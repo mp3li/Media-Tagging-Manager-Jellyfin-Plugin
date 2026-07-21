@@ -1,0 +1,306 @@
+MEDIA TAGGING MANAGER JELLYFIN PLUGIN — TESTING AND VALIDATION TRACKER
+======================================================================
+
+Purpose
+-------
+This document records every test required to verify Media Tagging Manager
+Jellyfin Plugin in a real Jellyfin environment before a public release. It is
+separate from project-goals.txt: that file defines what the project must do;
+this file records whether each behavior has actually been tested and what
+happened.
+
+When test feedback is provided, update the matching item's status and add a
+short professional result to the Test result log. Keep failures, unexpected
+behavior, workarounds, and retest results documented rather than deleting them.
+
+Status key
+----------
+[ ] Not tested
+[~] Test started, blocked, inconclusive, or failed; follow-up required
+[x] Passed in a real Jellyfin server
+[-] Not applicable to the tested server or deliberately deferred
+
+Test environment record
+-----------------------
+Jellyfin version:
+Plugin build/version:
+Operating system / installation type:
+Test server or primary server:
+Test library names and approximate item counts:
+Selected availability region:
+Enabled sources:
+Source plans / rate limits relevant to testing:
+Date testing began:
+
+1. Installation and plugin discovery
+------------------------------------
+
+[ ] Build the Release plugin successfully from a clean checkout.
+[ ] Confirm the published assembly is named Jellyfin.Plugin.MediaTaggingManager.dll.
+[ ] Install the DLL manually in a dedicated Jellyfin plugin directory.
+[ ] Restart Jellyfin and confirm the plugin loads without server startup errors.
+[ ] Confirm the Dashboard -> Plugins entry displays "Media Tagging Manager
+    Jellyfin Plugin".
+[ ] Open the plugin dashboard page and confirm all three areas are available:
+    Scan, Settings & sources, and Library overview.
+[ ] Confirm the plugin's existing stable GUID retains settings after replacing
+    an older local build with a newer local build.
+
+Acceptance criteria:
+- The plugin loads and its dashboard is reachable without manually editing
+  Jellyfin files after installation.
+- The server remains usable and reports no plugin-load exception.
+
+2. Library selection and settings persistence
+----------------------------------------------
+
+[ ] Confirm all configured Jellyfin libraries are listed in Settings & sources.
+[ ] Select one test library, save, leave the page, and confirm the selection
+    persists after reopening the dashboard.
+[ ] Restart Jellyfin and confirm the selection persists.
+[ ] Select more than one test library and confirm all selected libraries remain
+    selected after saving and restart.
+[ ] Clear every selection and confirm the plugin does not interpret this as
+    permission to scan every library.
+[ ] Confirm an unselected library is absent from Scan controls and is never
+    changed by Scan all selected libraries.
+[ ] Confirm the region field saves and reloads correctly.
+[ ] Confirm parallel-title value saves, reloads, and accepts only the supported
+    range.
+[ ] Confirm provider-only mode saves and reloads.
+[ ] Confirm network-only mode saves and reloads.
+[ ] Confirm combined provider-and-network mode saves and reloads.
+[ ] Confirm replacement of plugin-managed tags can be switched on and off.
+
+Acceptance criteria:
+- Settings persist across a page reload and Jellyfin restart.
+- No unselected library is queried, backed up, or modified.
+
+3. Source configuration and credential safety
+----------------------------------------------
+
+[ ] Configure a valid TMDb API Read Access Token through the dashboard.
+[ ] Configure a valid Watchmode API key through the dashboard.
+[ ] Configure one valid custom JSON source using the documented response shape.
+[ ] Confirm a blank TMDb field disables TMDb without affecting another enabled
+    source.
+[ ] Confirm a blank Watchmode field disables Watchmode without affecting
+    another enabled source.
+[ ] Confirm a disabled custom source is not queried.
+[ ] Confirm the plugin refuses a manual scan when every source is disabled or
+    missing credentials.
+[ ] Confirm that refusal leaves existing Provider: and Network: tags unchanged.
+[ ] Use an intentionally invalid source credential and confirm a failed lookup
+    leaves existing plugin-managed tags unchanged.
+[ ] Inspect source code, published DLL directory, backup files, and any private
+    manifest used for testing; confirm no real API key is present.
+[ ] Confirm source credentials are entered only in the Jellyfin dashboard and
+    remain absent from README examples and custom-source templates.
+[ ] Confirm normal source requests send credentials in HTTP headers rather than
+    including them in request URLs, where server-side inspection is possible.
+[ ] Record source-plan limits and confirm the configured parallel-title value is
+    appropriate for them.
+
+Acceptance criteria:
+- Every server uses its own credentials.
+- Missing or invalid credentials cannot erase known tags.
+- No credential is exposed in project, release, backup, or manifest artifacts.
+
+4. Provider and network tagging behavior
+-----------------------------------------
+
+[ ] Scan a title with one known provider and confirm a `Provider: <name>` tag
+    is written.
+[ ] Scan a title with more than one known provider and confirm all distinct
+    providers are retained.
+[ ] Scan a TV title with one known network and confirm a `Network: <name>` tag
+    is written.
+[ ] Scan a title with multiple network values where source data provides them
+    and confirm all distinct networks are retained.
+[ ] Confirm provider and network tags remain separate on the same title.
+[ ] Confirm duplicate source values result in only one case-insensitive tag.
+[ ] Confirm provider-only mode writes provider tags without adding networks.
+[ ] Confirm network-only mode writes network tags without adding providers.
+[ ] Confirm combined mode writes both kinds of tags where source data provides
+    them.
+[ ] Confirm tags unrelated to the plugin remain untouched after a healthy scan.
+[ ] With replacement enabled, confirm stale plugin-owned tags are reconciled on
+    a healthy source response while unrelated tags remain untouched.
+[ ] With replacement disabled, confirm existing plugin-owned tags are retained
+    alongside newly found tags.
+[ ] Confirm a source response with no external identifier available does not
+    invent a provider or network.
+[ ] Confirm the configured country region changes availability results only as
+    the source supports; record any expected regional difference.
+
+Acceptance criteria:
+- Tags are clear, overlap-friendly, and safe to filter in Jellyfin.
+- The plugin never treats a missing or failed lookup as a reason to guess or
+  remove unrelated metadata.
+
+5. Manual scans, scan status, and performance
+---------------------------------------------
+
+[ ] Click Scan this library and confirm only that library is checked.
+[ ] Click Scan all selected libraries and confirm each selected library is
+    checked.
+[ ] Confirm a pre-scan automatic backup is created before a manual one-library
+    scan changes tags.
+[ ] Confirm a single pre-scan backup is created before an all-selected-library
+    scan changes tags.
+[ ] During a multi-item scan, confirm the dashboard shows running state.
+[ ] Confirm the displayed current title changes as items are processed.
+[ ] Confirm completed count, total count, and percentage are credible.
+[ ] Confirm the ETA appears after sufficient progress and is reasonably close
+    on a multi-item test library.
+[ ] Confirm the configured parallel-title value produces stable behavior and
+    does not overwhelm the source or Jellyfin server.
+[ ] Test cancellation from Jellyfin where available and record final status,
+    partial tag state, and backup availability.
+[ ] Confirm a scan error is shown as a non-fatal status and does not make the
+    Jellyfin dashboard unusable.
+[ ] Test a representative larger library or larger batch after small-library
+    behavior is confirmed; record duration and source-rate-limit behavior.
+
+Acceptance criteria:
+- An administrator can tell what is happening during a scan.
+- A failed or cancelled scan remains recoverable using backups.
+
+6. New incoming media checks
+----------------------------
+
+[ ] Confirm incoming-media checks are off by default in a new configuration.
+[ ] Enable incoming-media checks and save settings.
+[ ] Run a normal Jellyfin library scan to establish the first enabled baseline.
+[ ] Add a new supported movie to a selected test library.
+[ ] Run Jellyfin's normal library scan and confirm the new movie is checked and
+    tagged after the scan completes.
+[ ] Add a new supported TV series to a selected test library.
+[ ] Run Jellyfin's normal library scan and confirm the new series is checked
+    and tagged after the scan completes.
+[ ] Confirm an existing older title is not unnecessarily rechecked by the
+    incoming-media path.
+[ ] Confirm an automatic pre-change backup is created before an incoming-media
+    update changes tags.
+[ ] Disable incoming-media checks, add a new supported title, run Jellyfin's
+    normal library scan, and confirm no automatic source lookup/tag update runs.
+[ ] Confirm manual scans and scheduled full scans still work while
+    incoming-media checks are disabled.
+[ ] Restart Jellyfin and confirm incoming-media enabled/disabled state and its
+    baseline timestamp behave correctly.
+
+Acceptance criteria:
+- Incoming media is checked only when the setting is enabled.
+- Disabling the setting has no effect on manual or scheduled full refreshes.
+
+7. Scheduled full refresh
+-------------------------
+
+[ ] Enable automatic full refresh and set a test interval.
+[ ] Restart Jellyfin and confirm Refresh provider and network tags appears in
+    Dashboard -> Scheduled Tasks.
+[ ] Start the scheduled task manually and confirm it scans configured libraries.
+[ ] Confirm the task creates a pre-change backup before changing tags.
+[ ] Confirm the task does not scan unselected libraries.
+[ ] Confirm disabling automatic full refresh prevents its default recurring
+    trigger after restart.
+[ ] Change the interval, restart Jellyfin, and confirm the task reflects the
+    expected new default schedule.
+[ ] Confirm task cancellation behaves safely and leaves a usable backup.
+[ ] Record actual schedule behavior, duration, and source rate-limit behavior.
+
+Acceptance criteria:
+- Manual, scheduled, incoming-media, combined, and fully disabled automatic
+  modes behave independently as configured.
+
+8. Library overview, filters, and manual corrections
+----------------------------------------------------
+
+[ ] Open Library overview and confirm supported movies and TV series from
+    selected libraries appear.
+[ ] Confirm an unselected library's titles do not appear.
+[ ] Confirm provider values display correctly.
+[ ] Confirm network values display correctly.
+[ ] Filter by a complete provider name.
+[ ] Filter by partial provider text.
+[ ] Filter by a complete network name.
+[ ] Filter by partial network text.
+[ ] Filter by provider and network together.
+[ ] Filter for titles that have at least one provider or network.
+[ ] Filter for titles missing both provider and network tags.
+[ ] Edit a title manually to add a provider and network.
+[ ] Edit a title manually to remove a provider and network.
+[ ] Confirm the manual edit creates a pre-change backup.
+[ ] Confirm manual editing preserves unrelated existing Jellyfin tags.
+[ ] Confirm the edited title refreshes correctly in the overview.
+[ ] Confirm an edit of a missing/deleted item is handled with a useful error.
+
+Acceptance criteria:
+- An administrator can locate, review, and correct supported title tags without
+  leaving the plugin dashboard.
+
+9. Backups, restore, and undo
+-----------------------------
+
+[ ] Create a named manual backup from settings.
+[ ] Confirm the backup list shows its label, timestamp, and item count.
+[ ] Restart Jellyfin and confirm the backup remains listed.
+[ ] Confirm the saved backup file exists in the plugin data directory.
+[ ] Confirm the backup contains complete tag lists, including an unrelated test
+    tag not created by this plugin.
+[ ] Change provider, network, and unrelated test tags after creating a backup.
+[ ] Restore the named backup and confirm all saved tags return exactly to their
+    backup state.
+[ ] Confirm the restore warning clearly explains that current tags are
+    overwritten for saved items.
+[ ] Confirm an item removed after backup is skipped without stopping the rest
+    of restoration.
+[ ] Run a tag-changing scan or manual edit, then use Undo last tag operation.
+[ ] Confirm Undo restores the newest pre-change backup as expected.
+[ ] Restore an older listed backup and confirm backup selection works, not only
+    Undo latest.
+[ ] Test backup and restore with a larger selected library; record duration and
+    backup file size.
+[ ] Confirm backups remain inaccessible to non-administrator Jellyfin users.
+
+Acceptance criteria:
+- A user can safely return selected-library tag state to a known prior backup.
+- Backup files survive normal server restarts and never include API credentials.
+
+10. Packaging, private manifest, and release safety
+---------------------------------------------------
+
+[ ] Create a Release ZIP containing the required plugin assembly and release
+    files.
+[ ] Calculate and record the ZIP's real checksum.
+[ ] Prepare a temporary private or local manifest that points to the real ZIP,
+    version, ABI, and checksum.
+[ ] Confirm the manifest contains no API credentials, backup files, local
+    Jellyfin configuration, or private test-media paths.
+[ ] Add the private/local manifest URL to a separate Jellyfin test server.
+[ ] Install the plugin from the private/local catalog and confirm installation
+    succeeds.
+[ ] Restart Jellyfin and confirm the catalog-installed plugin loads normally.
+[ ] Test update from one privately packaged version to a newer one and confirm
+    plugin settings remain intact.
+[ ] Confirm a user can install from the manifest without any API key, then add
+    their own source credentials only through the plugin dashboard.
+[ ] Review the public tracked-file set for secrets, local output, DLL build
+    output, backups, test artifacts, sessions, and operating-system metadata.
+[ ] Add and review an explicit open-source license before public release.
+
+Acceptance criteria:
+- The public installation mechanism works before it is public.
+- The release, manifest, and repository contain no user secrets or local data.
+
+Test result log
+---------------
+
+Add one entry for every completed, failed, blocked, or retested item. Keep the
+test number, date, Jellyfin/plugin version, result, and short evidence.
+
+Template:
+YYYY-MM-DD | Test <number/item> | Pass / Fail / Blocked | Jellyfin <version>,
+plugin <version> | Brief result and evidence
+
+Entries:

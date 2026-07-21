@@ -1,0 +1,224 @@
+MEDIA TAGGING MANAGER JELLYFIN PLUGIN — PROJECT GOALS AND ACCEPTANCE TRACKER
+============================================================================
+
+Purpose
+-------
+Media Tagging Manager Jellyfin Plugin is a Jellyfin server plugin intended to
+make a personal media library easier to browse, filter, and organize by adding
+current streaming-provider and television-network tags to the user's existing
+media. It must keep provider and network data deliberately separate, allow
+overlap, respect the selected availability region, and never treat a missing or
+temporarily unavailable source response as permission to erase known tags.
+
+This document turns the original feature brief into the project's product and
+delivery requirements. The separate goal-testing.txt file records execution
+checklists and results.
+
+Status key
+----------
+[x] Implemented in the project
+[~] Partly implemented or requiring further product work
+[ ] Planned / not yet implemented
+
+1. Product identity and safety boundary
+---------------------------------------
+
+[x] The project and displayed plugin are named "Media Tagging Manager Jellyfin
+    Plugin".
+[x] The project is a Jellyfin server plugin, rather than a separate application.
+[x] The plugin works with the media already known to Jellyfin; it does not
+    download media, rename files, or bypass streaming-provider access controls.
+[x] Provider and network classifications are separate concepts and may overlap
+    on the same item.
+[x] The plugin uses normal Jellyfin tags and preserves unrelated user-created
+    tags.
+
+Acceptance criteria:
+- The dashboard and packaged plugin identify themselves as Media Tagging
+  Manager Jellyfin Plugin.
+- A title may have several provider tags and several network tags at once.
+- The plugin never changes video files, filenames, or unrelated Jellyfin tags.
+
+2. Visual dashboard settings and library scope
+----------------------------------------------
+
+[x] Provide a visual configuration and management page in the Jellyfin server
+    dashboard.
+[x] Let an administrator select exactly which Jellyfin libraries the plugin may
+    access; an empty selection never means all libraries.
+[x] Let an administrator choose provider tags only, network tags only, or both.
+[x] Let an administrator choose the availability region and maximum number of
+    titles checked in parallel.
+[x] Let an administrator configure built-in source credentials and additional
+    authorized JSON sources in the dashboard.
+[x] Explain settings, source behavior, refresh behavior, incoming-media checks,
+    and restore risk in the dashboard rather than requiring a config-file or
+    terminal workflow.
+
+Acceptance criteria:
+- An administrator can perform normal setup from Dashboard -> Plugins -> Media
+  Tagging Manager Jellyfin Plugin.
+- Saving settings keeps the existing library selection, sources, and backups.
+- No unselected library is queried or changed.
+
+3. Provider and network classification
+--------------------------------------
+
+[x] Write explicit Jellyfin tags in these forms:
+    - Provider: <name>
+    - Network: <name>
+[x] Add all distinct results returned by healthy enabled sources instead of
+    forcing a single provider or single network.
+[x] Replace only tags owned by this plugin when replacement is enabled.
+[x] Preserve existing plugin-owned tags when every enabled source fails, rather
+    than clearing them because of a temporary outage.
+[x] Use TMDb for regional watch-provider data and television-network metadata.
+[x] Use Watchmode as an optional additional availability source.
+[x] Support administrator-configured JSON endpoints for additional licensed or
+    authorized sources without requiring a new plugin build.
+[ ] Add more first-class source adapters after appropriate review of their
+    terms, identifiers, regional coverage, rate limits, and matching quality.
+[ ] Evaluate Streaming Availability API as the first additional availability
+    adapter and TVMaze/TheTVDB as possible network-metadata fallbacks.
+
+Acceptance criteria:
+- A source result can add more than one provider and more than one network.
+- Provider and Network remain visibly separate in Jellyfin tags and dashboard
+  filters.
+- A source failure never deletes a previously known tag.
+- A source without required identifiers returns no guessed classification.
+
+4. Manual scans and new incoming media
+--------------------------------------
+
+[x] Provide a "Scan this library" action for each selected library.
+[x] Provide a "Scan all selected libraries" action.
+[x] Refuse scans safely when no source is configured, leaving existing plugin
+    tags unchanged.
+[x] Provide a separate setting to check new incoming media after Jellyfin
+    completes a normal library scan.
+[x] Keep incoming-media checks independent from scheduled full-library refresh.
+[x] Keep incoming-media checks off by default.
+[x] When enabled, check only new supported movies and TV series added after the
+    setting was enabled or after the previous enabled incoming-media check.
+[x] When disabled, make no post-library-scan API checks for incoming media.
+[x] Keep manual and scheduled full scans available regardless of the
+    incoming-media setting.
+
+Acceptance criteria:
+- A single-library scan affects only that chosen library.
+- A newly added title is checked after a normal Jellyfin library scan only
+  when incoming-media checks are enabled.
+- Disabling incoming-media checks prevents that automatic request while manual
+  scans continue to work.
+
+5. Scheduled refresh and scan feedback
+--------------------------------------
+
+[x] Register the native Jellyfin task "Refresh provider and network tags".
+[x] Provide a setting to enable or disable automatic full-library re-checking.
+[x] Provide a configurable refresh interval in hours.
+[x] Show scan state, active title, completed count, total count, percentage,
+    and estimated remaining time in the dashboard.
+[x] Limit parallel title checks to an administrator-configurable safe range.
+[x] Document that Jellyfin must be restarted after changing the default
+    scheduled-task interval or enabled state.
+
+Acceptance criteria:
+- An administrator can run the task manually from Dashboard -> Scheduled Tasks.
+- A user can choose manual-only, scheduled-only, incoming-media-only, combined,
+  or fully disabled automatic behavior.
+- Progress remains understandable during a multi-item scan.
+
+6. Library overview and manual corrections
+------------------------------------------
+
+[x] Provide a dedicated Jellyfin dashboard tab for reviewing supported items in
+    selected libraries.
+[x] Show whether each supported item has provider and/or network tags.
+[x] Filter by provider, network, tagged state, or a provider-plus-network
+    combination.
+[x] Support partial-text provider and network filtering.
+[x] Allow an administrator to replace a title's plugin-owned provider and
+    network tags manually with comma-separated values.
+[x] Preserve unrelated Jellyfin tags during manual corrections.
+[ ] Expand the overview and source adapters beyond movies and TV series to
+    additional Jellyfin media types where a reliable availability/network model
+    exists.
+[ ] Add durable per-item scan history, per-source provenance, last-check times,
+    and richer manual-edit controls instead of prompt-based editing.
+
+Acceptance criteria:
+- A user can find titles with one provider, one network, or a specific
+  provider-and-network combination.
+- A manual correction changes only the intended plugin-owned tags.
+- Existing unrelated tags remain after a manual correction or a re-check.
+
+7. Safety backups and undo
+--------------------------
+
+[x] Provide a settings action that creates a named, restorable tag-backup file.
+[x] Capture the complete current tag list for every Jellyfin item in selected
+    libraries, including tags not created by this plugin.
+[x] Create a pre-change backup before a manual scan, configured-library scan,
+    incoming-media update, or manual tag edit.
+[x] Show available backups with label, timestamp, and item count.
+[x] Restore a selected backup from settings.
+[x] Provide "Undo last tag operation" by restoring the newest backup.
+[x] Store backups in the Jellyfin plugin data directory so they persist across
+    server restarts.
+
+Acceptance criteria:
+- A manual backup can be created before a tag-changing operation.
+- A restore returns captured items to their saved complete tag lists.
+- The restore confirmation clearly warns that tags added after the backup,
+  including unrelated custom tags, are overwritten for saved items.
+- Removed Jellyfin items are skipped during restore without stopping the rest
+  of the backup restoration.
+
+8. API credentials, documentation, and release safety
+-----------------------------------------------------
+
+[x] Require every Jellyfin server administrator to supply their own API
+    credentials in their own plugin settings.
+[x] Do not bundle, commit, publish, or share API keys in code, documentation,
+    a repository manifest, release files, or screenshots.
+[x] Send TMDb and Watchmode credentials in request headers rather than URLs.
+[x] Document credential setup, rotation, custom JSON sources, and server-data
+    sensitivity in Documentation/API_KEYS.md.
+[x] Document the requested README conventions without copying another project's
+    sections verbatim: centered title and badges, expandable contents, practical
+    setup, settings, limitations, project structure, and responsible-use note.
+[x] Start Documentation/CHANGELOG.md.
+[x] Maintain Documentation/project-goals.txt acceptance tracker.
+[x] Build successfully against Jellyfin 10.11.3 with zero warnings.
+[x] Add an explicit GPL-3.0-or-later open-source license appropriate for Jellyfin plugin
+    distribution.
+[ ] Package a Release ZIP, calculate its real checksum, and publish a real
+    repository manifest after a public or private release URL exists.
+[ ] Add a release workflow that packages, checksums, and updates the manifest
+    without exposing configuration secrets.
+
+Acceptance criteria:
+- API keys are never required to add a plugin repository manifest or install
+  the plugin.
+- A user installs the plugin first, then enters their own source credentials in
+  the Jellyfin dashboard.
+- The public release contains no local Jellyfin configuration, backups, or
+  credentials.
+
+Primary files
+-------------
+- README.md: public project guide, setup instructions, behavior, and limits.
+- Documentation/API_KEYS.md: administrator credential, rotation, and custom-source guide.
+- Documentation/CHANGELOG.md: chronological record of user-visible changes.
+- Documentation/project-goals.txt: project goals, current status, and acceptance criteria.
+- Media Tagging Manager/Configuration/PluginConfiguration.cs:
+  persisted administrator settings.
+- Media Tagging Manager/Services/ProviderNetworkScanner.cs:
+  scanning, source lookups, safe tag changes, and incoming-media handling.
+- Media Tagging Manager/Services/TagBackupManager.cs: complete
+  tag backup creation and restoration.
+- Media Tagging Manager/ScheduledTasks/: scheduled refresh and
+  post-library-scan incoming-media hooks.
+- Media Tagging Manager/Web/configPage.html: visual dashboard.

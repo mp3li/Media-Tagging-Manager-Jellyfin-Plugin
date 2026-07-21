@@ -1,0 +1,217 @@
+<div id="mediaTaggingManagerPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+    <div data-role="content">
+        <div class="content-primary">
+            <h1>Media Tagging Manager Jellyfin Plugin</h1>
+            <p class="fieldDescription">Current streaming availability changes by region. This plugin keeps each result distinct: <code>Provider: Netflix</code> and <code>Network: BBC One</code> are separate Jellyfin tags and may both apply.</p>
+
+            <div class="tabs">
+                <button is="emby-button" type="button" class="raised tab-button" data-tab="scan">Scan</button>
+                <button is="emby-button" type="button" class="raised tab-button" data-tab="settings">Settings &amp; sources</button>
+                <button is="emby-button" type="button" class="raised tab-button" data-tab="library">Library overview</button>
+            </div>
+
+            <section data-panel="scan">
+                <h2>Scan selected libraries</h2>
+                <p id="scanStatus" class="fieldDescription">Loading status…</p>
+                <div id="scanProgress" style="height: 0.6em; background: #444; border-radius: 0.3em; overflow: hidden; margin-bottom: 1em;"><div style="height:100%; width:0; background:#00a4dc;"></div></div>
+                <button is="emby-button" type="button" class="raised" id="scanAllButton">Scan all selected libraries</button>
+                <div id="scanLibraries" style="margin-top:1.5em;"></div>
+            </section>
+
+            <section data-panel="settings" hidden>
+                <form id="mediaTaggingManagerForm">
+                    <h2>Libraries</h2>
+                    <p class="fieldDescription">Only selected libraries are read or changed. Movies and series are tagged; episodes inherit the series context.</p>
+                    <div id="libraryChoices"></div>
+
+                    <h2>Tag behavior</h2>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagProviders" /> <span>Tag providers</span></label>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagNetworks" /> <span>Tag networks</span></label>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="replaceManagedTags" /> <span>Replace tags managed by this plugin on each check</span></label>
+                    <p class="fieldDescription">Your other Jellyfin tags are never removed. Turning off replacement preserves previously found plugin tags.</p>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="region">Availability region</label>
+                        <input is="emby-input" id="region" type="text" maxlength="2" required />
+                        <div class="fieldDescription">Two-letter country code, for example US, GB, CA, or AU.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="concurrency">Maximum titles checked in parallel</label>
+                        <input is="emby-input" id="concurrency" type="number" min="1" max="12" />
+                    </div>
+
+                    <h2>Automatic refresh</h2>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="automaticRefresh" /> <span>Automatically re-check enabled sources</span></label>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="refreshHours">Refresh every (hours)</label>
+                        <input is="emby-input" id="refreshHours" type="number" min="6" max="8760" />
+                        <div class="fieldDescription">Also available as “Refresh provider and network tags” under Dashboard → Scheduled Tasks.</div>
+                    </div>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="newMediaChecks" /> <span>Check newly added media after Jellyfin library scans</span></label>
+                    <p class="fieldDescription">When enabled, only new movies and series added after it was turned on are checked after a normal Jellyfin library scan. Turn it off to prevent automatic checks for incoming media; manual and scheduled full scans remain available.</p>
+
+                    <h2>Safety backups and undo</h2>
+                    <p class="fieldDescription">A backup saves the complete current tag list for every item in the selected libraries. Restoring a backup overwrites current tags for those saved items, including tags not created by this plugin.</p>
+                    <button is="emby-button" type="button" class="raised" id="createBackupButton">Create tag backup</button>
+                    <button is="emby-button" type="button" class="raised" id="undoBackupButton">Undo last tag operation</button>
+                    <div id="backupList" style="margin-top:1em;"></div>
+
+                    <h2>Built-in sources</h2>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="tmdbKey">TMDb API Read Access Token</label>
+                        <input is="emby-input" id="tmdbKey" type="password" autocomplete="off" />
+                        <div class="fieldDescription">TMDb contributes region-specific watch providers and TV networks. Paste a Read Access Token, not an API key; leave blank to disable it.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="watchmodeKey">Watchmode API key</label>
+                        <input is="emby-input" id="watchmodeKey" type="password" autocomplete="off" />
+                        <div class="fieldDescription">Optional additional provider coverage. It needs the item’s IMDb ID.</div>
+                    </div>
+
+                    <h2>Additional JSON sources</h2>
+                    <p class="fieldDescription">Optional array of sources. URL tokens: <code>{tmdb}</code>, <code>{imdb}</code>, <code>{type}</code>, <code>{region}</code>. The two paths point to a JSON string or an array of strings.</p>
+                    <textarea is="emby-input" id="customSources" rows="10" style="width:100%; font-family:monospace;"></textarea>
+                    <button is="emby-button" type="submit" class="raised button-submit block">Save settings</button>
+                </form>
+            </section>
+
+            <section data-panel="library" hidden>
+                <h2>Library overview</h2>
+                <div class="formDialogContent smoothScrollY">
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="filterProvider">Provider contains</label>
+                        <input is="emby-input" id="filterProvider" type="text" />
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="filterNetwork">Network contains</label>
+                        <input is="emby-input" id="filterNetwork" type="text" />
+                    </div>
+                    <select is="emby-select" id="filterTagged"><option value="">All items</option><option value="true">Has providers or networks</option><option value="false">Missing both</option></select>
+                    <button is="emby-button" type="button" class="raised" id="applyFilters">Apply filters</button>
+                </div>
+                <p id="overviewCount" class="fieldDescription"></p>
+                <div style="overflow-x:auto;"><table class="detailTable"><thead><tr><th>Title</th><th>Providers</th><th>Networks</th><th></th></tr></thead><tbody id="overviewRows"></tbody></table></div>
+            </section>
+        </div>
+    </div>
+    <script>
+    (function () {
+        'use strict';
+        var page = document.querySelector('#mediaTaggingManagerPage');
+        var pluginId = 'c7b639bd-55c5-4694-aa8e-32c816048da8';
+        var config, libraries = [];
+        var $ = function (selector) { return page.querySelector(selector); };
+        var url = function (path) { return ApiClient.getUrl('MediaTaggingManager/' + path); };
+        var api = function (method, path, data) {
+            return ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' });
+        };
+        var escapeHtml = function (value) { var element = document.createElement('span'); element.textContent = value || ''; return element.innerHTML; };
+
+        function selectedLibraries() {
+            return Array.prototype.map.call(page.querySelectorAll('[data-library-choice]:checked'), function (input) { return input.value; });
+        }
+        function renderLibraryChoices() {
+            $('#libraryChoices').innerHTML = libraries.map(function (library) {
+                var checked = (config.LibraryIds || []).indexOf(library.ItemId) !== -1 ? ' checked' : '';
+                return '<label class="checkboxContainer"><input is="emby-checkbox" data-library-choice type="checkbox" value="' + library.ItemId + '"' + checked + ' /> <span>' + escapeHtml(library.Name) + '</span></label>';
+            }).join('') || '<p class="fieldDescription">No Jellyfin libraries were found.</p>';
+        }
+        function renderScanLibraries() {
+            var enabled = selectedLibraries();
+            $('#scanLibraries').innerHTML = libraries.filter(function (library) { return enabled.indexOf(library.ItemId) !== -1; }).map(function (library) {
+                return '<div class="listItem"><div class="listItemBody">' + escapeHtml(library.Name) + '</div><button is="emby-button" type="button" class="raised scan-library" data-id="' + library.ItemId + '">Scan this library</button></div>';
+            }).join('') || '<p class="fieldDescription">Select one or more libraries in Settings &amp; sources, then save.</p>';
+            Array.prototype.forEach.call(page.querySelectorAll('.scan-library'), function (button) { button.addEventListener('click', function () { api('POST', 'scan/' + button.dataset.id).then(updateStatus); }); });
+        }
+        function updateStatus() {
+            api('GET', 'status').then(function (status) {
+                var percent = status.Total ? Math.round(status.Completed * 100 / status.Total) : 0;
+                $('#scanProgress').firstElementChild.style.width = percent + '%';
+                $('#scanStatus').textContent = status.IsRunning ? ('Scanning ' + status.Completed + ' of ' + status.Total + ': ' + status.CurrentTitle + (status.EstimatedRemaining ? ' · about ' + Math.ceil(status.EstimatedRemaining / 600000000) + ' min remaining' : '')) : (status.LastError ? 'Last scan error: ' + status.LastError : 'No scan is currently running.');
+            });
+        }
+        function loadBackups() {
+            api('GET', 'backups').then(function (backups) {
+                $('#backupList').innerHTML = backups.map(function (backup) {
+                    var time = new Date(backup.CreatedUtc).toLocaleString();
+                    return '<div class="listItem"><div class="listItemBody"><div>' + escapeHtml(backup.Label) + '</div><div class="fieldDescription">' + escapeHtml(time) + ' · ' + backup.ItemCount + ' items</div></div><button is="emby-button" type="button" class="raised restore-backup" data-id="' + backup.Id + '">Restore</button></div>';
+                }).join('') || '<p class="fieldDescription">No tag backups have been created yet.</p>';
+                Array.prototype.forEach.call(page.querySelectorAll('.restore-backup'), function (button) {
+                    button.addEventListener('click', function () {
+                        if (window.confirm('Restore this complete tag backup? Current tags for every saved item will be overwritten.')) {
+                            api('POST', 'backups/' + button.dataset.id + '/restore').then(function () { Dashboard.alert('Tag backup restored.'); loadBackups(); loadItems(); });
+                        }
+                    });
+                });
+            });
+        }
+        function loadItems() {
+            var query = [];
+            if ($('#filterProvider').value.trim()) query.push('provider=' + encodeURIComponent($('#filterProvider').value.trim()));
+            if ($('#filterNetwork').value.trim()) query.push('network=' + encodeURIComponent($('#filterNetwork').value.trim()));
+            if ($('#filterTagged').value) query.push('isTagged=' + $('#filterTagged').value);
+            api('GET', 'items' + (query.length ? '?' + query.join('&') : '')).then(function (items) {
+                $('#overviewCount').textContent = items.length + ' items';
+                $('#overviewRows').innerHTML = items.map(function (item) {
+                    return '<tr><td>' + escapeHtml(item.Name) + '</td><td>' + escapeHtml(item.Providers.join(', ')) + '</td><td>' + escapeHtml(item.Networks.join(', ')) + '</td><td><button is="emby-button" type="button" class="edit-item" data-id="' + item.ItemId + '" data-p="' + escapeHtml(item.Providers.join(', ')) + '" data-n="' + escapeHtml(item.Networks.join(', ')) + '">Edit</button></td></tr>';
+                }).join('') || '<tr><td colspan="4">No matching items.</td></tr>';
+                Array.prototype.forEach.call(page.querySelectorAll('.edit-item'), function (button) { button.addEventListener('click', function () { editItem(button); }); });
+            });
+        }
+        function editItem(button) {
+            var providers = window.prompt('Providers (comma-separated):', button.dataset.p || '');
+            if (providers === null) return;
+            var networks = window.prompt('Networks (comma-separated):', button.dataset.n || '');
+            if (networks === null) return;
+            api('PUT', 'items/' + button.dataset.id, { Providers: providers.split(',').map(function (x) { return x.trim(); }).filter(Boolean), Networks: networks.split(',').map(function (x) { return x.trim(); }).filter(Boolean) }).then(loadItems);
+        }
+        function showTab(name) {
+            Array.prototype.forEach.call(page.querySelectorAll('[data-panel]'), function (panel) { panel.hidden = panel.dataset.panel !== name; });
+            if (name === 'scan') renderScanLibraries();
+            if (name === 'library') loadItems();
+        }
+        page.addEventListener('viewshow', function () {
+            Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('Library/VirtualFolders') })]).then(function (results) {
+                config = results[0]; libraries = results[1] || [];
+                $('#tagProviders').checked = config.TagProviders;
+                $('#tagNetworks').checked = config.TagNetworks;
+                $('#replaceManagedTags').checked = config.ReplaceManagedTags;
+                $('#automaticRefresh').checked = config.EnableAutomaticRefresh;
+                $('#newMediaChecks').checked = config.EnableNewMediaChecks;
+                $('#region').value = config.Region || 'US';
+                $('#concurrency').value = config.MaxConcurrentLookups || 3;
+                $('#refreshHours').value = config.RefreshIntervalHours || 168;
+                $('#tmdbKey').value = config.TmdbApiKey || '';
+                $('#watchmodeKey').value = config.WatchmodeApiKey || '';
+                $('#customSources').value = JSON.stringify(config.CustomSources || [], null, 2);
+                renderLibraryChoices(); renderScanLibraries(); updateStatus(); loadBackups();
+            });
+        });
+        page.addEventListener('click', function (event) { if (event.target.dataset.tab) showTab(event.target.dataset.tab); });
+        $('#scanAllButton').addEventListener('click', function () { api('POST', 'scan').then(updateStatus); });
+        $('#applyFilters').addEventListener('click', loadItems);
+        $('#createBackupButton').addEventListener('click', function () {
+            var label = window.prompt('Optional backup label:', 'Manual tag backup');
+            if (label === null) return;
+            api('POST', 'backups', { Label: label.trim() || 'Manual tag backup' }).then(function () { Dashboard.alert('Tag backup created.'); loadBackups(); });
+        });
+        $('#undoBackupButton').addEventListener('click', function () {
+            if (window.confirm('Undo the last tag operation by restoring the newest backup? Current tags for every saved item will be overwritten.')) {
+                api('POST', 'backups/undo').then(function () { Dashboard.alert('Newest tag backup restored.'); loadBackups(); loadItems(); });
+            }
+        });
+        $('#mediaTaggingManagerForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            try { config.CustomSources = JSON.parse($('#customSources').value || '[]'); } catch (error) { Dashboard.alert('Additional JSON sources must be valid JSON.'); return; }
+            config.LibraryIds = selectedLibraries(); config.TagProviders = $('#tagProviders').checked; config.TagNetworks = $('#tagNetworks').checked;
+            config.ReplaceManagedTags = $('#replaceManagedTags').checked; config.EnableAutomaticRefresh = $('#automaticRefresh').checked;
+            config.EnableNewMediaChecks = $('#newMediaChecks').checked;
+            if (!config.EnableNewMediaChecks) config.LastIncomingMediaCheckUtc = null;
+            config.Region = $('#region').value.trim().toUpperCase(); config.MaxConcurrentLookups = Number($('#concurrency').value || 3); config.RefreshIntervalHours = Number($('#refreshHours').value || 168);
+            config.TmdbApiKey = $('#tmdbKey').value.trim(); config.WatchmodeApiKey = $('#watchmodeKey').value.trim();
+            ApiClient.updatePluginConfiguration(pluginId, config).then(function () { Dashboard.alert('Settings saved. The scheduled full-refresh interval is refreshed after a Jellyfin restart; manual and new-media checks work immediately.'); renderScanLibraries(); });
+        });
+        setInterval(updateStatus, 3000);
+    }());
+    </script>
+</div>

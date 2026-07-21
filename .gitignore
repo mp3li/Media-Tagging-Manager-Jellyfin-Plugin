@@ -1,0 +1,64 @@
+# Build and package output
+**/bin/
+**/obj/
+[Bb]uild/
+[Dd]ist/
+[Aa]rtifacts/
+[Rr]elease/
+*.nupkg
+*.snupkg
+*.zip
+
+# Test and diagnostic output
+[Tt]est[Rr]esults/
+[Cc]overage/
+*.coverage
+*.trx
+*.log
+[Ll]ogs/
+
+# IDE workspace files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# macOS Finder and resource-fork metadata
+.DS_Store
+**/.DS_Store
+.AppleDouble
+**/.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Local credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+appsettings.Local.json
+appsettings.Development.json
+local.settings.json
+secrets.json
+credentials.json
+settings.local.json
+settings.json
+*.private.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Jellyfin runtime data copied in during local development
+[Tt]ag-[Bb]ackups/
+[Ll]ocal[Dd]ata/
+[Jj]ellyfin[Dd]ata/
+[Ss]essions/
+[Bb]rowser [Ss]ession/
+[Cc]ache/
+[Tt]emp/
