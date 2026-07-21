@@ -48,7 +48,7 @@
 
 ## About the Project
 
-Media Tagging Manager Jellyfin Plugin by mp3li is for media-library owners who want their local collection to show where a title is currently available and which television network it belongs to, without treating those two ideas as the same thing.
+Media Tagging Manager Jellyfin Plugin by mp3li is for media-library owners who want their local collection tagged with the online streaming providers a title is currently available to watch on and with the television network it belongs to, without treating those two ideas as the same thing.
 
 The plugin is built around a practical Jellyfin workflow:
 
