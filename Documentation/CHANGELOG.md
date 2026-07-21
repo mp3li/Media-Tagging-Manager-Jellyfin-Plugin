@@ -6,6 +6,22 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.2-test] - 2026-07-21
+
+### Fixed
+
+- Corrected the Jellyfin dashboard lifecycle event so the plugin now loads the
+  selectable library list, saved configuration, scan controls, and backup list.
+- Added visible errors for failed settings loads, saves, manual backup creation,
+  and Undo so an unsuccessful request no longer appears to do nothing.
+- Clarified that a library must be selected and saved before a manual backup can
+  be created.
+
+### Test-release notes
+
+- This supersedes the `0.1.0.1-test` catalog build and remains a public test
+  build, not a stable release.
+
 ## [0.1.0.1-test] - 2026-07-21
 
 ### Added

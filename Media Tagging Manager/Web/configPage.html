@@ -107,6 +107,12 @@
             return ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' });
         };
         var escapeHtml = function (value) { var element = document.createElement('span'); element.textContent = value || ''; return element.innerHTML; };
+        var errorMessage = function (error) {
+            if (!error) return 'An unknown error occurred.';
+            if (typeof error === 'string') return error;
+            return error.responseJSON && (error.responseJSON.detail || error.responseJSON.title) || error.message || error.statusText || 'An unknown error occurred.';
+        };
+        var showRequestError = function (action, error) { Dashboard.alert(action + ': ' + errorMessage(error)); };
 
         function selectedLibraries() {
             return Array.prototype.map.call(page.querySelectorAll('[data-library-choice]:checked'), function (input) { return input.value; });
@@ -171,7 +177,8 @@
             if (name === 'scan') renderScanLibraries();
             if (name === 'library') loadItems();
         }
-        page.addEventListener('viewshow', function () {
+        function loadPage() {
+            Dashboard.showLoadingMsg();
             Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('Library/VirtualFolders') })]).then(function (results) {
                 config = results[0]; libraries = results[1] || [];
                 $('#tagProviders').checked = config.TagProviders;
@@ -186,19 +193,33 @@
                 $('#watchmodeKey').value = config.WatchmodeApiKey || '';
                 $('#customSources').value = JSON.stringify(config.CustomSources || [], null, 2);
                 renderLibraryChoices(); renderScanLibraries(); updateStatus(); loadBackups();
+                Dashboard.hideLoadingMsg();
+            }, function (error) {
+                var message = 'Could not load your Jellyfin libraries and plugin settings: ' + errorMessage(error);
+                $('#libraryChoices').innerHTML = '<p class="fieldDescription">' + escapeHtml(message) + '</p>';
+                $('#backupList').innerHTML = '<p class="fieldDescription">Backups cannot load until the plugin settings load successfully.</p>';
+                $('#scanStatus').textContent = message;
+                Dashboard.hideLoadingMsg();
             });
-        });
+        }
+        // Jellyfin dispatches "pageshow" for configuration pages. "viewshow" never
+        // ran here, leaving all dynamic controls empty without an error message.
+        page.addEventListener('pageshow', loadPage);
         page.addEventListener('click', function (event) { if (event.target.dataset.tab) showTab(event.target.dataset.tab); });
         $('#scanAllButton').addEventListener('click', function () { api('POST', 'scan').then(updateStatus); });
         $('#applyFilters').addEventListener('click', loadItems);
         $('#createBackupButton').addEventListener('click', function () {
+            if (!config || !(config.LibraryIds || []).length) {
+                Dashboard.alert('Select one or more libraries and save Settings & sources before creating a tag backup.');
+                return;
+            }
             var label = window.prompt('Optional backup label:', 'Manual tag backup');
             if (label === null) return;
-            api('POST', 'backups', { Label: label.trim() || 'Manual tag backup' }).then(function () { Dashboard.alert('Tag backup created.'); loadBackups(); });
+            api('POST', 'backups', { Label: label.trim() || 'Manual tag backup' }).then(function () { Dashboard.alert('Tag backup created.'); loadBackups(); }, function (error) { showRequestError('Could not create the tag backup', error); });
         });
         $('#undoBackupButton').addEventListener('click', function () {
             if (window.confirm('Undo the last tag operation by restoring the newest backup? Current tags for every saved item will be overwritten.')) {
-                api('POST', 'backups/undo').then(function () { Dashboard.alert('Newest tag backup restored.'); loadBackups(); loadItems(); });
+                api('POST', 'backups/undo').then(function () { Dashboard.alert('Newest tag backup restored.'); loadBackups(); loadItems(); }, function (error) { showRequestError('Could not undo the last tag operation', error); });
             }
         });
         $('#mediaTaggingManagerForm').addEventListener('submit', function (event) {
@@ -210,7 +231,7 @@
             if (!config.EnableNewMediaChecks) config.LastIncomingMediaCheckUtc = null;
             config.Region = $('#region').value.trim().toUpperCase(); config.MaxConcurrentLookups = Number($('#concurrency').value || 3); config.RefreshIntervalHours = Number($('#refreshHours').value || 168);
             config.TmdbApiKey = $('#tmdbKey').value.trim(); config.WatchmodeApiKey = $('#watchmodeKey').value.trim();
-            ApiClient.updatePluginConfiguration(pluginId, config).then(function () { Dashboard.alert('Settings saved. The scheduled full-refresh interval is refreshed after a Jellyfin restart; manual and new-media checks work immediately.'); renderScanLibraries(); });
+            ApiClient.updatePluginConfiguration(pluginId, config).then(function () { Dashboard.alert('Settings saved. The scheduled full-refresh interval is refreshed after a Jellyfin restart; manual and new-media checks work immediately.'); renderScanLibraries(); }, function (error) { showRequestError('Could not save settings', error); });
         });
         setInterval(updateStatus, 3000);
     }());

@@ -54,7 +54,7 @@ Acceptance criteria:
 2. Library selection and settings persistence
 ----------------------------------------------
 
-[ ] Confirm all configured Jellyfin libraries are listed in Settings & sources.
+[~] Confirm all configured Jellyfin libraries are listed in Settings & sources.
 [ ] Select one test library, save, leave the page, and confirm the selection
     persists after reopening the dashboard.
 [ ] Restart Jellyfin and confirm the selection persists.
@@ -304,3 +304,8 @@ YYYY-MM-DD | Test <number/item> | Pass / Fail / Blocked | Jellyfin <version>,
 plugin <version> | Brief result and evidence
 
 Entries:
+2026-07-21 | Test 2 — library selection | Fail; fix pending retest | Jellyfin
+version not recorded, plugin 0.1.0.1-test | The Settings & sources page showed
+the Libraries heading but did not populate selectable library checkboxes. The
+manual backup action therefore had no selected library scope and provided no
+visible response. Fixed in 0.1.0.2-test; retest required.
