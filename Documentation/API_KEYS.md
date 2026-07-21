@@ -18,13 +18,24 @@ The plugin stores those values with the Jellyfin server's plugin configuration. 
 
 TMDb is the recommended first source because it supplies both regional watch-provider data and television-network information.
 
-1. Create or sign in to a TMDb developer account.
-2. Create an API application and copy its **API Read Access Token**.
-3. Paste the token into the plugin's **TMDb API Read Access Token** field.
-4. Set the availability region and save.
-5. Run a scan of a small test library before scanning everything.
+1. Create or sign in to a TMDb account, then open **Account settings → API**.
+2. Create an API application. For a self-hosted server used only for your own library, select a personal or non-commercial use option **only if that is truthful**. A commercial project must use the option and licensing path TMDb requires for its actual use.
+3. Use the following accurate application information when the form asks for it:
+
+   | Form field | Suggested value |
+   | --- | --- |
+   | Application name | `Media Tagging Manager Jellyfin Plugin` |
+   | Application URL | `https://github.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin` |
+   | Application summary / description | `A self-hosted Jellyfin plugin for my personal media library. It uses the TMDb API to identify regional watch providers and television networks for titles already in my library. Each server administrator supplies and stores their own private TMDb API Read Access Token in that server's plugin settings. The plugin does not distribute, share, or expose TMDb API credentials.` |
+
+4. Copy the **API Read Access Token**, not the older API-key value.
+5. Paste the token into the plugin's **TMDb API Read Access Token** field.
+6. Set the availability region and save.
+7. Run a scan of a small test library before scanning everything.
 
 The plugin sends the token as a Bearer authorization header. It does not place the token in a request URL.
+
+TMDb attribution is shown in the plugin settings. TMDb's current API terms, attribution requirements, rate limits, and usage restrictions still apply to each administrator's use of the source.
 
 ## Watchmode
 

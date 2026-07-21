@@ -194,8 +194,8 @@ Acceptance criteria:
 [x] Build successfully against Jellyfin 10.11.3 with zero warnings.
 [x] Add an explicit GPL-3.0-or-later open-source license appropriate for Jellyfin plugin
     distribution.
-[ ] Package a Release ZIP, calculate its real checksum, and publish a real
-    repository manifest after a public or private release URL exists.
+[x] Package a test Release ZIP, calculate its real checksum, and publish a
+    clearly labeled repository manifest for catalog-install testing.
 [ ] Add a release workflow that packages, checksums, and updates the manifest
     without exposing configuration secrets.
 

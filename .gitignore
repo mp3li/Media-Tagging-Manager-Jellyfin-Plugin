@@ -62,3 +62,7 @@ settings.json
 [Bb]rowser [Ss]ession/
 [Cc]ache/
 [Tt]emp/
+
+# Deliberately tracked Jellyfin catalog-install test artifact.
+!Test Releases/
+!Test Releases/**/*.zip

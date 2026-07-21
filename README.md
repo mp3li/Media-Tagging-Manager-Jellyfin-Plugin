@@ -1,6 +1,10 @@
 <h1 align="center">Media Tagging Manager Jellyfin Plugin by mp3li</h1>
 
 <p align="center">
+  <strong>⚠️ Testing build:</strong> This plugin is still under active testing and is not yet a stable release. Please test it on a backed-up library and report any unexpected behavior before relying on it for regular automated scans.
+</p>
+
+<p align="center">
   A Jellyfin server plugin that checks selected movie and TV libraries against enabled availability sources, then adds clear, overlap-friendly provider and network tags directly to the titles you already own.
 </p>
 
@@ -28,6 +32,7 @@
 - [Requirements](#requirements)
 - [Build and Install](#build-and-install)
 - [Repository Manifest and API Keys](#repository-manifest-and-api-keys)
+- [Test Prerelease Catalog](#test-prerelease-catalog)
 - [First-Time Setup](#first-time-setup)
 - [Scanning and Progress](#scanning-and-progress)
 - [Library Overview and Manual Edits](#library-overview-and-manual-edits)
@@ -107,6 +112,29 @@ Jellyfin's plugin configuration should still be treated as sensitive server data
 
 For step-by-step setup, key rotation, and a safe custom-source example, read [API_KEYS.md](Documentation/API_KEYS.md).
 
+<details>
+<summary><strong>Get a TMDb API Read Access Token — usually only a few minutes</strong></summary>
+
+<br />
+
+TMDb is the easiest built-in source to begin with because it provides both regional watch-provider information and TV-network metadata. Create or sign in to a TMDb account, then open **Account settings → API** and create an application.
+
+For a self-hosted Jellyfin server used only for your own library, choose the **personal** or **non-commercial** option if that truthfully describes your use. Do not select a personal option for a commercial project; review TMDb's terms or contact TMDb instead.
+
+If the form asks for application information, these truthful values are appropriate for a personal server:
+
+| Form field | Suggested value |
+| --- | --- |
+| Application name | `Media Tagging Manager Jellyfin Plugin` |
+| Application URL | `https://github.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin` |
+| Application summary / description | `A self-hosted Jellyfin plugin for my personal media library. It uses the TMDb API to identify regional watch providers and television networks for titles already in my library. Each server administrator supplies and stores their own private TMDb API Read Access Token in that server's plugin settings. The plugin does not distribute, share, or expose TMDb API credentials.` |
+
+After TMDb approves the application, copy the **API Read Access Token**—not the older API-key value—and paste it only into **Dashboard → Plugins → Media Tagging Manager Jellyfin Plugin → Settings & sources**. Never put the token in a GitHub issue, screenshot, README, release archive, or this repository.
+
+The plugin sends the token only in an HTTPS authorization header during TMDb requests. It does not ship a shared project key, and one person's token is never needed by another Jellyfin server.
+
+</details>
+
 ## Requirements
 
 To build and use the current project, you need:
@@ -147,7 +175,19 @@ The public manifest only tells Jellyfin which plugin release to download. It con
 
 After a user adds the public manifest URL in Jellyfin and installs the plugin, it appears with no availability source enabled. The server administrator then opens the plugin settings, chooses their own sources, and enters their own credentials. This keeps every server's rate limits, billing, revocation, and access under that server owner's control.
 
-Once this project has a public GitHub release URL, the release workflow should create a ZIP, calculate its checksum, and publish a real `manifest.json` that points to that ZIP. Until there is a public release URL and checksum, there should not be a fake install manifest in the repository.
+The repository now has a real, checksum-backed test manifest for `0.1.0.1-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete.
+
+## Test Prerelease Catalog
+
+`0.1.0.1-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
+
+To test it, add this repository URL in Jellyfin:
+
+```text
+https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/manifest.json
+```
+
+Then refresh the plugin catalog and install **Media Tagging Manager Jellyfin Plugin**. The test build supports Jellyfin `10.11.3`. It contains no API credentials, Jellyfin configuration, backups, logs, or media data. Record the result in [goal-testing.txt](Documentation/goal-testing.txt) before treating any feature as release-ready.
 
 ## First-Time Setup
 

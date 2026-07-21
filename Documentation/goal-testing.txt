@@ -267,21 +267,21 @@ Acceptance criteria:
 - A user can safely return selected-library tag state to a known prior backup.
 - Backup files survive normal server restarts and never include API credentials.
 
-10. Packaging, private manifest, and release safety
----------------------------------------------------
+10. Packaging, test manifest, and release safety
+-------------------------------------------------
 
-[ ] Create a Release ZIP containing the required plugin assembly and release
+[x] Create a Release ZIP containing the required plugin assembly and release
     files.
-[ ] Calculate and record the ZIP's real checksum.
-[ ] Prepare a temporary private or local manifest that points to the real ZIP,
+[x] Calculate and record the ZIP's real checksum.
+[x] Prepare a clearly labeled test manifest that points to the real ZIP,
     version, ABI, and checksum.
-[ ] Confirm the manifest contains no API credentials, backup files, local
+[x] Confirm the manifest contains no API credentials, backup files, local
     Jellyfin configuration, or private test-media paths.
-[ ] Add the private/local manifest URL to a separate Jellyfin test server.
-[ ] Install the plugin from the private/local catalog and confirm installation
+[ ] Add the test manifest URL to a Jellyfin test server.
+[ ] Install the plugin from the test catalog and confirm installation
     succeeds.
 [ ] Restart Jellyfin and confirm the catalog-installed plugin loads normally.
-[ ] Test update from one privately packaged version to a newer one and confirm
+[ ] Test update from one packaged test version to a newer one and confirm
     plugin settings remain intact.
 [ ] Confirm a user can install from the manifest without any API key, then add
     their own source credentials only through the plugin dashboard.

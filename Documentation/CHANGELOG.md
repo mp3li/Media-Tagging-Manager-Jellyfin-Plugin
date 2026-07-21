@@ -6,6 +6,8 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.1-test] - 2026-07-21
+
 ### Added
 
 - Jellyfin plugin foundation targeting Jellyfin 10.11.3.
@@ -22,6 +24,7 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 - Documentation/API_KEYS.md with per-server credential setup, safe rotation guidance, and a non-secret custom JSON example.
 - Documentation/project-goals.txt for product-scope and delivery tracking.
 - GPL-3.0-or-later licensing and package metadata for the public source repository.
+- A compact README TMDb credential walkthrough, truthful application-form wording, and visible TMDb attribution in the plugin settings.
 
 ### Changed
 
@@ -30,8 +33,9 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 - Moved built-in source credentials from request URLs to HTTP headers.
 - Improved dashboard provider and network filters to support partial-text matching.
 
-### Notes
+### Test-release notes
 
-- This is not a packaged public release yet.
-- A public repository manifest will be added only after a real release ZIP, public download URL, target ABI, and checksum exist.
-- Runtime testing in an installed Jellyfin server remains required before the first public release.
+- This is a public, catalog-install test build—not a stable release.
+- The test manifest points to a real ZIP for Jellyfin 10.11.3 and includes that ZIP's real checksum.
+- The ZIP, manifest, and repository contain no administrator API keys, Jellyfin configuration, backups, logs, or media data.
+- Runtime testing in an installed Jellyfin server remains required before the first stable release.
