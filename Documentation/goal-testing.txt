@@ -321,3 +321,9 @@ absent and Jellyfin's global loading indicator remained active for more than
 five minutes. The plugin now uses its own administrator-only settings and
 library endpoint instead of the hanging dashboard-internal request; retest
 with 0.1.0.5-test is required.
+2026-07-21 | Test 2 — library selection retest | Fail; fourth fix pending
+retest | Jellyfin 10.11.11, plugin 0.1.0.5-test | The global loading indicator
+was resolved, but the library list still did not display. Jellyfin's official
+10.11.11 LibraryStructureController obtains all folders with
+GetVirtualFolders(true); the plugin now mirrors that call and handles either
+supported API JSON capitalization style. Retest with 0.1.0.6-test is required.

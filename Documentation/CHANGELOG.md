@@ -6,6 +6,21 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.6-test] - 2026-07-21
+
+### Fixed
+
+- Matched Jellyfin 10.11.11's own library controller by retrieving all virtual
+  folders through `ILibraryManager.GetVirtualFolders(true)`.
+- Made the dashboard accept either PascalCase or camelCase API response fields
+  and display a readable response error instead of silently leaving library
+  selection blank.
+
+### Test-release notes
+
+- This supersedes the `0.1.0.5-test` catalog build and remains a public test
+  build, not a stable release.
+
 ## [0.1.0.5-test] - 2026-07-21
 
 ### Fixed

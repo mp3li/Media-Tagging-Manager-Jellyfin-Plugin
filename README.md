@@ -175,11 +175,11 @@ The public manifest only tells Jellyfin which plugin release to download. It con
 
 After a user adds the public manifest URL in Jellyfin and installs the plugin, it appears with no availability source enabled. The server administrator then opens the plugin settings, chooses their own sources, and enters their own credentials. This keeps every server's rate limits, billing, revocation, and access under that server owner's control.
 
-The repository now has a real, checksum-backed test manifest for `0.1.0.5-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete.
+The repository now has a real, checksum-backed test manifest for `0.1.0.6-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete.
 
 ## Test Prerelease Catalog
 
-`0.1.0.5-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
+`0.1.0.6-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
 
 To test it, add this repository URL in Jellyfin:
 

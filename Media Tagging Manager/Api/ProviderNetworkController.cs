@@ -35,7 +35,9 @@ public sealed class ProviderNetworkController : ControllerBase
         return Ok(new
         {
             Configuration = plugin.Configuration,
-            Libraries = _libraryManager.GetVirtualFolders().Select(folder => new { folder.ItemId, folder.Name })
+            // Match Jellyfin's own LibraryStructureController, which asks for
+            // all virtual folders by passing true.
+            Libraries = _libraryManager.GetVirtualFolders(true).Select(folder => new { folder.ItemId, folder.Name })
         });
     }
 

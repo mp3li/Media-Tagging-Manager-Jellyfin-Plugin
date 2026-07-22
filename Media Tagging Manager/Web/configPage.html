@@ -108,35 +108,59 @@
             return error.responseJSON && (error.responseJSON.detail || error.responseJSON.title) || error.message || error.statusText || 'An unknown error occurred.';
         };
         var showRequestError = function (action, error) { Dashboard.alert(action + ': ' + errorMessage(error)); };
+        var property = function (object, pascalName) {
+            if (!object) return undefined;
+            if (object[pascalName] !== undefined) return object[pascalName];
+            var camelName = pascalName.charAt(0).toLowerCase() + pascalName.slice(1);
+            return object[camelName];
+        };
+        var normalizeConfiguration = function (raw) {
+            return {
+                LibraryIds: property(raw, 'LibraryIds') || [], TagProviders: property(raw, 'TagProviders'), TagNetworks: property(raw, 'TagNetworks'),
+                ReplaceManagedTags: property(raw, 'ReplaceManagedTags'), EnableAutomaticRefresh: property(raw, 'EnableAutomaticRefresh'),
+                EnableNewMediaChecks: property(raw, 'EnableNewMediaChecks'), LastIncomingMediaCheckUtc: property(raw, 'LastIncomingMediaCheckUtc'),
+                Region: property(raw, 'Region') || 'US', MaxConcurrentLookups: property(raw, 'MaxConcurrentLookups') || 3,
+                RefreshIntervalHours: property(raw, 'RefreshIntervalHours') || 168, TmdbApiKey: property(raw, 'TmdbApiKey') || '',
+                WatchmodeApiKey: property(raw, 'WatchmodeApiKey') || '', CustomSources: property(raw, 'CustomSources') || []
+            };
+        };
 
         function selectedLibraries() {
             return Array.prototype.map.call(page.querySelectorAll('[data-library-choice]:checked'), function (input) { return input.value; });
         }
         function renderLibraryChoices() {
             $('#libraryChoices').innerHTML = libraries.map(function (library) {
-                var checked = (config.LibraryIds || []).indexOf(library.ItemId) !== -1 ? ' checked' : '';
-                return '<label class="checkboxContainer"><input is="emby-checkbox" data-library-choice type="checkbox" value="' + library.ItemId + '"' + checked + ' /> <span>' + escapeHtml(library.Name) + '</span></label>';
+                var libraryId = property(library, 'ItemId');
+                var libraryName = property(library, 'Name');
+                var checked = (config.LibraryIds || []).map(String).indexOf(String(libraryId)) !== -1 ? ' checked' : '';
+                return '<label class="checkboxContainer"><input is="emby-checkbox" data-library-choice type="checkbox" value="' + libraryId + '"' + checked + ' /> <span>' + escapeHtml(libraryName) + '</span></label>';
             }).join('') || '<p class="fieldDescription">No Jellyfin libraries were found.</p>';
         }
         function renderScanLibraries() {
             var enabled = selectedLibraries();
-            $('#scanLibraries').innerHTML = libraries.filter(function (library) { return enabled.indexOf(library.ItemId) !== -1; }).map(function (library) {
-                return '<div class="listItem"><div class="listItemBody">' + escapeHtml(library.Name) + '</div><button is="emby-button" type="button" class="raised scan-library" data-id="' + library.ItemId + '">Scan this library</button></div>';
+            $('#scanLibraries').innerHTML = libraries.filter(function (library) { return enabled.indexOf(String(property(library, 'ItemId'))) !== -1; }).map(function (library) {
+                return '<div class="listItem"><div class="listItemBody">' + escapeHtml(property(library, 'Name')) + '</div><button is="emby-button" type="button" class="raised scan-library" data-id="' + property(library, 'ItemId') + '">Scan this library</button></div>';
             }).join('') || '<p class="fieldDescription">Select one or more libraries in Settings &amp; sources, then save.</p>';
             Array.prototype.forEach.call(page.querySelectorAll('.scan-library'), function (button) { button.addEventListener('click', function () { api('POST', 'scan/' + button.dataset.id).then(updateStatus); }); });
         }
         function updateStatus() {
             api('GET', 'status').then(function (status) {
-                var percent = status.Total ? Math.round(status.Completed * 100 / status.Total) : 0;
+                var total = property(status, 'Total') || 0;
+                var completed = property(status, 'Completed') || 0;
+                var isRunning = property(status, 'IsRunning');
+                var currentTitle = property(status, 'CurrentTitle');
+                var estimatedRemaining = property(status, 'EstimatedRemaining');
+                var lastError = property(status, 'LastError');
+                var percent = total ? Math.round(completed * 100 / total) : 0;
                 $('#scanProgress').firstElementChild.style.width = percent + '%';
-                $('#scanStatus').textContent = status.IsRunning ? ('Scanning ' + status.Completed + ' of ' + status.Total + ': ' + status.CurrentTitle + (status.EstimatedRemaining ? ' · about ' + Math.ceil(status.EstimatedRemaining / 600000000) + ' min remaining' : '')) : (status.LastError ? 'Last scan error: ' + status.LastError : 'No scan is currently running.');
+                $('#scanStatus').textContent = isRunning ? ('Scanning ' + completed + ' of ' + total + ': ' + currentTitle + (estimatedRemaining ? ' · about ' + Math.ceil(estimatedRemaining / 600000000) + ' min remaining' : '')) : (lastError ? 'Last scan error: ' + lastError : 'No scan is currently running.');
             });
         }
         function loadBackups() {
             api('GET', 'backups').then(function (backups) {
                 $('#backupList').innerHTML = backups.map(function (backup) {
-                    var time = new Date(backup.CreatedUtc).toLocaleString();
-                    return '<div class="listItem"><div class="listItemBody"><div>' + escapeHtml(backup.Label) + '</div><div class="fieldDescription">' + escapeHtml(time) + ' · ' + backup.ItemCount + ' items</div></div><button is="emby-button" type="button" class="raised restore-backup" data-id="' + backup.Id + '">Restore</button></div>';
+                    var time = new Date(property(backup, 'CreatedUtc')).toLocaleString();
+                    return '<div class="listItem"><div class="listItemBody"><div>' + escapeHtml(property(backup, 'Label')) + '</div><div class="fieldDescription">' + escapeHtml(time) + ' · ' + property(backup, 'ItemCount') + ' items</div></div><button is="emby-button" type="button" class="raised restore-backup" data-id="' + property(backup, 'Id') + '">Restore</button></div>';
                 }).join('') || '<p class="fieldDescription">No tag backups have been created yet.</p>';
                 Array.prototype.forEach.call(page.querySelectorAll('.restore-backup'), function (button) {
                     button.addEventListener('click', function () {
@@ -155,7 +179,9 @@
             api('GET', 'items' + (query.length ? '?' + query.join('&') : '')).then(function (items) {
                 $('#overviewCount').textContent = items.length + ' items';
                 $('#overviewRows').innerHTML = items.map(function (item) {
-                    return '<tr><td>' + escapeHtml(item.Name) + '</td><td>' + escapeHtml(item.Providers.join(', ')) + '</td><td>' + escapeHtml(item.Networks.join(', ')) + '</td><td><button is="emby-button" type="button" class="edit-item" data-id="' + item.ItemId + '" data-p="' + escapeHtml(item.Providers.join(', ')) + '" data-n="' + escapeHtml(item.Networks.join(', ')) + '">Edit</button></td></tr>';
+                    var providers = property(item, 'Providers') || [];
+                    var networks = property(item, 'Networks') || [];
+                    return '<tr><td>' + escapeHtml(property(item, 'Name')) + '</td><td>' + escapeHtml(providers.join(', ')) + '</td><td>' + escapeHtml(networks.join(', ')) + '</td><td><button is="emby-button" type="button" class="edit-item" data-id="' + property(item, 'ItemId') + '" data-p="' + escapeHtml(providers.join(', ')) + '" data-n="' + escapeHtml(networks.join(', ')) + '">Edit</button></td></tr>';
                 }).join('') || '<tr><td colspan="4">No matching items.</td></tr>';
                 Array.prototype.forEach.call(page.querySelectorAll('.edit-item'), function (button) { button.addEventListener('click', function () { editItem(button); }); });
             });
@@ -169,7 +195,11 @@
         }
         function loadPage() {
             api('GET', 'settings').then(function (setup) {
-                config = setup.Configuration; libraries = setup.Libraries || [];
+                try {
+                var rawConfiguration = property(setup, 'Configuration');
+                if (!rawConfiguration) throw new Error('The plugin settings response did not contain a configuration object.');
+                config = normalizeConfiguration(rawConfiguration);
+                libraries = property(setup, 'Libraries') || [];
                 $('#tagProviders').checked = config.TagProviders;
                 $('#tagNetworks').checked = config.TagNetworks;
                 $('#replaceManagedTags').checked = config.ReplaceManagedTags;
@@ -182,6 +212,11 @@
                 $('#watchmodeKey').value = config.WatchmodeApiKey || '';
                 $('#customSources').value = JSON.stringify(config.CustomSources || [], null, 2);
                 renderLibraryChoices(); renderScanLibraries(); updateStatus(); loadBackups(); loadItems();
+                } catch (error) {
+                    var message = 'Could not read the plugin settings response: ' + errorMessage(error);
+                    $('#libraryChoices').innerHTML = '<p class="fieldDescription">' + escapeHtml(message) + '</p>';
+                    $('#scanStatus').textContent = message;
+                }
             }, function (error) {
                 var message = 'Could not load your Jellyfin libraries and plugin settings: ' + errorMessage(error);
                 $('#libraryChoices').innerHTML = '<p class="fieldDescription">' + escapeHtml(message) + '</p>';
