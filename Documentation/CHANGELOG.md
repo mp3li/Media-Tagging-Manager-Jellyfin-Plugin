@@ -6,6 +6,18 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.12-test] - 2026-07-22
+
+### Added
+
+- Jellyfin-color retro television/question-mark branding: a transparent README
+  icon and a larger catalog plugin image served through the repository manifest.
+
+### Test-release notes
+
+- This supersedes `0.1.0.11-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.11-test] - 2026-07-22
 
 ### Added

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Assets/Branding/media-tagging-manager-icon.png" alt="Media Tagging Manager icon: retro television with a question mark" width="180" />
+</p>
+
 <h1 align="center">Media Tagging Manager Jellyfin Plugin by mp3li</h1>
 
 <p align="center">
