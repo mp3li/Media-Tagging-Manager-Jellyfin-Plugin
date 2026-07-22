@@ -309,3 +309,8 @@ version not recorded, plugin 0.1.0.1-test | The Settings & sources page showed
 the Libraries heading but did not populate selectable library checkboxes. The
 manual backup action therefore had no selected library scope and provided no
 visible response. Fixed in 0.1.0.2-test; retest required.
+2026-07-21 | Test 2 — library selection retest | Fail; second fix pending
+retest | Jellyfin version and installed plugin version not recorded | The
+library list remained absent after the first dashboard lifecycle-event fix.
+The plugin has been changed to load settings immediately rather than waiting
+for a dashboard page-show event; retest with 0.1.0.3-test is required.

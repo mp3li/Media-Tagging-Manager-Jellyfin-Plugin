@@ -4,13 +4,7 @@
             <h1>Media Tagging Manager Jellyfin Plugin</h1>
             <p class="fieldDescription">Current streaming availability changes by region. This plugin keeps each result distinct: <code>Provider: Netflix</code> and <code>Network: BBC One</code> are separate Jellyfin tags and may both apply.</p>
 
-            <div class="tabs">
-                <button is="emby-button" type="button" class="raised tab-button" data-tab="scan">Scan</button>
-                <button is="emby-button" type="button" class="raised tab-button" data-tab="settings">Settings &amp; sources</button>
-                <button is="emby-button" type="button" class="raised tab-button" data-tab="library">Library overview</button>
-            </div>
-
-            <section data-panel="scan">
+            <section>
                 <h2>Scan selected libraries</h2>
                 <p id="scanStatus" class="fieldDescription">Loading status…</p>
                 <div id="scanProgress" style="height: 0.6em; background: #444; border-radius: 0.3em; overflow: hidden; margin-bottom: 1em;"><div style="height:100%; width:0; background:#00a4dc;"></div></div>
@@ -18,13 +12,14 @@
                 <div id="scanLibraries" style="margin-top:1.5em;"></div>
             </section>
 
-            <section data-panel="settings" hidden>
+            <section>
                 <form id="mediaTaggingManagerForm">
-                    <h2>Libraries</h2>
+                    <h2>Settings &amp; sources</h2>
+                    <h3>Libraries</h3>
                     <p class="fieldDescription">Only selected libraries are read or changed. Movies and series are tagged; episodes inherit the series context.</p>
                     <div id="libraryChoices"></div>
 
-                    <h2>Tag behavior</h2>
+                    <h3>Tag behavior</h3>
                     <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagProviders" /> <span>Tag providers</span></label>
                     <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagNetworks" /> <span>Tag networks</span></label>
                     <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="replaceManagedTags" /> <span>Replace tags managed by this plugin on each check</span></label>
@@ -40,7 +35,7 @@
                         <input is="emby-input" id="concurrency" type="number" min="1" max="12" />
                     </div>
 
-                    <h2>Automatic refresh</h2>
+                    <h3>Automatic refresh</h3>
                     <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="automaticRefresh" /> <span>Automatically re-check enabled sources</span></label>
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="refreshHours">Refresh every (hours)</label>
@@ -50,13 +45,13 @@
                     <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="newMediaChecks" /> <span>Check newly added media after Jellyfin library scans</span></label>
                     <p class="fieldDescription">When enabled, only new movies and series added after it was turned on are checked after a normal Jellyfin library scan. Turn it off to prevent automatic checks for incoming media; manual and scheduled full scans remain available.</p>
 
-                    <h2>Safety backups and undo</h2>
+                    <h3>Safety backups and undo</h3>
                     <p class="fieldDescription">A backup saves the complete current tag list for every item in the selected libraries. Restoring a backup overwrites current tags for those saved items, including tags not created by this plugin.</p>
                     <button is="emby-button" type="button" class="raised" id="createBackupButton">Create tag backup</button>
                     <button is="emby-button" type="button" class="raised" id="undoBackupButton">Undo last tag operation</button>
                     <div id="backupList" style="margin-top:1em;"></div>
 
-                    <h2>Built-in sources</h2>
+                    <h3>Built-in sources</h3>
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="tmdbKey">TMDb API Read Access Token</label>
                         <input is="emby-input" id="tmdbKey" type="password" autocomplete="off" />
@@ -69,14 +64,14 @@
                         <div class="fieldDescription">Optional additional provider coverage. It needs the item’s IMDb ID.</div>
                     </div>
 
-                    <h2>Additional JSON sources</h2>
+                    <h3>Additional JSON sources</h3>
                     <p class="fieldDescription">Optional array of sources. URL tokens: <code>{tmdb}</code>, <code>{imdb}</code>, <code>{type}</code>, <code>{region}</code>. The two paths point to a JSON string or an array of strings.</p>
                     <textarea is="emby-input" id="customSources" rows="10" style="width:100%; font-family:monospace;"></textarea>
                     <button is="emby-button" type="submit" class="raised button-submit block">Save settings</button>
                 </form>
             </section>
 
-            <section data-panel="library" hidden>
+            <section>
                 <h2>Library overview</h2>
                 <div class="formDialogContent smoothScrollY">
                     <div class="inputContainer">
@@ -172,11 +167,6 @@
             if (networks === null) return;
             api('PUT', 'items/' + button.dataset.id, { Providers: providers.split(',').map(function (x) { return x.trim(); }).filter(Boolean), Networks: networks.split(',').map(function (x) { return x.trim(); }).filter(Boolean) }).then(loadItems);
         }
-        function showTab(name) {
-            Array.prototype.forEach.call(page.querySelectorAll('[data-panel]'), function (panel) { panel.hidden = panel.dataset.panel !== name; });
-            if (name === 'scan') renderScanLibraries();
-            if (name === 'library') loadItems();
-        }
         function loadPage() {
             Dashboard.showLoadingMsg();
             Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('Library/VirtualFolders') })]).then(function (results) {
@@ -192,7 +182,7 @@
                 $('#tmdbKey').value = config.TmdbApiKey || '';
                 $('#watchmodeKey').value = config.WatchmodeApiKey || '';
                 $('#customSources').value = JSON.stringify(config.CustomSources || [], null, 2);
-                renderLibraryChoices(); renderScanLibraries(); updateStatus(); loadBackups();
+                renderLibraryChoices(); renderScanLibraries(); updateStatus(); loadBackups(); loadItems();
                 Dashboard.hideLoadingMsg();
             }, function (error) {
                 var message = 'Could not load your Jellyfin libraries and plugin settings: ' + errorMessage(error);
@@ -202,10 +192,10 @@
                 Dashboard.hideLoadingMsg();
             });
         }
-        // Jellyfin dispatches "pageshow" for configuration pages. "viewshow" never
-        // ran here, leaving all dynamic controls empty without an error message.
+        // Load immediately because some Jellyfin dashboard builds do not dispatch a
+        // page-show event for embedded plugin configuration pages.
+        loadPage();
         page.addEventListener('pageshow', loadPage);
-        page.addEventListener('click', function (event) { if (event.target.dataset.tab) showTab(event.target.dataset.tab); });
         $('#scanAllButton').addEventListener('click', function () { api('POST', 'scan').then(updateStatus); });
         $('#applyFilters').addEventListener('click', loadItems);
         $('#createBackupButton').addEventListener('click', function () {

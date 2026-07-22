@@ -8,12 +8,12 @@
     "category": "Metadata",
     "versions": [
       {
-        "version": "0.1.0.2",
-        "changelog": "0.1.0.2-test fixes dynamic library selection and makes backup/settings failures visible. Test only; not a stable release.",
+        "version": "0.1.0.3",
+        "changelog": "0.1.0.3-test loads settings directly and replaces the dashboard tabs with one scrollable page. Test only; not a stable release.",
         "targetAbi": "10.11.3.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.2-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.2-test.zip",
-        "checksum": "280117d3ac7be2361e450443f6ec712d",
-        "timestamp": "2026-07-21T23:35:00Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.3-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.3-test.zip",
+        "checksum": "1de646c817234d23bf14cfcfd5b657d7",
+        "timestamp": "2026-07-21T23:52:00Z"
       }
     ]
   }

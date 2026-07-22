@@ -6,6 +6,24 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.3-test] - 2026-07-21
+
+### Fixed
+
+- Load plugin settings and Jellyfin libraries immediately when the dashboard
+  configuration page opens, avoiding dashboard variants that do not emit the
+  expected page-show event.
+
+### Changed
+
+- Replaced the Scan, Settings & sources, and Library overview tabs with one
+  continuous, scrollable administrator page.
+
+### Test-release notes
+
+- This supersedes the `0.1.0.2-test` catalog build and remains a public test
+  build, not a stable release.
+
 ## [0.1.0.2-test] - 2026-07-21
 
 ### Fixed
