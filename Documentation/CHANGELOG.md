@@ -6,6 +6,19 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.4-test] - 2026-07-21
+
+### Changed
+
+- Rebuilt the plugin against the official Jellyfin.Controller and Jellyfin.Model
+  `10.11.11` packages for the active Jellyfin 10.11.11 test server.
+- Updated the test catalog ABI declaration to `10.11.11.0`.
+
+### Test-release notes
+
+- This supersedes the `0.1.0.3-test` catalog build and remains a public test
+  build, not a stable release.
+
 ## [0.1.0.3-test] - 2026-07-21
 
 ### Fixed

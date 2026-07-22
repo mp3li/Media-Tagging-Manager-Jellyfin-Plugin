@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="Status: In Active Development" src="Assets/Badges/status.svg" />
-  <img alt="Platform: Jellyfin 10.11.3" src="Assets/Badges/platform.svg" />
+  <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
   <img alt="Tags: Providers and Networks" src="Assets/Badges/tags.svg" />
   <img alt="Sources: TMDb, Watchmode, and Custom JSON" src="Assets/Badges/sources.svg" />
@@ -139,7 +139,7 @@ The plugin sends the token only in an HTTPS authorization header during TMDb req
 
 To build and use the current project, you need:
 
-- **Jellyfin 10.11.3** — the referenced Jellyfin package versions must match the installed server version.
+- **Jellyfin 10.11.11** — the referenced Jellyfin package versions match this test server version.
 - **.NET SDK 9.0** — required to build this `net9.0` plugin project.
 - **Jellyfin administrator access** — required for plugin settings, scans, and manual tag edits.
 - **Internet access from the Jellyfin server** — only for the sources you explicitly enable.
@@ -175,11 +175,11 @@ The public manifest only tells Jellyfin which plugin release to download. It con
 
 After a user adds the public manifest URL in Jellyfin and installs the plugin, it appears with no availability source enabled. The server administrator then opens the plugin settings, chooses their own sources, and enters their own credentials. This keeps every server's rate limits, billing, revocation, and access under that server owner's control.
 
-The repository now has a real, checksum-backed test manifest for `0.1.0.3-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete.
+The repository now has a real, checksum-backed test manifest for `0.1.0.4-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete.
 
 ## Test Prerelease Catalog
 
-`0.1.0.3-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
+`0.1.0.4-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
 
 To test it, add this repository URL in Jellyfin:
 
@@ -187,11 +187,11 @@ To test it, add this repository URL in Jellyfin:
 https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/manifest.json
 ```
 
-Then refresh the plugin catalog and install **Media Tagging Manager Jellyfin Plugin**. The test build supports Jellyfin `10.11.3`. It contains no API credentials, Jellyfin configuration, backups, logs, or media data. Record the result in [goal-testing.txt](Documentation/goal-testing.txt) before treating any feature as release-ready.
+Then refresh the plugin catalog and install **Media Tagging Manager Jellyfin Plugin**. The test build supports Jellyfin `10.11.11`. It contains no API credentials, Jellyfin configuration, backups, logs, or media data. Record the result in [goal-testing.txt](Documentation/goal-testing.txt) before treating any feature as release-ready.
 
 ## First-Time Setup
 
-1. Open the **Settings & sources** tab.
+1. Open the **Settings & sources** section.
 2. Select the libraries the plugin may scan.
 3. Choose **Tag providers**, **Tag networks**, or both.
 4. Set the two-letter availability region, such as `US`, `GB`, `CA`, or `AU`.

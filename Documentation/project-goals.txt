@@ -191,7 +191,8 @@ Acceptance criteria:
     setup, settings, limitations, project structure, and responsible-use note.
 [x] Start Documentation/CHANGELOG.md.
 [x] Maintain Documentation/project-goals.txt acceptance tracker.
-[x] Build successfully against Jellyfin 10.11.3 with zero warnings.
+[x] Build successfully against the Jellyfin 10.11.11 test-server version with
+    zero warnings.
 [x] Add an explicit GPL-3.0-or-later open-source license appropriate for Jellyfin plugin
     distribution.
 [x] Package a test Release ZIP, calculate its real checksum, and publish a

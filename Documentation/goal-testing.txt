@@ -313,4 +313,5 @@ visible response. Fixed in 0.1.0.2-test; retest required.
 retest | Jellyfin version and installed plugin version not recorded | The
 library list remained absent after the first dashboard lifecycle-event fix.
 The plugin has been changed to load settings immediately rather than waiting
-for a dashboard page-show event; retest with 0.1.0.3-test is required.
+for a dashboard page-show event; retest with the 10.11.11-targeted
+0.1.0.4-test build is required.
