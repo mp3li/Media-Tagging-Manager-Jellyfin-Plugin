@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyName>Jellyfin.Plugin.MediaTaggingManager</AssemblyName>
     <RootNamespace>Jellyfin.Plugin.MediaTaggingManager</RootNamespace>
-    <Version>0.1.0.10</Version>
+    <Version>0.1.0.11</Version>
     <Authors>mp3li</Authors>
     <Description>Tags selected Jellyfin media with current streaming providers and television networks.</Description>
     <PackageProjectUrl>https://github.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin</PackageProjectUrl>

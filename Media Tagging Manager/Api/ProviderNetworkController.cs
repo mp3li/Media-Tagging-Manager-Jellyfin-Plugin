@@ -70,8 +70,17 @@ public sealed class ProviderNetworkController : ControllerBase
 
     /// <summary>Gets TMDb's official watch-provider regions for the settings dropdowns.</summary>
     [HttpGet("regions")]
-    public async Task<ActionResult<IReadOnlyCollection<AvailabilityRegionDto>>> GetRegions(CancellationToken cancellationToken) =>
-        Ok(await _tmdb.GetAvailableRegionsAsync(cancellationToken).ConfigureAwait(false));
+    public async Task<ActionResult<AvailabilityRegionsResponse>> GetRegions(CancellationToken cancellationToken)
+    {
+        var regions = await _tmdb.GetAvailableRegionsAsync(cancellationToken).ConfigureAwait(false);
+        var hasToken = !string.IsNullOrWhiteSpace(Plugin.Instance?.Configuration.TmdbApiKey);
+        var message = regions.Count > 0
+            ? null
+            : hasToken
+                ? "TMDb did not return its country list. Verify that this is a TMDb API Read Access Token (not an API key), save Main Settings, then reload this page."
+                : "Save a TMDb API Read Access Token in API Settings, then reload this page to load all available countries.";
+        return Ok(new AvailabilityRegionsResponse(regions, message));
+    }
 
     /// <summary>Gets the current locally tracked Watchmode monthly usage.</summary>
     [HttpGet("watchmode-usage")]
@@ -142,6 +151,14 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("backups")]
     public async Task<ActionResult<IReadOnlyCollection<TagBackupSummary>>> GetBackups(CancellationToken cancellationToken) =>
         Ok(await _backups.GetAllAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Deletes one stored backup without restoring it or changing Jellyfin tags.</summary>
+    [HttpDelete("backups/{backupId:guid}")]
+    public async Task<IActionResult> DeleteBackup(Guid backupId, CancellationToken cancellationToken)
+    {
+        await _backups.DeleteAsync(backupId, cancellationToken).ConfigureAwait(false);
+        return NoContent();
+    }
 
     /// <summary>Restores every saved tag list from a requested backup.</summary>
     [HttpPost("backups/{backupId:guid}/restore")]

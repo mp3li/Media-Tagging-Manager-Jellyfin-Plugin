@@ -67,6 +67,27 @@ public sealed class TagBackupManager
         return results.OrderByDescending(backup => backup.CreatedUtc).ToArray();
     }
 
+    /// <summary>Deletes one stored backup without changing any Jellyfin item tags.</summary>
+    public async Task DeleteAsync(Guid backupId, CancellationToken cancellationToken)
+    {
+        var path = BackupPath(backupId);
+
+        await _fileLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!File.Exists(path))
+            {
+                throw new KeyNotFoundException("The requested tag backup does not exist.");
+            }
+
+            File.Delete(path);
+        }
+        finally
+        {
+            _fileLock.Release();
+        }
+    }
+
     /// <summary>Restores every captured tag list from a specific backup. Items removed from Jellyfin are skipped.</summary>
     public async Task<TagBackupSummary> RestoreAsync(Guid backupId, IProgress<double>? progress, CancellationToken cancellationToken)
     {

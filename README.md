@@ -1,11 +1,11 @@
 <h1 align="center">Media Tagging Manager Jellyfin Plugin by mp3li</h1>
 
 <p align="center">
-  <strong>⚠️ Testing build:</strong> This plugin is still under active testing and is not yet a stable release. Please test it on a backed-up library and report any unexpected behavior before relying on it for regular automated scans.
+  <strong>⚠️ Testing build:</strong> This plugin is still under active testing and is not yet a stable release.
 </p>
 
 <p align="center">
-  A Jellyfin server plugin that checks selected movie and TV libraries against enabled availability sources, then adds clear, overlap-friendly provider and network tags directly to the titles you already own.
+  A Jellyfin server plugin that checks selected libraries against enabled availability sources, then adds clear, overlap-friendly provider and network tags directly to the titles you already own.
 </p>
 
 <p align="center">
@@ -25,19 +25,11 @@
 <br />
 
 - [About the Project](#about-the-project)
-- [What the Plugin Does](#what-the-plugin-does)
 - [How Tags Work](#how-tags-work)
 - [Source Coverage](#source-coverage)
-- [API Keys and Server Privacy](#api-keys-and-server-privacy)
 - [Requirements](#requirements)
-- [Build and Install](#build-and-install)
-- [Repository Manifest and API Keys](#repository-manifest-and-api-keys)
-- [Test Prerelease Catalog](#test-prerelease-catalog)
-- [First-Time Setup](#first-time-setup)
-- [Scanning and Progress](#scanning-and-progress)
-- [Library Overview and Manual Edits](#library-overview-and-manual-edits)
-- [Safety Backups and Undo](#safety-backups-and-undo)
-- [Automatic Refresh](#automatic-refresh)
+- [Installation](#installation)
+- [Plugin Settings](#plugin-settings)
 - [Project Structure](#project-structure)
 - [Known Limitations](#known-limitations)
 - [Responsible Use and Availability Disclaimer](#responsible-use-and-availability-disclaimer)
@@ -47,33 +39,9 @@
 
 ## About the Project
 
-Media Tagging Manager Jellyfin Plugin by mp3li is for media-library owners who want their local collection tagged with the online streaming providers a title is currently available to watch on and with the television network it belongs to, without treating those two ideas as the same thing.
-
-The plugin is built around a practical Jellyfin workflow:
-
-- choose exactly which Jellyfin libraries it may access
-- connect one or more availability sources with the server administrator's own API credentials
-- run a full selected-library scan or scan one library from the dashboard
-- filter the resulting title list by any provider, network, or combination of both
-- correct a title manually when you know the source data needs adjustment
-- re-check on a schedule when streaming availability changes
+Media Tagging Manager Jellyfin Plugin is for media-library owners who want their local collection tagged with the online streaming providers a title is currently available to watch on, and with the television network it belongs to.
 
 It works with the existing Jellyfin library. It does not download media, alter filenames, replace ordinary Jellyfin tags, or assume that a title has only one provider or network.
-
-## What the Plugin Does
-
-- Lets an administrator select the movie and TV libraries the plugin may scan.
-- Writes provider tags, network tags, or both, based on the configured mode.
-- Adds multiple classifications when they overlap.
-- Uses TMDb for regional watch-provider data and TV-network metadata when configured.
-- Uses Watchmode as a quota-tracked fallback availability source when TMDb has
-  no provider result for a title.
-- Provides a **Scan all selected libraries** action.
-- Shows the item currently being checked, completed count, percentage, and an estimated remaining time while a scan runs.
-- Adds a **Library overview** dashboard tab for filtering selected-library titles by provider, network, tagged state, or a provider-plus-network combination.
-- Lets an administrator replace a title's plugin-owned provider and network tags manually.
-- Adds a native Jellyfin scheduled task named **Refresh provider and network tags**.
-- Can independently check new incoming movies and TV series after a normal Jellyfin library scan, or leave that behavior off.
 
 ## How Tags Work
 
@@ -85,35 +53,78 @@ Provider: Prime Video
 Network: BBC One
 ```
 
-This is intentional. A service where a title can currently be watched is not necessarily the network that originally aired or carries it. A title may have any number of provider tags and network tags at once.
+A service where a title can currently be watched is not necessarily the network that originally aired or carries it. A title may have any number of provider tags and network tags at once.
 
-When **Replace tags managed by this plugin** is enabled, the plugin replaces only tags beginning with `Provider: ` or `Network: `. Your genres, studios, collections, and unrelated custom Jellyfin tags remain untouched. If every enabled source is unavailable for a title, existing plugin tags are preserved rather than erased.
+When the setting to remove outdated plugin-assigned tags is enabled, the plugin replaces only tags beginning with `Provider: ` or `Network: `. Genres, studios, collections, and unrelated custom Jellyfin tags remain untouched. If every enabled source is unavailable for a title, existing plugin tags are preserved rather than erased.
 
 ## Source Coverage
 
-| Source | What it contributes | Credentials | Current status |
+| Source | What it contributes | Credentials | Status |
 | --- | --- | --- | --- |
-| TMDb | Regional streaming providers; TV networks | TMDb API Read Access Token | Built in |
-| Watchmode | Quota-tracked fallback regional streaming sources | Watchmode API key | Built in |
-| Streaming Availability API | Strong candidate for future first-class integration, with catalog coverage across supported countries | Its own API key | Not bundled yet |
-| TVMaze / TheTVDB | Potential network and TV-metadata fallbacks, subject to identifier coverage and API terms | Varies | Not bundled yet |
+| TMDb | Regional streaming providers and TV-network metadata | TMDb API Read Access Token | Built in; checked first |
+| Watchmode | Quota-tracked fallback regional streaming availability when TMDb finds no provider | Watchmode API key | Built in |
+| Streaming Availability API | Additional streaming-availability coverage | Streaming Availability API key | Planned source |
 
-TMDb is queried first. Watchmode is a quota-tracked fallback when TMDb has no
-provider result. Availability can be selected for up to three regions, and a
-provider correct in one country can be unavailable in another.
+Availability can be selected for up to three countries. A provider available in one country may be unavailable in another.
 
-## API Keys and Server Privacy
+## Requirements
 
-**Use your own API credentials as the Jellyfin server administrator.** Do not put a shared project key in the source code, a README, a release archive, or a public Git repository.
+- **Jellyfin 10.11.11** — the current plugin build targets this Jellyfin version.
+- **Jellyfin administrator access** — required for plugin settings, scans, backups, and manual tag edits.
+- **Internet access from the Jellyfin server** — only for the sources you enable.
+- **At least one credential from the two built-in sources** — a TMDb API Read Access Token or a Watchmode API Key.
 
-The plugin asks for credentials in its Jellyfin dashboard settings page. They are saved in that Jellyfin server's plugin configuration, so `.gitignore` is not what protects them: the key never belongs in this project folder in the first place. The dashboard sends the built-in source credentials in HTTP request headers rather than putting them in source URLs.
+## Installation
 
-Jellyfin's plugin configuration should still be treated as sensitive server data. Protect access to the Jellyfin dashboard, its configuration/data directory, backups, and logs. The plugin does not claim to encrypt API keys at rest.
+1. In Jellyfin, open **Dashboard → Plugins → Repositories**.
+2. Add the repository URL below, then refresh the plugin catalog:
 
-For step-by-step setup and key rotation, read [API_KEYS.md](Documentation/API_KEYS.md).
+   ```text
+   https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/manifest.json
+   ```
+
+3. Find **Media Tagging Manager Jellyfin Plugin** in the catalog and select **Install**.
+4. Restart Jellyfin when prompted.
+5. Open **Dashboard → Media Tagging Manager** to configure the plugin.
+
+The repository manifest contains plugin-release information only. It never contains API keys, Jellyfin configuration, backups, logs, or media data. Each server administrator adds their own source credentials in the plugin settings after installation.
+
+## Plugin Settings
+
+The plugin is configured from **Dashboard → Media Tagging Manager**. Save changes on the **Main Settings** tab before using the other tabs.
+
+### Main Settings
+
+#### Backup Settings
+
+Create a complete tag backup for every item in the selected libraries before making changes. A backup captures the entire current tag list for each item, including tags that were not created by this plugin.
+
+- **Create Tag Backup** creates a named snapshot.
+- **Undo Last Tag Action** restores the newest available backup.
+- **Available Backups** lists saved backups with their date, time, and item count.
+- **Restore from Backup** restores the selected snapshot and overwrites the current tags for its saved items.
+- **Delete Backup** permanently removes the selected backup without changing current Jellyfin tags.
+
+Backups remain in Jellyfin’s plugin data directory through normal server restarts. Restore is intentionally powerful: it also restores unrelated custom tags to their state at the time of the backup.
+
+#### Select Libraries
+
+Choose the Jellyfin libraries the plugin may access. Only selected libraries are read or changed, regardless of what you named them. Within those libraries, the plugin tags Movies and Series; episodes inherit their series context.
+
+#### API Settings
+
+Enter API credentials for the sources you want to use. Credentials are stored in that Jellyfin server’s plugin configuration; never share them or include them in GitHub, screenshots, releases, or backups.
+
+- **TMDb API Read Access Token** is the primary source for regional streaming providers and television networks.
+- **Watchmode API Key** is an optional fallback for a title where TMDb returns no provider. It requires an IMDb ID.
+- **Watchmode monthly request limit** is a safety cap. The plugin tracks its own usage and stops sending Watchmode requests when that cap is reached.
+
+The dashboard sends built-in-source credentials in request headers, not in source URLs. Jellyfin’s plugin configuration should still be treated as sensitive server data; protect access to the Jellyfin dashboard, its data directory, backups, and logs. The plugin does not claim to encrypt API keys at rest.
+
+For detailed setup and key rotation, read [API_KEYS.md](Documentation/API_KEYS.md).
 
 <details>
-<summary><strong>Get a TMDb API Read Access Token — usually only a few minutes</strong></summary>
+<summary><strong>Get a TMDb API Read Access Token and Watchmode API Key — usually only takes a few minutes</strong></summary>
 
 <br />
 
@@ -131,130 +142,51 @@ If the form asks for application information, these truthful values are appropri
 
 After TMDb approves the application, copy the **API Read Access Token**—not the older API-key value—and paste it only into **Dashboard → Media Tagging Manager → Main Settings → API Settings**. Never put the token in a GitHub issue, screenshot, README, release archive, or this repository.
 
-The plugin sends the token only in an HTTPS authorization header during TMDb requests. It does not ship a shared project key, and one person's token is never needed by another Jellyfin server.
+For Watchmode, create an account and generate an API key through its account dashboard. Paste it only into the Watchmode field in the same API Settings section. You may use either TMDb or Watchmode, but using both gives the plugin its configured fallback path.
 
 </details>
 
-## Requirements
+#### Availability Region Settings
 
-To build and use the current project, you need:
+Choose up to three countries used for streaming-availability results. The country choices come from TMDb’s watch-provider regions. Save a valid TMDb API Read Access Token, then reload the page if the complete country list does not appear.
 
-- **Jellyfin 10.11.11** — the referenced Jellyfin package versions match this test server version.
-- **.NET SDK 9.0** — required to build this `net9.0` plugin project.
-- **Jellyfin administrator access** — required for plugin settings, scans, and manual tag edits.
-- **Internet access from the Jellyfin server** — only for the sources you explicitly enable.
-- **At least one enabled source** — TMDb or Watchmode. A scan refuses to run without one, so it cannot accidentally clear existing plugin tags.
+#### Tag Settings
 
-## Build and Install
+Choose whether to create **Provider tags**, **Network tags**, or both.
 
-Build a Release copy from this project folder:
+- Provider tags identify streaming, rental, purchase, ad-supported, or free services where a title is currently available.
+- Network tags identify a television series’ network.
 
-```bash
-dotnet publish "Media Tagging Manager/Jellyfin.Plugin.MediaTaggingManager.csproj" -c Release
-```
+Your existing Jellyfin tags added without this plugin are never removed. The plugin only adds new tags and, if you enable removal of outdated tags, only removes tags that it added.
 
-The plugin DLL is produced here:
+#### Newly Added Media Settings
 
-```text
-Media Tagging Manager/bin/Release/net9.0/publish/Jellyfin.Plugin.MediaTaggingManager.dll
-```
+Turn on **Scan newly added media in my libraries using this plugin** to check newly added Movies and Series after a normal Jellyfin library scan. Turn it off to prevent automatic API checks for incoming media; manual and scheduled full scans remain available.
 
-Copy the published DLL into its own folder under the Jellyfin server's `plugins` data directory, then restart Jellyfin. Keep the DLL and the installed Jellyfin server on matching package versions; Jellyfin marks incompatible plugin assemblies unsupported.
+The first time this feature is enabled, the plugin records a starting point instead of rechecking the entire existing library. Use a manual full scan for existing titles.
 
-After the restart, open:
+#### Scheduled Tasks
 
-```text
-Dashboard → Plugins → Media Tagging Manager Jellyfin Plugin
-```
+Turn on the scheduled task and choose a refresh interval in hours to keep provider and network information current. The task also appears as **Refresh provider and network tags** under **Dashboard → Scheduled Tasks**.
 
-## Repository Manifest and API Keys
+Enable the setting to remove outdated plugin-assigned tags if you want a later scan to remove a tag when a provider or network no longer hosts a title. Leaving it off preserves old plugin-created tags. Other Jellyfin tags remain untouched.
 
-A Jellyfin repository manifest and API credentials are separate things.
+### View Tags
 
-The public manifest only tells Jellyfin which plugin release to download. It contains release metadata such as the plugin ID, version, supported Jellyfin ABI, ZIP download URL, checksum, and changelog. It must contain **no API keys**.
+Use **Filters** at the top of the tab to narrow the selected-library results by provider, network, tagged state, or a provider-and-network combination.
 
-After a user adds the public manifest URL in Jellyfin and installs the plugin, it appears with no availability source enabled. The server administrator then opens the plugin settings, chooses their own sources, and enters their own credentials. This keeps every server's rate limits, billing, revocation, and access under that server owner's control.
+The **Library Overview** groups matching Movies and Series by selected library. Use **Edit** to manually replace a title’s plugin-owned provider and network tags, then use **Save Tag Changes** to apply the edits. A backup is created before tag changes are written.
 
-The repository now has a real, checksum-backed test manifest for `0.1.0.10-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete. The complete source-level compatibility review is in [the Jellyfin 10.11.11 audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md).
+### Scan
 
-## Test Prerelease Catalog
+The Scan tab lists the libraries currently selected in Main Settings and lets you initiate a full scan for all of them.
 
-`0.1.0.10-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
-
-To test it, add this repository URL in Jellyfin:
-
-```text
-https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/manifest.json
-```
-
-Then refresh the plugin catalog and install **Media Tagging Manager Jellyfin Plugin**. The test build supports Jellyfin `10.11.11`. It contains no API credentials, Jellyfin configuration, backups, logs, or media data. Record the result in [goal-testing.txt](Documentation/goal-testing.txt) before treating any feature as release-ready.
-
-## First-Time Setup
-
-1. Open the **Main Settings** tab.
-2. Select the libraries the plugin may scan.
-3. Choose **Tag providers**, **Tag networks**, or both.
-4. Select up to three availability countries.
-5. Add a TMDb Read Access Token and, if desired, a Watchmode key and monthly limit.
-7. Save settings.
-8. Open **Scan** and run all selected libraries.
-9. Optionally enable **Check newly added media after Jellyfin library scans** for future incoming titles. It is off by default.
-
-## Scanning and Progress
-
-The Scan tab keeps the manual action close to the selected libraries:
-
-- **Scan all selected libraries** checks every selected library.
+- **Scan All Selected Libraries** checks every selected library.
 - **Stop Scan** requests cancellation of the current dashboard-initiated scan.
 - The status area shows the active title, completed and total counts, progress percentage, and an estimated remaining time.
+- The Backup Settings section provides the same create, undo, restore, and delete controls as Main Settings, so you can create a safety backup immediately before scanning.
 
-Only movie and TV-series items are automatically queried in this first version. Episodes inherit their series-level availability context rather than creating a noisy duplicate availability scan for every episode.
-
-## Library Overview and Manual Edits
-
-The **Library overview** tab is the review-and-correction area for selected movie and TV libraries.
-
-You can:
-
-- show everything the plugin supports in the selected libraries
-- filter by a provider
-- filter by a network
-- combine provider and network filters
-- show titles with classifications or titles missing both kinds of tag
-- edit providers and networks manually with comma-separated values
-
-Manual edits replace only the plugin-owned tags for that title. This is useful for niche availability, regional edge cases, titles without enough external identifiers, and source corrections.
-
-## Safety Backups and Undo
-
-Before any tag-changing scan, incoming-media update, or manual edit, the plugin creates a complete tag backup for the affected selected libraries. A backup stores the entire tag list for every captured Jellyfin item, not just `Provider: ` and `Network: ` tags.
-
-The **Safety backups and undo** section in settings lets an administrator:
-
-- create a named backup at any time
-- see stored backups and their item counts
-- restore a specific backup
-- use **Undo last tag operation** to restore the newest backup
-
-Backups are saved in the plugin's Jellyfin data directory and remain available through server restarts. Restoring a backup overwrites the current tag list for every item in that backup, including unrelated custom tags added after the backup was made. The dashboard asks for confirmation before restoring.
-
-## Automatic Refresh
-
-Enable **Automatically re-check enabled sources**, then choose an interval in hours. The plugin registers a native Jellyfin scheduled task:
-
-```text
-Refresh provider and network tags
-```
-
-It also appears in **Dashboard → Scheduled Tasks**, where an administrator can inspect or run it. The configured default schedule is loaded when Jellyfin starts, so restart Jellyfin after changing the automatic-refresh setting or interval. Manual scans work immediately.
-
-### Incoming-media checks
-
-The **Check newly added media after Jellyfin library scans** setting is separate from the periodic full refresh.
-
-- **On:** after Jellyfin completes a library scan, the plugin checks only new movie and series titles added since the previous enabled incoming-media check.
-- **Off:** no automatic API check runs for incoming media. Manual scans and the optional scheduled full refresh still work.
-- **First enable:** the plugin records a starting point rather than re-checking the entire existing library. Run a manual full scan once if you want older titles checked too.
+Only Movies and Series are automatically queried. Episodes inherit their series-level availability context rather than triggering a duplicate scan for every episode.
 
 ## Project Structure
 
@@ -270,19 +202,17 @@ Media Tagging Manager/
 └── ServiceRegistrator.cs   Jellyfin dependency-injection registration
 Documentation/              project documentation and trackers
 ├── API_KEYS.md             administrator credential setup guide
-├── CHANGELOG.md            unreleased and future release notes
+├── CHANGELOG.md            release notes
 ├── goal-testing.txt        live-server testing checklist and results log
 └── project-goals.txt       product goals and acceptance behavior
-Tests/                      reserved for future automated tests
-README.md                   project overview and runbook
+README.md                   project overview and setup guide
 ```
 
 ## Known Limitations
 
-- Current automatic querying is intentionally limited to **movies and TV series**. Music, books, episodes, and other Jellyfin item kinds are not yet source adapters in this first version.
-- Availability depends on region, external IDs, API coverage, source plans, and source uptime. Missing data is not treated as proof that a title is unavailable.
+- Current automatic querying is limited to **Movies and Series**. Music, books, episodes, and other Jellyfin item kinds are not source adapters in this version.
+- Availability depends on region, external IDs, API coverage, source plans, and source uptime. Missing data is not proof that a title is unavailable.
 - TMDb TV networks describe TV-network metadata; they are not a universal network authority for every media type.
-- The dashboard's last-check details are available during the current server session; durable scan history and per-source provenance are sensible follow-up features.
 - This plugin does not ship third-party API credentials and does not bypass provider logins, DRM, access restrictions, source rate limits, or terms of use.
 
 ## Responsible Use and Availability Disclaimer

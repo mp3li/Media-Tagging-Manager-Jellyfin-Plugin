@@ -249,6 +249,10 @@ Acceptance criteria:
 [ ] Confirm Undo restores the newest pre-change backup as expected.
 [ ] Restore an older listed backup and confirm backup selection works, not only
     Undo latest.
+[ ] Select a backup and use Delete Backup; confirm only that selected backup is
+    removed and no current Jellyfin tags change.
+[ ] Click Delete Backup with no backup selected; confirm the dashboard says
+    "Select a backup before deleting."
 [ ] Test backup and restore with a larger selected library; record duration and
     backup file size.
 [ ] Confirm backups remain inaccessible to non-administrator Jellyfin users.

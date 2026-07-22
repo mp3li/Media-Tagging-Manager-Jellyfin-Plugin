@@ -22,6 +22,9 @@ public sealed record SourceLookupResult(string Source, IReadOnlyCollection<Sourc
 /// <summary>A country with watch-provider data available from TMDb.</summary>
 public sealed record AvailabilityRegionDto(string Code, string Name);
 
+/// <summary>TMDb country choices plus any administrator-facing setup guidance.</summary>
+public sealed record AvailabilityRegionsResponse(IReadOnlyCollection<AvailabilityRegionDto> Regions, string? Message);
+
 /// <summary>Current locally tracked Watchmode usage for the administrator dashboard.</summary>
 public sealed record WatchmodeUsageDto(int Used, int Limit, string Month, bool IsLimitReached);
 

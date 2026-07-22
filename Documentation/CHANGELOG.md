@@ -6,6 +6,34 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.11-test] - 2026-07-22
+
+### Added
+
+- **Delete Backup** controls in Main Settings and Scan. They permanently remove
+  only the selected stored backup and never alter current Jellyfin tags.
+- The complete Backup Settings section to the Scan tab, so a safety snapshot
+  can be made immediately before a manual scan.
+- Clear country-list guidance when TMDb cannot return its watch-provider regions.
+
+### Changed
+
+- Shortened the dashboard page title to **Media Tagging Manager** and replaced
+  its introduction with repository and Patreon links.
+- Moved View Tags filters ahead of the Library Overview.
+- Expanded and reorganized the public README around the current plugin settings
+  tabs and controls.
+
+### Fixed
+
+- Creating a backup before saving a library selection now explains that no
+  libraries have been saved instead of showing an unknown error.
+
+### Test-release notes
+
+- This supersedes `0.1.0.10-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.10-test] - 2026-07-21
 
 ### Changed
