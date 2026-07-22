@@ -326,4 +326,7 @@ retest | Jellyfin 10.11.11, plugin 0.1.0.5-test | The global loading indicator
 was resolved, but the library list still did not display. Jellyfin's official
 10.11.11 LibraryStructureController obtains all folders with
 GetVirtualFolders(true); the plugin now mirrors that call and handles either
-supported API JSON capitalization style. Retest with 0.1.0.6-test is required.
+supported API JSON capitalization style. The untested 0.1.0.6-test build was
+superseded by 0.1.0.8-test, which adds the documented Dashboard menu entry,
+task-manager scan flow, and a fix for the dashboard response wrapper that
+reported a missing configuration object. Retest with 0.1.0.8-test is required.

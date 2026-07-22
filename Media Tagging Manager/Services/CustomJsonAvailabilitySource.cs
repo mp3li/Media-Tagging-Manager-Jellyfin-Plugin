@@ -25,8 +25,16 @@ public sealed class CustomJsonAvailabilitySource : IAvailabilitySource
         }
 
         var collected = new List<SourceTag>();
+        var hadLookupFailure = false;
         foreach (var source in configuration.CustomSources.Where(static source => source.Enabled && !string.IsNullOrWhiteSpace(source.UrlTemplate)))
         {
+            if ((source.UrlTemplate.Contains("{tmdb}", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(ids.Tmdb))
+                || (source.UrlTemplate.Contains("{imdb}", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(ids.Imdb)))
+            {
+                hadLookupFailure = true;
+                continue;
+            }
+
             var uri = Expand(source.UrlTemplate, ids, configuration.Region);
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
             if (!string.IsNullOrWhiteSpace(source.Authorization))
@@ -37,6 +45,7 @@ public sealed class CustomJsonAvailabilitySource : IAvailabilitySource
             using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
+                hadLookupFailure = true;
                 continue;
             }
 
@@ -45,7 +54,7 @@ public sealed class CustomJsonAvailabilitySource : IAvailabilitySource
             collected.AddRange(FindStrings(document.RootElement, source.NetworkPath).Select(name => new SourceTag(TagKind.Network, name, source.Name)));
         }
 
-        return new SourceLookupResult(Name, collected);
+        return new SourceLookupResult(Name, collected, hadLookupFailure ? "One or more enabled custom sources could not be queried for this item." : null);
     }
 
     private static string Expand(string template, ExternalIds ids, string region) => template

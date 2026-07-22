@@ -18,12 +18,18 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
     public async Task<SourceLookupResult> LookupAsync(ExternalIds ids, CancellationToken cancellationToken)
     {
         var configuration = Plugin.Instance?.Configuration;
-        if (configuration is null || string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey) || string.IsNullOrWhiteSpace(ids.Imdb))
+        if (configuration is null || string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey))
         {
             return new SourceLookupResult(Name, []);
         }
 
-        var uri = $"https://api.watchmode.com/v1/title/{Uri.EscapeDataString(ids.Imdb)}/sources/";
+        if (string.IsNullOrWhiteSpace(ids.Imdb))
+        {
+            return new SourceLookupResult(Name, [], "The item has no IMDb ID.");
+        }
+
+        var requestedRegion = Uri.EscapeDataString(configuration.Region.ToUpperInvariant());
+        var uri = $"https://api.watchmode.com/v1/title/{Uri.EscapeDataString(ids.Imdb)}/sources/?regions={requestedRegion}";
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Add("X-API-Key", configuration.WatchmodeApiKey);
         using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);

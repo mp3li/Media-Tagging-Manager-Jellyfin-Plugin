@@ -58,6 +58,7 @@
                         <div class="fieldDescription">TMDb contributes region-specific watch providers and TV networks. Paste a Read Access Token, not an API key; leave blank to disable it.</div>
                     </div>
                     <p class="fieldDescription"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer"><img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg" alt="TMDB" style="height:28px; width:auto; vertical-align:middle;" /></a> This product uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB. <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">Learn more about TMDB</a>.</p>
+                    <p class="fieldDescription">Streaming availability data supplied through TMDb is powered by <a href="https://www.justwatch.com/" target="_blank" rel="noopener noreferrer">JustWatch</a>.</p>
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="watchmodeKey">Watchmode API key</label>
                         <input is="emby-input" id="watchmodeKey" type="password" autocomplete="off" />
@@ -99,7 +100,8 @@
         var $ = function (selector) { return page.querySelector(selector); };
         var url = function (path) { return ApiClient.getUrl('MediaTaggingManager/' + path); };
         var api = function (method, path, data) {
-            return ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' });
+            return ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' })
+                .then(unwrapPayload);
         };
         var escapeHtml = function (value) { var element = document.createElement('span'); element.textContent = value || ''; return element.innerHTML; };
         var errorMessage = function (error) {
@@ -113,6 +115,22 @@
             if (object[pascalName] !== undefined) return object[pascalName];
             var camelName = pascalName.charAt(0).toLowerCase() + pascalName.slice(1);
             return object[camelName];
+        };
+        // Jellyfin dashboard builds may return a JSON response directly or wrap
+        // it in a transport object's data/responseJSON/result field. Normalize
+        // that boundary once so every plugin endpoint is handled consistently.
+        var unwrapPayload = function (response) {
+            var current = response;
+            for (var depth = 0; depth < 3; depth++) {
+                if (typeof current === 'string') {
+                    try { current = JSON.parse(current); } catch (error) { return current; }
+                }
+                if (!current || typeof current !== 'object' || Array.isArray(current) || property(current, 'Configuration') !== undefined) return current;
+                var next = current.data !== undefined ? current.data : current.responseJSON !== undefined ? current.responseJSON : current.result;
+                if (next === undefined || next === current) return current;
+                current = next;
+            }
+            return current;
         };
         var normalizeConfiguration = function (raw) {
             return {

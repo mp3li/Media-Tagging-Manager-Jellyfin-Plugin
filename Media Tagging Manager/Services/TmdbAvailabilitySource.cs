@@ -19,9 +19,14 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
     public async Task<SourceLookupResult> LookupAsync(ExternalIds ids, CancellationToken cancellationToken)
     {
         var configuration = Plugin.Instance?.Configuration;
-        if (configuration is null || string.IsNullOrWhiteSpace(configuration.TmdbApiKey) || string.IsNullOrWhiteSpace(ids.Tmdb))
+        if (configuration is null || string.IsNullOrWhiteSpace(configuration.TmdbApiKey))
         {
             return new SourceLookupResult(Name, []);
+        }
+
+        if (string.IsNullOrWhiteSpace(ids.Tmdb))
+        {
+            return new SourceLookupResult(Name, [], "The item has no TMDb ID.");
         }
 
         var tags = new List<SourceTag>();

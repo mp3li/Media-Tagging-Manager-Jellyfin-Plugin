@@ -15,7 +15,9 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<ScanStateStore>();
         serviceCollection.AddSingleton<TagBackupManager>();
         serviceCollection.AddSingleton<ProviderNetworkScanner>();
+        serviceCollection.AddSingleton<ManualScanRequestQueue>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, RefreshAvailabilityTask>();
+        serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, ManualScanTask>();
         serviceCollection.AddSingleton<MediaBrowser.Controller.Library.ILibraryPostScanTask, NewMediaPostScanTask>();
         serviceCollection.AddHttpClient<IAvailabilitySource, TmdbAvailabilitySource>();
         serviceCollection.AddHttpClient<IAvailabilitySource, WatchmodeAvailabilitySource>();

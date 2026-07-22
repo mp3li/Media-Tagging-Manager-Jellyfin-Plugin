@@ -1,8 +1,10 @@
 using Jellyfin.Plugin.MediaTaggingManager.Models;
+using Jellyfin.Plugin.MediaTaggingManager.ScheduledTasks;
 using Jellyfin.Plugin.MediaTaggingManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Tasks;
 using PluginConfiguration = Jellyfin.Plugin.MediaTaggingManager.Configuration.PluginConfiguration;
 
 namespace Jellyfin.Plugin.MediaTaggingManager.Api;
@@ -17,14 +19,24 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly ScanStateStore _state;
     private readonly TagBackupManager _backups;
     private readonly ILibraryManager _libraryManager;
+    private readonly ITaskManager _taskManager;
+    private readonly ManualScanRequestQueue _manualScanRequests;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
-    public ProviderNetworkController(ProviderNetworkScanner scanner, ScanStateStore state, TagBackupManager backups, ILibraryManager libraryManager)
+    public ProviderNetworkController(
+        ProviderNetworkScanner scanner,
+        ScanStateStore state,
+        TagBackupManager backups,
+        ILibraryManager libraryManager,
+        ITaskManager taskManager,
+        ManualScanRequestQueue manualScanRequests)
     {
         _scanner = scanner;
         _state = state;
         _backups = backups;
         _libraryManager = libraryManager;
+        _taskManager = taskManager;
+        _manualScanRequests = manualScanRequests;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -54,19 +66,21 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("status")]
     public ActionResult<ScanProgress> GetStatus() => Ok(_state.GetProgress());
 
-    /// <summary>Starts an asynchronous scan of one enabled library.</summary>
+    /// <summary>Queues a Jellyfin-managed scan of one enabled library.</summary>
     [HttpPost("scan/{libraryId:guid}")]
     public IActionResult ScanLibrary(Guid libraryId)
     {
-        _ = Task.Run(() => _scanner.ScanLibraryAsync(libraryId, null, CancellationToken.None));
+        _manualScanRequests.EnqueueLibrary(libraryId);
+        _taskManager.QueueScheduledTask<ManualScanTask>();
         return Accepted();
     }
 
-    /// <summary>Starts an asynchronous scan of all selected libraries.</summary>
+    /// <summary>Queues a Jellyfin-managed scan of all selected libraries.</summary>
     [HttpPost("scan")]
     public IActionResult ScanAll()
     {
-        _ = Task.Run(() => _scanner.ScanConfiguredLibrariesAsync(null, CancellationToken.None));
+        _manualScanRequests.EnqueueAllLibraries();
+        _taskManager.QueueScheduledTask<ManualScanTask>();
         return Accepted();
     }
 
@@ -97,7 +111,7 @@ public sealed class ProviderNetworkController : ControllerBase
         }
 
         var label = string.IsNullOrWhiteSpace(request?.Label) ? "Manual tag backup" : request.Label;
-        return Ok(await _backups.CreateAsync(label, libraries, cancellationToken).ConfigureAwait(false));
+        return Ok(await _scanner.CreateBackupAsync(label, libraries, cancellationToken).ConfigureAwait(false));
     }
 
     /// <summary>Lists restorable complete tag backups, newest first.</summary>
@@ -108,12 +122,12 @@ public sealed class ProviderNetworkController : ControllerBase
     /// <summary>Restores every saved tag list from a requested backup.</summary>
     [HttpPost("backups/{backupId:guid}/restore")]
     public async Task<ActionResult<TagBackupSummary>> RestoreBackup(Guid backupId, CancellationToken cancellationToken) =>
-        Ok(await _backups.RestoreAsync(backupId, null, cancellationToken).ConfigureAwait(false));
+        Ok(await _scanner.RestoreBackupAsync(backupId, null, cancellationToken).ConfigureAwait(false));
 
     /// <summary>Restores the newest available tag backup.</summary>
     [HttpPost("backups/undo")]
     public async Task<ActionResult<TagBackupSummary>> UndoLatest(CancellationToken cancellationToken) =>
-        Ok(await _backups.UndoLatestAsync(null, cancellationToken).ConfigureAwait(false));
+        Ok(await _scanner.UndoLatestBackupAsync(null, cancellationToken).ConfigureAwait(false));
 }
 
 /// <summary>Manual provider/network edits submitted from the dashboard.</summary>

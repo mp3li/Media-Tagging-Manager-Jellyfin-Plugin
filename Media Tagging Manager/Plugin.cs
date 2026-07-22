@@ -31,6 +31,7 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         {
             Name = Name,
             DisplayName = Name,
+            EnableInMainMenu = true,
             EmbeddedResourcePath = "Jellyfin.Plugin.MediaTaggingManager.Web.configPage.html"
         }
     ];

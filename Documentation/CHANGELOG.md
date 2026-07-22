@@ -6,6 +6,43 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.8-test] - 2026-07-21
+
+### Fixed
+
+- Normalized the JSON transport wrapper returned by Jellyfin 10.11.11's
+  dashboard client before reading plugin settings, libraries, status, backups,
+  and overview data. This addresses the visible message that the configuration
+  object was missing despite the endpoint responding.
+
+### Test-release notes
+
+- This supersedes the unuploaded `0.1.0.7-test` package and remains a public
+  test build, not a stable release.
+
+## [0.1.0.7-test] - 2026-07-21
+
+### Fixed
+
+- Added the supported Dashboard plugin-menu entry, using the same
+  `EnableInMainMenu` page setting as File Transformation.
+- Moved dashboard scan requests into Jellyfin's scheduled-task manager instead
+  of using detached background tasks.
+- Sent Watchmode's documented region filter and added the required JustWatch
+  attribution for TMDb watch-provider data.
+- Preserved managed tags when an enabled source cannot identify or query an
+  item, restricted manual edits to selected Movie/Series libraries, and
+  serialized backup creation/restoration with scans and manual edits.
+
+### Documentation
+
+- Added the source-level Jellyfin 10.11.11 compatibility audit.
+
+### Test-release notes
+
+- This was a local test package superseded before publication by
+  `0.1.0.8-test`.
+
 ## [0.1.0.6-test] - 2026-07-21
 
 ### Fixed

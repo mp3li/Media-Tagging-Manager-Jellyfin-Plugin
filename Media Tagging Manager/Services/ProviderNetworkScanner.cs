@@ -2,6 +2,8 @@ using System.Text.Json;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.MediaTaggingManager.Models;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 
 namespace Jellyfin.Plugin.MediaTaggingManager.Services;
@@ -42,19 +44,7 @@ public sealed class ProviderNetworkScanner
         await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (createBackup)
-            {
-                await _backups.CreateAsync("Before library scan", [libraryId], cancellationToken).ConfigureAwait(false);
-            }
-
-            var query = new InternalItemsQuery
-            {
-                ParentId = libraryId,
-                Recursive = true,
-                IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
-            };
-            var items = _libraryManager.GetItemList(query);
-            await ScanItemsAsync(items.Select(item => (Item: item, LibraryId: libraryId)).ToArray(), configuration, jellyfinProgress, cancellationToken).ConfigureAwait(false);
+            await ScanLibraryLockedAsync(libraryId, configuration, jellyfinProgress, cancellationToken, createBackup).ConfigureAwait(false);
         }
         catch (Exception exception)
         {
@@ -78,11 +68,29 @@ public sealed class ProviderNetworkScanner
         }
 
         EnsureSourceConfigured(configuration);
-        await _backups.CreateAsync("Before configured-library scan", libraries, cancellationToken).ConfigureAwait(false);
-        for (var index = 0; index < libraries.Length; index++)
+        await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            var offset = index;
-            await ScanLibraryAsync(libraries[index], new Progress<double>(value => progress?.Report((offset * 100d + value) / libraries.Length)), cancellationToken, false).ConfigureAwait(false);
+            await _backups.CreateAsync("Before configured-library scan", libraries, cancellationToken).ConfigureAwait(false);
+            for (var index = 0; index < libraries.Length; index++)
+            {
+                var offset = index;
+                await ScanLibraryLockedAsync(
+                    libraries[index],
+                    configuration,
+                    new Progress<double>(value => progress?.Report((offset * 100d + value) / libraries.Length)),
+                    cancellationToken,
+                    createBackup: false).ConfigureAwait(false);
+            }
+        }
+        catch (Exception exception)
+        {
+            _state.Complete(exception.Message);
+            throw;
+        }
+        finally
+        {
+            _scanLock.Release();
         }
     }
 
@@ -156,10 +164,59 @@ public sealed class ProviderNetworkScanner
         try
         {
             var item = _libraryManager.GetItemById(itemId) ?? throw new KeyNotFoundException("The Jellyfin item no longer exists.");
-            await _backups.CreateAsync("Before manual tag edit", [item.GetTopParent().Id], cancellationToken).ConfigureAwait(false);
+            var libraryId = item.GetTopParent().Id;
+            var enabledLibraries = Plugin.Instance?.Configuration.LibraryIds ?? [];
+            if (!enabledLibraries.Contains(libraryId) || (item is not Movie && item is not Series))
+            {
+                throw new InvalidOperationException("Only movies and series in selected libraries may be edited by Media Tagging Manager.");
+            }
+
+            await _backups.CreateAsync("Before manual tag edit", [libraryId], cancellationToken).ConfigureAwait(false);
             var tags = providers.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Provider, value, "Manual"))
                 .Concat(networks.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Network, value, "Manual")));
-            await ApplyTagsAsync(item, item.GetTopParent().Id, tags, ["Manual"], true, cancellationToken).ConfigureAwait(false);
+            await ApplyTagsAsync(item, libraryId, tags, ["Manual"], true, cancellationToken, forceManagedReplacement: true).ConfigureAwait(false);
+        }
+        finally
+        {
+            _scanLock.Release();
+        }
+    }
+
+    /// <summary>Creates a complete snapshot while preventing a scan or manual edit from changing tags concurrently.</summary>
+    public async Task<TagBackupSummary> CreateBackupAsync(string label, IEnumerable<Guid> libraryIds, CancellationToken cancellationToken)
+    {
+        await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await _backups.CreateAsync(label, libraryIds, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _scanLock.Release();
+        }
+    }
+
+    /// <summary>Restores a snapshot while preventing a scan or manual edit from changing tags concurrently.</summary>
+    public async Task<TagBackupSummary> RestoreBackupAsync(Guid backupId, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await _backups.RestoreAsync(backupId, progress, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _scanLock.Release();
+        }
+    }
+
+    /// <summary>Restores the newest snapshot while preventing a scan or manual edit from changing tags concurrently.</summary>
+    public async Task<TagBackupSummary> UndoLatestBackupAsync(IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await _backups.UndoLatestAsync(progress, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -203,6 +260,28 @@ public sealed class ProviderNetworkScanner
             results.Select(result => result.Source),
             results.All(result => string.IsNullOrWhiteSpace(result.Note)),
             cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task ScanLibraryLockedAsync(
+        Guid libraryId,
+        Configuration.PluginConfiguration configuration,
+        IProgress<double>? jellyfinProgress,
+        CancellationToken cancellationToken,
+        bool createBackup)
+    {
+        if (createBackup)
+        {
+            await _backups.CreateAsync("Before library scan", [libraryId], cancellationToken).ConfigureAwait(false);
+        }
+
+        var query = new InternalItemsQuery
+        {
+            ParentId = libraryId,
+            Recursive = true,
+            IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
+        };
+        var items = _libraryManager.GetItemList(query);
+        await ScanItemsAsync(items.Select(item => (Item: item, LibraryId: libraryId)).ToArray(), configuration, jellyfinProgress, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task ScanItemsAsync(
@@ -252,6 +331,10 @@ public sealed class ProviderNetworkScanner
         {
             return new SourceLookupResult(source.Name, [], exception.Message);
         }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return new SourceLookupResult(source.Name, [], exception.Message);
+        }
     }
 
     private async Task ApplyTagsAsync(
@@ -260,7 +343,8 @@ public sealed class ProviderNetworkScanner
         IEnumerable<SourceTag> values,
         IEnumerable<string> sources,
         bool replaceManagedTags,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool forceManagedReplacement = false)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
         var selected = values
@@ -271,7 +355,7 @@ public sealed class ProviderNetworkScanner
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase);
         var existing = item.Tags ?? [];
         // A failed source must never erase previously known availability. A later healthy scan reconciles it.
-        var retained = configuration.ReplaceManagedTags && replaceManagedTags ? existing.Where(tag => !TagNaming.IsManaged(tag)) : existing;
+        var retained = (configuration.ReplaceManagedTags || forceManagedReplacement) && replaceManagedTags ? existing.Where(tag => !TagNaming.IsManaged(tag)) : existing;
         item.Tags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         await _libraryManager.UpdateItemAsync(item, item, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
         _state.Save(ToDto(item, libraryId, DateTimeOffset.UtcNow, sources));
