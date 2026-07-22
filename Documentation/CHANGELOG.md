@@ -6,6 +6,20 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.5-test] - 2026-07-21
+
+### Fixed
+
+- Removed the dashboard-internal configuration and virtual-folder requests that
+  could leave the settings page in an endless global loading state.
+- Added administrator-only plugin endpoints that retrieve selectable Jellyfin
+  libraries and save plugin settings directly through Jellyfin server services.
+
+### Test-release notes
+
+- This supersedes the `0.1.0.4-test` catalog build and remains a public test
+  build, not a stable release.
+
 ## [0.1.0.4-test] - 2026-07-21
 
 ### Changed

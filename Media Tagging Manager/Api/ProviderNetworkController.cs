@@ -2,6 +2,8 @@ using Jellyfin.Plugin.MediaTaggingManager.Models;
 using Jellyfin.Plugin.MediaTaggingManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MediaBrowser.Controller.Library;
+using PluginConfiguration = Jellyfin.Plugin.MediaTaggingManager.Configuration.PluginConfiguration;
 
 namespace Jellyfin.Plugin.MediaTaggingManager.Api;
 
@@ -14,13 +16,36 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly ProviderNetworkScanner _scanner;
     private readonly ScanStateStore _state;
     private readonly TagBackupManager _backups;
+    private readonly ILibraryManager _libraryManager;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
-    public ProviderNetworkController(ProviderNetworkScanner scanner, ScanStateStore state, TagBackupManager backups)
+    public ProviderNetworkController(ProviderNetworkScanner scanner, ScanStateStore state, TagBackupManager backups, ILibraryManager libraryManager)
     {
         _scanner = scanner;
         _state = state;
         _backups = backups;
+        _libraryManager = libraryManager;
+    }
+
+    /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
+    [HttpGet("settings")]
+    public IActionResult GetSettings()
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(new
+        {
+            Configuration = plugin.Configuration,
+            Libraries = _libraryManager.GetVirtualFolders().Select(folder => new { folder.ItemId, folder.Name })
+        });
+    }
+
+    /// <summary>Saves administrator settings without relying on the dashboard plugin-configuration endpoint.</summary>
+    [HttpPost("settings")]
+    public IActionResult UpdateSettings([FromBody] PluginConfiguration configuration)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        plugin.UpdateConfiguration(configuration);
+        return NoContent();
     }
 
     /// <summary>Returns active scan status, including an estimated remaining duration.</summary>

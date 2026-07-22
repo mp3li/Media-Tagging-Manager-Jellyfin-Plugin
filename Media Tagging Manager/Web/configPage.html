@@ -168,9 +168,8 @@
             api('PUT', 'items/' + button.dataset.id, { Providers: providers.split(',').map(function (x) { return x.trim(); }).filter(Boolean), Networks: networks.split(',').map(function (x) { return x.trim(); }).filter(Boolean) }).then(loadItems);
         }
         function loadPage() {
-            Dashboard.showLoadingMsg();
-            Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('Library/VirtualFolders') })]).then(function (results) {
-                config = results[0]; libraries = results[1] || [];
+            api('GET', 'settings').then(function (setup) {
+                config = setup.Configuration; libraries = setup.Libraries || [];
                 $('#tagProviders').checked = config.TagProviders;
                 $('#tagNetworks').checked = config.TagNetworks;
                 $('#replaceManagedTags').checked = config.ReplaceManagedTags;
@@ -183,13 +182,11 @@
                 $('#watchmodeKey').value = config.WatchmodeApiKey || '';
                 $('#customSources').value = JSON.stringify(config.CustomSources || [], null, 2);
                 renderLibraryChoices(); renderScanLibraries(); updateStatus(); loadBackups(); loadItems();
-                Dashboard.hideLoadingMsg();
             }, function (error) {
                 var message = 'Could not load your Jellyfin libraries and plugin settings: ' + errorMessage(error);
                 $('#libraryChoices').innerHTML = '<p class="fieldDescription">' + escapeHtml(message) + '</p>';
                 $('#backupList').innerHTML = '<p class="fieldDescription">Backups cannot load until the plugin settings load successfully.</p>';
                 $('#scanStatus').textContent = message;
-                Dashboard.hideLoadingMsg();
             });
         }
         // Load immediately because some Jellyfin dashboard builds do not dispatch a
@@ -221,7 +218,7 @@
             if (!config.EnableNewMediaChecks) config.LastIncomingMediaCheckUtc = null;
             config.Region = $('#region').value.trim().toUpperCase(); config.MaxConcurrentLookups = Number($('#concurrency').value || 3); config.RefreshIntervalHours = Number($('#refreshHours').value || 168);
             config.TmdbApiKey = $('#tmdbKey').value.trim(); config.WatchmodeApiKey = $('#watchmodeKey').value.trim();
-            ApiClient.updatePluginConfiguration(pluginId, config).then(function () { Dashboard.alert('Settings saved. The scheduled full-refresh interval is refreshed after a Jellyfin restart; manual and new-media checks work immediately.'); renderScanLibraries(); }, function (error) { showRequestError('Could not save settings', error); });
+            api('POST', 'settings', config).then(function () { Dashboard.alert('Settings saved. The scheduled full-refresh interval is refreshed after a Jellyfin restart; manual and new-media checks work immediately.'); renderScanLibraries(); }, function (error) { showRequestError('Could not save settings', error); });
         });
         setInterval(updateStatus, 3000);
     }());

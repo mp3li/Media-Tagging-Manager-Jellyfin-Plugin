@@ -8,12 +8,12 @@
     "category": "Metadata",
     "versions": [
       {
-        "version": "0.1.0.4",
-        "changelog": "0.1.0.4-test is compiled for Jellyfin 10.11.11. Test only; not a stable release.",
+        "version": "0.1.0.5",
+        "changelog": "0.1.0.5-test replaces the hanging dashboard settings request with plugin-owned endpoints. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.4-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.4-test.zip",
-        "checksum": "40b23adfcc2f31ad5d0409ae13efb893",
-        "timestamp": "2026-07-22T00:15:00Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.5-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.5-test.zip",
+        "checksum": "f3256204b673af51be841ba23323ad24",
+        "timestamp": "2026-07-22T00:32:00Z"
       }
     ]
   }

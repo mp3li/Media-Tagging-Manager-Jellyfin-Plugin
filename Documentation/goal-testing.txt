@@ -315,3 +315,9 @@ library list remained absent after the first dashboard lifecycle-event fix.
 The plugin has been changed to load settings immediately rather than waiting
 for a dashboard page-show event; retest with the 10.11.11-targeted
 0.1.0.4-test build is required.
+2026-07-21 | Test 2 — library selection retest | Fail; third fix pending
+retest | Jellyfin 10.11.11, plugin 0.1.0.4-test | The library list was still
+absent and Jellyfin's global loading indicator remained active for more than
+five minutes. The plugin now uses its own administrator-only settings and
+library endpoint instead of the hanging dashboard-internal request; retest
+with 0.1.0.5-test is required.
