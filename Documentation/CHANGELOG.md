@@ -6,6 +6,34 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.10-test] - 2026-07-21
+
+### Changed
+
+- Rebuilt the dashboard into **Main Settings**, **View Tags**, and **Scan**
+  page-style tabs, with consistent top-level section headers and descriptions.
+- Reordered and redesigned backup controls, selected-library configuration, API
+  settings, three-country availability selection, tag settings, incoming-media
+  settings, scheduled tasks, grouped tag review, and scan controls.
+- Removed administrator-configured JSON sources and the configurable parallel
+  lookup setting from the product and configuration.
+- Shortened the main Dashboard menu label to **Media Tagging Manager** while
+  retaining the full catalog title.
+
+### Added
+
+- TMDb-backed availability-country dropdowns with up to three selected regions.
+- Watchmode monthly quota settings and visible usage tracking. TMDb is queried
+  first; Watchmode is only used as a quota-limited provider fallback.
+- A Stop Scan action, selected-library list on the Scan tab, backup dropdown,
+  disabled no-backup restore action, and staged manual tag edits saved from the
+  View Tags tab.
+
+### Test-release notes
+
+- This supersedes `0.1.0.9-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.9-test] - 2026-07-21
 
 ### Fixed

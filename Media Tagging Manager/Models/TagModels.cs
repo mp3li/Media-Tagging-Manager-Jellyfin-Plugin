@@ -19,6 +19,12 @@ public sealed record ExternalIds(string? Tmdb, string? Imdb, string MediaType);
 /// <summary>The data returned from a single source adapter.</summary>
 public sealed record SourceLookupResult(string Source, IReadOnlyCollection<SourceTag> Tags, string? Note = null);
 
+/// <summary>A country with watch-provider data available from TMDb.</summary>
+public sealed record AvailabilityRegionDto(string Code, string Name);
+
+/// <summary>Current locally tracked Watchmode usage for the administrator dashboard.</summary>
+public sealed record WatchmodeUsageDto(int Used, int Limit, string Month, bool IsLimitReached);
+
 /// <summary>Progress visible in the dashboard while a scan runs.</summary>
 public sealed class ScanProgress
 {

@@ -1,266 +1,133 @@
-<div id="mediaTaggingManagerPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
-    <div data-role="content">
-        <div class="content-primary">
-            <h1>Media Tagging Manager Jellyfin Plugin</h1>
-            <p class="fieldDescription">Current streaming availability changes by region. This plugin keeps each result distinct: <code>Provider: Netflix</code> and <code>Network: BBC One</code> are separate Jellyfin tags and may both apply.</p>
+<div id="mediaTaggingManagerPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox,emby-select">
+    <style>
+        #mediaTaggingManagerPage .mtm-tabs { display:flex; gap:.5em; border-bottom:1px solid rgba(255,255,255,.16); margin:1.5em 0; }
+        #mediaTaggingManagerPage .mtm-tab { border:0; border-radius:.45em .45em 0 0; padding:.85em 1.25em; background:rgba(255,255,255,.08); color:inherit; cursor:pointer; font-size:1em; }
+        #mediaTaggingManagerPage .mtm-tab.active { background:#00a4dc; color:#fff; font-weight:bold; }
+        #mediaTaggingManagerPage .mtm-panel { display:none; }
+        #mediaTaggingManagerPage .mtm-panel.active { display:block; }
+        #mediaTaggingManagerPage .mtm-section { border:1px solid rgba(255,255,255,.16); border-radius:.65em; padding:1.25em; margin:0 0 1.25em; }
+        #mediaTaggingManagerPage .mtm-section h2 { font-size:1.35em; line-height:1.25; margin:0 0 .35em; }
+        #mediaTaggingManagerPage .mtm-actions { display:flex; flex-wrap:wrap; gap:.65em; margin-top:1em; }
+        #mediaTaggingManagerPage .mtm-progress { height:.65em; background:#444; border-radius:.35em; overflow:hidden; margin:1em 0; }
+        #mediaTaggingManagerPage .mtm-progress > div { height:100%; width:0; background:#00a4dc; }
+        #mediaTaggingManagerPage .mtm-region-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(12em,1fr)); gap:.8em; }
+        #mediaTaggingManagerPage .mtm-library-list { margin:.75em 0 0; }
+        #mediaTaggingManagerPage button:disabled { opacity:.45; cursor:not-allowed; }
+    </style>
+    <div data-role="content"><div class="content-primary">
+        <h1>Media Tagging Manager Jellyfin Plugin</h1>
+        <p class="fieldDescription">Current streaming availability changes by region. <code>Provider: Netflix</code> and <code>Network: BBC One</code> are separate Jellyfin tags and may both apply.</p>
 
-            <section>
-                <h2>Scan selected libraries</h2>
-                <p id="scanStatus" class="fieldDescription">Loading status…</p>
-                <div id="scanProgress" style="height: 0.6em; background: #444; border-radius: 0.3em; overflow: hidden; margin-bottom: 1em;"><div style="height:100%; width:0; background:#00a4dc;"></div></div>
-                <button is="emby-button" type="button" class="raised" id="scanAllButton">Scan all selected libraries</button>
-                <div id="scanLibraries" style="margin-top:1.5em;"></div>
-            </section>
-
-            <section>
-                <form id="mediaTaggingManagerForm">
-                    <h2>Settings &amp; sources</h2>
-                    <h3>Libraries</h3>
-                    <p class="fieldDescription">Only selected libraries are read or changed. Movies and series are tagged; episodes inherit the series context.</p>
-                    <div id="libraryChoices"></div>
-
-                    <h3>Tag behavior</h3>
-                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagProviders" /> <span>Tag providers</span></label>
-                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagNetworks" /> <span>Tag networks</span></label>
-                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="replaceManagedTags" /> <span>Replace tags managed by this plugin on each check</span></label>
-                    <p class="fieldDescription">Your other Jellyfin tags are never removed. Turning off replacement preserves previously found plugin tags.</p>
-
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="region">Availability region</label>
-                        <input is="emby-input" id="region" type="text" maxlength="2" required />
-                        <div class="fieldDescription">Two-letter country code, for example US, GB, CA, or AU.</div>
-                    </div>
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="concurrency">Maximum titles checked in parallel</label>
-                        <input is="emby-input" id="concurrency" type="number" min="1" max="12" />
-                    </div>
-
-                    <h3>Automatic refresh</h3>
-                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="automaticRefresh" /> <span>Automatically re-check enabled sources</span></label>
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="refreshHours">Refresh every (hours)</label>
-                        <input is="emby-input" id="refreshHours" type="number" min="6" max="8760" />
-                        <div class="fieldDescription">Also available as “Refresh provider and network tags” under Dashboard → Scheduled Tasks.</div>
-                    </div>
-                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="newMediaChecks" /> <span>Check newly added media after Jellyfin library scans</span></label>
-                    <p class="fieldDescription">When enabled, only new movies and series added after it was turned on are checked after a normal Jellyfin library scan. Turn it off to prevent automatic checks for incoming media; manual and scheduled full scans remain available.</p>
-
-                    <h3>Safety backups and undo</h3>
-                    <p class="fieldDescription">A backup saves the complete current tag list for every item in the selected libraries. Restoring a backup overwrites current tags for those saved items, including tags not created by this plugin.</p>
-                    <button is="emby-button" type="button" class="raised" id="createBackupButton">Create tag backup</button>
-                    <button is="emby-button" type="button" class="raised" id="undoBackupButton">Undo last tag operation</button>
-                    <div id="backupList" style="margin-top:1em;"></div>
-
-                    <h3>Built-in sources</h3>
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="tmdbKey">TMDb API Read Access Token</label>
-                        <input is="emby-input" id="tmdbKey" type="password" autocomplete="off" />
-                        <div class="fieldDescription">TMDb contributes region-specific watch providers and TV networks. Paste a Read Access Token, not an API key; leave blank to disable it.</div>
-                    </div>
-                    <p class="fieldDescription"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer"><img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg" alt="TMDB" style="height:28px; width:auto; vertical-align:middle;" /></a> This product uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB. <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">Learn more about TMDB</a>.</p>
-                    <p class="fieldDescription">Streaming availability data supplied through TMDb is powered by <a href="https://www.justwatch.com/" target="_blank" rel="noopener noreferrer">JustWatch</a>.</p>
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="watchmodeKey">Watchmode API key</label>
-                        <input is="emby-input" id="watchmodeKey" type="password" autocomplete="off" />
-                        <div class="fieldDescription">Optional additional provider coverage. It needs the item’s IMDb ID.</div>
-                    </div>
-
-                    <h3>Additional JSON sources</h3>
-                    <p class="fieldDescription">Optional array of sources. URL tokens: <code>{tmdb}</code>, <code>{imdb}</code>, <code>{type}</code>, <code>{region}</code>. The two paths point to a JSON string or an array of strings.</p>
-                    <textarea is="emby-input" id="customSources" rows="10" style="width:100%; font-family:monospace;"></textarea>
-                    <button is="emby-button" type="submit" class="raised button-submit block">Save settings</button>
-                </form>
-            </section>
-
-            <section>
-                <h2>Library overview</h2>
-                <div class="formDialogContent smoothScrollY">
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="filterProvider">Provider contains</label>
-                        <input is="emby-input" id="filterProvider" type="text" />
-                    </div>
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="filterNetwork">Network contains</label>
-                        <input is="emby-input" id="filterNetwork" type="text" />
-                    </div>
-                    <select is="emby-select" id="filterTagged"><option value="">All items</option><option value="true">Has providers or networks</option><option value="false">Missing both</option></select>
-                    <button is="emby-button" type="button" class="raised" id="applyFilters">Apply filters</button>
-                </div>
-                <p id="overviewCount" class="fieldDescription"></p>
-                <div style="overflow-x:auto;"><table class="detailTable"><thead><tr><th>Title</th><th>Providers</th><th>Networks</th><th></th></tr></thead><tbody id="overviewRows"></tbody></table></div>
-            </section>
+        <div class="mtm-tabs" role="tablist" aria-label="Media Tagging Manager sections">
+            <button type="button" class="mtm-tab active" data-tab="main" role="tab" aria-selected="true">Main Settings</button>
+            <button type="button" class="mtm-tab" data-tab="tags" role="tab" aria-selected="false">View Tags</button>
+            <button type="button" class="mtm-tab" data-tab="scan" role="tab" aria-selected="false">Scan</button>
         </div>
-    </div>
+
+        <div class="mtm-panel active" data-panel="main">
+            <form id="mediaTaggingManagerForm">
+                <section class="mtm-section">
+                    <h2>Backup Settings</h2>
+                    <p class="fieldDescription">A backup saves the complete current tag list for every item in the selected libraries. Restoring a backup overwrites current tags for those saved items, including tags not created by this plugin.</p>
+                    <div class="mtm-actions"><button is="emby-button" type="button" class="raised" id="createBackupButton">Create Tag Backup</button><button is="emby-button" type="button" class="raised" id="undoBackupButton">Undo Last Tag Action</button></div>
+                    <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="backupSelect">Available Backups</label><select is="emby-select" id="backupSelect"></select></div>
+                    <button is="emby-button" type="button" class="raised" id="restoreBackupButton" disabled>Restore from Backup</button>
+                </section>
+
+                <section class="mtm-section">
+                    <h2>Select Libraries</h2>
+                    <p class="fieldDescription">Choose which Jellyfin libraries the plugin can access. Only selected libraries are read or changed, whatever you named the library. Within each selected library, Movies and Series are tagged; episodes inherit their series context.</p>
+                    <div id="libraryChoices"></div>
+                </section>
+
+                <section class="mtm-section">
+                    <h2>API Settings</h2>
+                    <p class="fieldDescription">Enter your TMDb and Watchmode API credentials here. Never share these or include them on GitHub. <a href="https://github.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/blob/main/Documentation/API_KEYS.md" target="_blank" rel="noopener noreferrer">Read the repository’s API-key instructions.</a></p>
+                    <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="tmdbKey">TMDb API Read Access Token</label><input is="emby-input" id="tmdbKey" type="password" autocomplete="off" /><div class="fieldDescription">Primary provider and television-network source. Save a token to load TMDb’s available-country choices below.</div></div>
+                    <p class="fieldDescription"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDB</a> — This product uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB. Streaming availability data supplied through TMDb is powered by <a href="https://www.justwatch.com/" target="_blank" rel="noopener noreferrer">JustWatch</a>.</p>
+                    <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="watchmodeKey">Watchmode API Key</label><input is="emby-input" id="watchmodeKey" type="password" autocomplete="off" /><div class="fieldDescription">Optional fallback for titles where TMDb finds no provider availability. It requires an IMDb ID.</div></div>
+                    <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="watchmodeLimit">Watchmode monthly request limit</label><input is="emby-input" id="watchmodeLimit" type="number" min="0" /><div id="watchmodeUsage" class="fieldDescription">Usage will load after settings are available.</div></div>
+                </section>
+
+                <section class="mtm-section">
+                    <h2>Availability Region Settings</h2>
+                    <p class="fieldDescription">Set up to three countries used for streaming availability. The choices are TMDb countries with watch-provider data.</p>
+                    <div class="mtm-region-grid"><div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="region1">Country 1</label><select is="emby-select" id="region1"></select></div><div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="region2">Country 2</label><select is="emby-select" id="region2"></select></div><div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="region3">Country 3</label><select is="emby-select" id="region3"></select></div></div>
+                </section>
+
+                <section class="mtm-section">
+                    <h2>Tag Settings</h2>
+                    <p class="fieldDescription">Choose if you want provider tags, network tags, or both. Existing Jellyfin tags created without this plugin are never removed. This plugin only adds new tags and only removes tags it created.</p>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagProviders" /> <span>Provider tags</span></label><p class="fieldDescription">Adds tags such as <code>Provider: Netflix</code> for currently available streaming, rental, purchase, or free providers.</p>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="tagNetworks" /> <span>Network tags</span></label><p class="fieldDescription">Adds tags such as <code>Network: BBC One</code> for a television series’ network.</p>
+                </section>
+
+                <section class="mtm-section">
+                    <h2>Newly Added Media Settings</h2>
+                    <p class="fieldDescription">Choose your preference for how this plugin will interact with newly added media in your selected libraries. When enabled, only new Movies and Series added after it was turned on are checked after a normal Jellyfin library scan. Turn it off to prevent automatic checks for incoming media; manual and scheduled full scans remain available.</p>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="newMediaChecks" /> <span>Scan newly added media in my libraries using this plugin</span></label>
+                </section>
+
+                <section class="mtm-section">
+                    <h2>Scheduled Tasks</h2>
+                    <p class="fieldDescription">Media often changes which streaming provider or network it is shown on. Enable a full-library scan at your selected interval to keep tags current. Also available as “Refresh provider and network tags” under Dashboard → Scheduled Tasks.</p>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="automaticRefresh" /> <span>Turn on scheduled task</span></label>
+                    <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="refreshHours">Refresh every (hours)</label><input is="emby-input" id="refreshHours" type="number" min="6" max="8760" /></div>
+                    <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="replaceManagedTags" /> <span>Remove tags assigned by this plugin when a provider or network no longer hosts the media</span></label>
+                    <p class="fieldDescription">Example: if <em>The Hunger Games</em> was tagged <code>Provider: Netflix</code> and later moves to Amazon Prime—or is no longer hosted anywhere—turning this on removes the old plugin-created Netflix tag during the next scan. Leaving it off preserves the old plugin-created tag. Your other Jellyfin tags are never removed.</p>
+                </section>
+                <button is="emby-button" type="submit" class="raised button-submit block">Save Main Settings</button>
+            </form>
+        </div>
+
+        <div class="mtm-panel" data-panel="tags">
+            <section class="mtm-section"><h2>Library Overview</h2><p class="fieldDescription">Browse, filter, and manually edit provider/network tags for each selected library on the Main Settings tab of this plugin.</p></section>
+            <section class="mtm-section"><h2>Filters</h2><p class="fieldDescription">Filter the selected-library tag view by provider, network, or missing tags.</p><div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="filterProvider">Provider contains</label><input is="emby-input" id="filterProvider" type="text" /></div><div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="filterNetwork">Network contains</label><input is="emby-input" id="filterNetwork" type="text" /></div><select is="emby-select" id="filterTagged"><option value="">All items</option><option value="true">Has providers or networks</option><option value="false">Missing both</option></select><div class="mtm-actions"><button is="emby-button" type="button" class="raised" id="applyFilters">Apply Filters</button></div></section>
+            <div id="libraryOverviewGroups"></div>
+            <button is="emby-button" type="button" class="raised button-submit block" id="saveTagEditsButton" disabled>Save Tag Changes</button>
+        </div>
+
+        <div class="mtm-panel" data-panel="scan">
+            <section class="mtm-section"><h2>Scan Selected Libraries</h2><p class="fieldDescription">Initiate a full provider and network scan for every selected library on the Main Settings tab. View progress, stop, or undo your last action. Make sure you saved settings on the other tabs before scanning.</p><div id="selectedLibrariesForScan" class="mtm-library-list"></div><p id="scanStatus" class="fieldDescription">No scan is currently running.</p><div class="mtm-progress"><div></div></div><div class="mtm-actions"><button is="emby-button" type="button" class="raised" id="scanAllButton">Scan All Selected Libraries</button><button is="emby-button" type="button" class="raised" id="stopScanButton">Stop Scan</button><button is="emby-button" type="button" class="raised" id="scanUndoButton">Undo Last Tag Action</button></div></section>
+        </div>
+    </div></div>
     <script>
     (function () {
         'use strict';
-        var page = document.querySelector('#mediaTaggingManagerPage');
-        var pluginId = 'c7b639bd-55c5-4694-aa8e-32c816048da8';
-        var config, libraries = [];
-        var $ = function (selector) { return page.querySelector(selector); };
-        var url = function (path) { return ApiClient.getUrl('MediaTaggingManager/' + path); };
-        var api = function (method, path, data) {
-            // Jellyfin Web 10.11.11's official ApiClient.getJSON helper parses
-            // JSON GET responses. ApiClient.ajax otherwise returns a Response
-            // object unless dataType: 'json' is explicitly supplied.
-            if (method === 'GET') return ApiClient.getJSON(url(path));
-            return ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' });
-        };
-        var escapeHtml = function (value) { var element = document.createElement('span'); element.textContent = value || ''; return element.innerHTML; };
-        var errorMessage = function (error) {
-            if (!error) return 'An unknown error occurred.';
-            if (typeof error === 'string') return error;
-            return error.responseJSON && (error.responseJSON.detail || error.responseJSON.title) || error.message || error.statusText || 'An unknown error occurred.';
-        };
-        var showRequestError = function (action, error) { Dashboard.alert(action + ': ' + errorMessage(error)); };
-        var property = function (object, pascalName) {
-            if (!object) return undefined;
-            if (object[pascalName] !== undefined) return object[pascalName];
-            var camelName = pascalName.charAt(0).toLowerCase() + pascalName.slice(1);
-            return object[camelName];
-        };
-        var normalizeConfiguration = function (raw) {
-            return {
-                LibraryIds: property(raw, 'LibraryIds') || [], TagProviders: property(raw, 'TagProviders'), TagNetworks: property(raw, 'TagNetworks'),
-                ReplaceManagedTags: property(raw, 'ReplaceManagedTags'), EnableAutomaticRefresh: property(raw, 'EnableAutomaticRefresh'),
-                EnableNewMediaChecks: property(raw, 'EnableNewMediaChecks'), LastIncomingMediaCheckUtc: property(raw, 'LastIncomingMediaCheckUtc'),
-                Region: property(raw, 'Region') || 'US', MaxConcurrentLookups: property(raw, 'MaxConcurrentLookups') || 3,
-                RefreshIntervalHours: property(raw, 'RefreshIntervalHours') || 168, TmdbApiKey: property(raw, 'TmdbApiKey') || '',
-                WatchmodeApiKey: property(raw, 'WatchmodeApiKey') || '', CustomSources: property(raw, 'CustomSources') || []
-            };
-        };
-
-        function selectedLibraries() {
-            return Array.prototype.map.call(page.querySelectorAll('[data-library-choice]:checked'), function (input) { return input.value; });
-        }
-        function renderLibraryChoices() {
-            $('#libraryChoices').innerHTML = libraries.map(function (library) {
-                var libraryId = property(library, 'ItemId');
-                var libraryName = property(library, 'Name');
-                var checked = (config.LibraryIds || []).map(String).indexOf(String(libraryId)) !== -1 ? ' checked' : '';
-                return '<label class="checkboxContainer"><input is="emby-checkbox" data-library-choice type="checkbox" value="' + libraryId + '"' + checked + ' /> <span>' + escapeHtml(libraryName) + '</span></label>';
-            }).join('') || '<p class="fieldDescription">No Jellyfin libraries were found.</p>';
-        }
-        function renderScanLibraries() {
-            var enabled = selectedLibraries();
-            $('#scanLibraries').innerHTML = libraries.filter(function (library) { return enabled.indexOf(String(property(library, 'ItemId'))) !== -1; }).map(function (library) {
-                return '<div class="listItem"><div class="listItemBody">' + escapeHtml(property(library, 'Name')) + '</div><button is="emby-button" type="button" class="raised scan-library" data-id="' + property(library, 'ItemId') + '">Scan this library</button></div>';
-            }).join('') || '<p class="fieldDescription">Select one or more libraries in Settings &amp; sources, then save.</p>';
-            Array.prototype.forEach.call(page.querySelectorAll('.scan-library'), function (button) { button.addEventListener('click', function () { api('POST', 'scan/' + button.dataset.id).then(updateStatus); }); });
-        }
-        function updateStatus() {
-            api('GET', 'status').then(function (status) {
-                var total = property(status, 'Total') || 0;
-                var completed = property(status, 'Completed') || 0;
-                var isRunning = property(status, 'IsRunning');
-                var currentTitle = property(status, 'CurrentTitle');
-                var estimatedRemaining = property(status, 'EstimatedRemaining');
-                var lastError = property(status, 'LastError');
-                var percent = total ? Math.round(completed * 100 / total) : 0;
-                $('#scanProgress').firstElementChild.style.width = percent + '%';
-                $('#scanStatus').textContent = isRunning ? ('Scanning ' + completed + ' of ' + total + ': ' + currentTitle + (estimatedRemaining ? ' · about ' + Math.ceil(estimatedRemaining / 600000000) + ' min remaining' : '')) : (lastError ? 'Last scan error: ' + lastError : 'No scan is currently running.');
-            });
-        }
-        function loadBackups() {
-            api('GET', 'backups').then(function (backups) {
-                $('#backupList').innerHTML = backups.map(function (backup) {
-                    var time = new Date(property(backup, 'CreatedUtc')).toLocaleString();
-                    return '<div class="listItem"><div class="listItemBody"><div>' + escapeHtml(property(backup, 'Label')) + '</div><div class="fieldDescription">' + escapeHtml(time) + ' · ' + property(backup, 'ItemCount') + ' items</div></div><button is="emby-button" type="button" class="raised restore-backup" data-id="' + property(backup, 'Id') + '">Restore</button></div>';
-                }).join('') || '<p class="fieldDescription">No tag backups have been created yet.</p>';
-                Array.prototype.forEach.call(page.querySelectorAll('.restore-backup'), function (button) {
-                    button.addEventListener('click', function () {
-                        if (window.confirm('Restore this complete tag backup? Current tags for every saved item will be overwritten.')) {
-                            api('POST', 'backups/' + button.dataset.id + '/restore').then(function () { Dashboard.alert('Tag backup restored.'); loadBackups(); loadItems(); });
-                        }
-                    });
-                });
-            });
-        }
-        function loadItems() {
-            var query = [];
-            if ($('#filterProvider').value.trim()) query.push('provider=' + encodeURIComponent($('#filterProvider').value.trim()));
-            if ($('#filterNetwork').value.trim()) query.push('network=' + encodeURIComponent($('#filterNetwork').value.trim()));
-            if ($('#filterTagged').value) query.push('isTagged=' + $('#filterTagged').value);
-            api('GET', 'items' + (query.length ? '?' + query.join('&') : '')).then(function (items) {
-                $('#overviewCount').textContent = items.length + ' items';
-                $('#overviewRows').innerHTML = items.map(function (item) {
-                    var providers = property(item, 'Providers') || [];
-                    var networks = property(item, 'Networks') || [];
-                    return '<tr><td>' + escapeHtml(property(item, 'Name')) + '</td><td>' + escapeHtml(providers.join(', ')) + '</td><td>' + escapeHtml(networks.join(', ')) + '</td><td><button is="emby-button" type="button" class="edit-item" data-id="' + property(item, 'ItemId') + '" data-p="' + escapeHtml(providers.join(', ')) + '" data-n="' + escapeHtml(networks.join(', ')) + '">Edit</button></td></tr>';
-                }).join('') || '<tr><td colspan="4">No matching items.</td></tr>';
-                Array.prototype.forEach.call(page.querySelectorAll('.edit-item'), function (button) { button.addEventListener('click', function () { editItem(button); }); });
-            });
-        }
-        function editItem(button) {
-            var providers = window.prompt('Providers (comma-separated):', button.dataset.p || '');
-            if (providers === null) return;
-            var networks = window.prompt('Networks (comma-separated):', button.dataset.n || '');
-            if (networks === null) return;
-            api('PUT', 'items/' + button.dataset.id, { Providers: providers.split(',').map(function (x) { return x.trim(); }).filter(Boolean), Networks: networks.split(',').map(function (x) { return x.trim(); }).filter(Boolean) }).then(loadItems);
-        }
-        function loadPage() {
-            api('GET', 'settings').then(function (setup) {
-                try {
-                var rawConfiguration = property(setup, 'Configuration');
-                if (!rawConfiguration) throw new Error('The plugin settings response did not contain a configuration object.');
-                config = normalizeConfiguration(rawConfiguration);
-                libraries = property(setup, 'Libraries') || [];
-                $('#tagProviders').checked = config.TagProviders;
-                $('#tagNetworks').checked = config.TagNetworks;
-                $('#replaceManagedTags').checked = config.ReplaceManagedTags;
-                $('#automaticRefresh').checked = config.EnableAutomaticRefresh;
-                $('#newMediaChecks').checked = config.EnableNewMediaChecks;
-                $('#region').value = config.Region || 'US';
-                $('#concurrency').value = config.MaxConcurrentLookups || 3;
-                $('#refreshHours').value = config.RefreshIntervalHours || 168;
-                $('#tmdbKey').value = config.TmdbApiKey || '';
-                $('#watchmodeKey').value = config.WatchmodeApiKey || '';
-                $('#customSources').value = JSON.stringify(config.CustomSources || [], null, 2);
-                renderLibraryChoices(); renderScanLibraries(); updateStatus(); loadBackups(); loadItems();
-                } catch (error) {
-                    var message = 'Could not read the plugin settings response: ' + errorMessage(error);
-                    $('#libraryChoices').innerHTML = '<p class="fieldDescription">' + escapeHtml(message) + '</p>';
-                    $('#scanStatus').textContent = message;
-                }
-            }, function (error) {
-                var message = 'Could not load your Jellyfin libraries and plugin settings: ' + errorMessage(error);
-                $('#libraryChoices').innerHTML = '<p class="fieldDescription">' + escapeHtml(message) + '</p>';
-                $('#backupList').innerHTML = '<p class="fieldDescription">Backups cannot load until the plugin settings load successfully.</p>';
-                $('#scanStatus').textContent = message;
-            });
-        }
-        // Load immediately because some Jellyfin dashboard builds do not dispatch a
-        // page-show event for embedded plugin configuration pages.
-        loadPage();
-        page.addEventListener('pageshow', loadPage);
-        $('#scanAllButton').addEventListener('click', function () { api('POST', 'scan').then(updateStatus); });
+        var page = document.querySelector('#mediaTaggingManagerPage'), config, libraries = [], regions = [], backups = [], pendingTagEdits = {};
+        var $ = function (s) { return page.querySelector(s); };
+        var url = function (p) { return ApiClient.getUrl('MediaTaggingManager/' + p); };
+        var api = function (method, path, data) { return method === 'GET' ? ApiClient.getJSON(url(path)) : ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' }); };
+        var prop = function (o, n) { return o && (o[n] !== undefined ? o[n] : o[n.charAt(0).toLowerCase() + n.slice(1)]); };
+        var escapeHtml = function (v) { var e = document.createElement('span'); e.textContent = v || ''; return e.innerHTML; };
+        var err = function (e) { return e && (e.message || e.statusText) || 'An unknown error occurred.'; };
+        var selectedLibraries = function () { return Array.prototype.map.call(page.querySelectorAll('[data-library-choice]:checked'), function (i) { return i.value; }); };
+        var selectedRegions = function () { return ['#region1', '#region2', '#region3'].map(function (s) { return $(s).value; }).filter(Boolean); };
+        function normalize(raw) { return { LibraryIds: prop(raw, 'LibraryIds') || [], TagProviders: prop(raw, 'TagProviders'), TagNetworks: prop(raw, 'TagNetworks'), ReplaceManagedTags: prop(raw, 'ReplaceManagedTags'), EnableAutomaticRefresh: prop(raw, 'EnableAutomaticRefresh'), EnableNewMediaChecks: prop(raw, 'EnableNewMediaChecks'), LastIncomingMediaCheckUtc: prop(raw, 'LastIncomingMediaCheckUtc'), Regions: prop(raw, 'Regions') || [], Region: prop(raw, 'Region') || 'US', RefreshIntervalHours: prop(raw, 'RefreshIntervalHours') || 168, TmdbApiKey: prop(raw, 'TmdbApiKey') || '', WatchmodeApiKey: prop(raw, 'WatchmodeApiKey') || '', WatchmodeMonthlyLimit: prop(raw, 'WatchmodeMonthlyLimit') || 2500 }; }
+        function renderLibraries() { var selected = config.LibraryIds.map(String); $('#libraryChoices').innerHTML = libraries.map(function (l) { var id = prop(l, 'ItemId'), name = prop(l, 'Name'); return '<label class="checkboxContainer"><input is="emby-checkbox" data-library-choice type="checkbox" value="' + id + '"' + (selected.indexOf(String(id)) >= 0 ? ' checked' : '') + ' /> <span>' + escapeHtml(name) + '</span></label>'; }).join('') || '<p class="fieldDescription">No Jellyfin libraries were found.</p>'; Array.prototype.forEach.call(page.querySelectorAll('[data-library-choice]'), function (i) { i.addEventListener('change', renderScanLibraries); }); }
+        function renderScanLibraries() { var selected = selectedLibraries(); $('#selectedLibrariesForScan').innerHTML = libraries.filter(function (l) { return selected.indexOf(String(prop(l, 'ItemId'))) >= 0; }).map(function (l) { return '<div class="listItem"><div class="listItemBody">' + escapeHtml(prop(l, 'Name')) + '</div></div>'; }).join('') || '<p class="fieldDescription">No libraries are currently selected. Select libraries in Main Settings, then save.</p>'; }
+        function renderRegions() { var available = regions.length ? regions : [{ Code: 'US', Name: 'United States' }], selected = config.Regions.length ? config.Regions : [config.Region]; ['#region1', '#region2', '#region3'].forEach(function (s, i) { $(s).innerHTML = '<option value="">No additional country</option>' + available.map(function (r) { return '<option value="' + escapeHtml(prop(r, 'Code')) + '">' + escapeHtml(prop(r, 'Name')) + ' (' + escapeHtml(prop(r, 'Code')) + ')</option>'; }).join(''); $(s).value = selected[i] || ''; }); }
+        function loadRegions() { api('GET', 'regions').then(function (items) { regions = items || []; renderRegions(); }, function () { renderRegions(); }); }
+        function loadUsage() { api('GET', 'watchmode-usage').then(function (u) { $('#watchmodeUsage').textContent = (prop(u, 'Used') || 0) + ' / ' + (prop(u, 'Limit') || 0) + ' Watchmode quota credits used in ' + (prop(u, 'Month') || 'the current month') + '.'; }); }
+        function updateStatus() { api('GET', 'status').then(function (s) { var total = prop(s, 'Total') || 0, done = prop(s, 'Completed') || 0, running = prop(s, 'IsRunning'), remain = prop(s, 'EstimatedRemaining'), error = prop(s, 'LastError'), percent = total ? Math.round(done * 100 / total) : 0; $('.mtm-progress > div').style.width = percent + '%'; $('#scanStatus').textContent = running ? ('Scanning ' + done + ' of ' + total + ': ' + (prop(s, 'CurrentTitle') || '') + (remain ? ' · about ' + Math.ceil(remain / 600000000) + ' min remaining' : '')) : (error ? 'Last scan error: ' + error : 'No scan is currently running.'); }); }
+        function loadBackups() { api('GET', 'backups').then(function (items) { backups = items || []; var select = $('#backupSelect'), restore = $('#restoreBackupButton'); if (!backups.length) { select.innerHTML = '<option value="">No available backups</option>'; restore.disabled = true; return; } select.innerHTML = backups.map(function (b) { return '<option value="' + prop(b, 'Id') + '">' + escapeHtml(prop(b, 'Label')) + ' — ' + new Date(prop(b, 'CreatedUtc')).toLocaleString() + ' (' + prop(b, 'ItemCount') + ' items)</option>'; }).join(''); restore.disabled = false; }); }
+        function filteredItems() { var q = []; if ($('#filterProvider').value.trim()) q.push('provider=' + encodeURIComponent($('#filterProvider').value.trim())); if ($('#filterNetwork').value.trim()) q.push('network=' + encodeURIComponent($('#filterNetwork').value.trim())); if ($('#filterTagged').value) q.push('isTagged=' + $('#filterTagged').value); return api('GET', 'items' + (q.length ? '?' + q.join('&') : '')); }
+        function loadItems() { filteredItems().then(renderItems); }
+        function renderItems(items) { var enabled = selectedLibraries(); $('#libraryOverviewGroups').innerHTML = libraries.filter(function (l) { return enabled.indexOf(String(prop(l, 'ItemId'))) >= 0; }).map(function (l) { var id = String(prop(l, 'ItemId')), group = items.filter(function (i) { return String(prop(i, 'LibraryId')) === id; }); return '<section class="mtm-section"><h2>' + escapeHtml(prop(l, 'Name')) + '</h2><p class="fieldDescription">' + group.length + ' matching Movies or Series in this selected library.</p><div style="overflow-x:auto"><table class="detailTable"><thead><tr><th>Title</th><th>Providers</th><th>Networks</th><th></th></tr></thead><tbody>' + (group.map(row).join('') || '<tr><td colspan="4">No matching items.</td></tr>') + '</tbody></table></div></section>'; }).join('') || '<p class="fieldDescription">Select libraries in Main Settings and save before viewing tags.</p>'; Array.prototype.forEach.call(page.querySelectorAll('.edit-item'), function (b) { b.addEventListener('click', function () { editItem(b); }); }); $('#saveTagEditsButton').disabled = Object.keys(pendingTagEdits).length === 0; }
+        function row(item) { var id = prop(item, 'ItemId'), pending = pendingTagEdits[id], providers = pending ? pending.Providers : prop(item, 'Providers') || [], networks = pending ? pending.Networks : prop(item, 'Networks') || []; return '<tr><td>' + escapeHtml(prop(item, 'Name')) + '</td><td>' + escapeHtml(providers.join(', ')) + '</td><td>' + escapeHtml(networks.join(', ')) + '</td><td><button is="emby-button" type="button" class="edit-item" data-id="' + id + '" data-p="' + escapeHtml(providers.join(', ')) + '" data-n="' + escapeHtml(networks.join(', ')) + '">Edit</button></td></tr>'; }
+        function editItem(button) { var p = window.prompt('Providers (comma-separated):', button.dataset.p || ''); if (p === null) return; var n = window.prompt('Networks (comma-separated):', button.dataset.n || ''); if (n === null) return; pendingTagEdits[button.dataset.id] = { Providers: p.split(',').map(function (x) { return x.trim(); }).filter(Boolean), Networks: n.split(',').map(function (x) { return x.trim(); }).filter(Boolean) }; loadItems(); }
+        function loadPage() { api('GET', 'settings').then(function (setup) { var raw = prop(setup, 'Configuration'); if (!raw) throw new Error('The plugin settings response did not contain a configuration object.'); config = normalize(raw); libraries = prop(setup, 'Libraries') || []; $('#tagProviders').checked = config.TagProviders; $('#tagNetworks').checked = config.TagNetworks; $('#replaceManagedTags').checked = config.ReplaceManagedTags; $('#automaticRefresh').checked = config.EnableAutomaticRefresh; $('#newMediaChecks').checked = config.EnableNewMediaChecks; $('#refreshHours').value = config.RefreshIntervalHours; $('#tmdbKey').value = config.TmdbApiKey; $('#watchmodeKey').value = config.WatchmodeApiKey; $('#watchmodeLimit').value = config.WatchmodeMonthlyLimit; renderLibraries(); renderScanLibraries(); renderRegions(); loadRegions(); loadUsage(); loadBackups(); loadItems(); updateStatus(); }, function (e) { $('#libraryChoices').innerHTML = '<p class="fieldDescription">Could not load plugin settings: ' + escapeHtml(err(e)) + '</p>'; }); }
+        Array.prototype.forEach.call(page.querySelectorAll('.mtm-tab'), function (b) { b.addEventListener('click', function () { Array.prototype.forEach.call(page.querySelectorAll('.mtm-tab'), function (x) { x.classList.toggle('active', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); }); Array.prototype.forEach.call(page.querySelectorAll('.mtm-panel'), function (p) { p.classList.toggle('active', p.dataset.panel === b.dataset.tab); }); if (b.dataset.tab === 'tags') loadItems(); if (b.dataset.tab === 'scan') { renderScanLibraries(); updateStatus(); } }); });
+        $('#createBackupButton').addEventListener('click', function () { if (!selectedLibraries().length) return Dashboard.alert('Select and save at least one library before creating a backup.'); var label = window.prompt('Optional backup label:', 'Manual tag backup'); if (label !== null) api('POST', 'backups', { Label: label.trim() || 'Manual tag backup' }).then(function () { Dashboard.alert('Tag backup created.'); loadBackups(); }, function (e) { Dashboard.alert('Could not create the tag backup: ' + err(e)); }); });
+        $('#restoreBackupButton').addEventListener('click', function () { var id = $('#backupSelect').value; if (id && window.confirm('Restore this complete tag backup? Current tags for every saved item will be overwritten.')) api('POST', 'backups/' + id + '/restore').then(function () { Dashboard.alert('Tag backup restored.'); loadBackups(); loadItems(); }); });
+        $('#undoBackupButton').addEventListener('click', function () { if (window.confirm('Undo the last tag action by restoring the newest backup?')) api('POST', 'backups/undo').then(function () { Dashboard.alert('Newest tag backup restored.'); loadBackups(); loadItems(); }); });
+        $('#scanUndoButton').addEventListener('click', function () { if (window.confirm('Undo the last tag action by restoring the newest backup?')) api('POST', 'backups/undo').then(function () { Dashboard.alert('Newest tag backup restored.'); loadBackups(); loadItems(); }); });
+        $('#scanAllButton').addEventListener('click', function () { if (!selectedLibraries().length) return Dashboard.alert('Select and save at least one library first.'); api('POST', 'scan').then(updateStatus); });
+        $('#stopScanButton').addEventListener('click', function () { api('POST', 'scan/cancel').then(function () { Dashboard.alert('Scan cancellation requested.'); updateStatus(); }); });
         $('#applyFilters').addEventListener('click', loadItems);
-        $('#createBackupButton').addEventListener('click', function () {
-            if (!config || !(config.LibraryIds || []).length) {
-                Dashboard.alert('Select one or more libraries and save Settings & sources before creating a tag backup.');
-                return;
-            }
-            var label = window.prompt('Optional backup label:', 'Manual tag backup');
-            if (label === null) return;
-            api('POST', 'backups', { Label: label.trim() || 'Manual tag backup' }).then(function () { Dashboard.alert('Tag backup created.'); loadBackups(); }, function (error) { showRequestError('Could not create the tag backup', error); });
-        });
-        $('#undoBackupButton').addEventListener('click', function () {
-            if (window.confirm('Undo the last tag operation by restoring the newest backup? Current tags for every saved item will be overwritten.')) {
-                api('POST', 'backups/undo').then(function () { Dashboard.alert('Newest tag backup restored.'); loadBackups(); loadItems(); }, function (error) { showRequestError('Could not undo the last tag operation', error); });
-            }
-        });
-        $('#mediaTaggingManagerForm').addEventListener('submit', function (event) {
-            event.preventDefault();
-            try { config.CustomSources = JSON.parse($('#customSources').value || '[]'); } catch (error) { Dashboard.alert('Additional JSON sources must be valid JSON.'); return; }
-            config.LibraryIds = selectedLibraries(); config.TagProviders = $('#tagProviders').checked; config.TagNetworks = $('#tagNetworks').checked;
-            config.ReplaceManagedTags = $('#replaceManagedTags').checked; config.EnableAutomaticRefresh = $('#automaticRefresh').checked;
-            config.EnableNewMediaChecks = $('#newMediaChecks').checked;
-            if (!config.EnableNewMediaChecks) config.LastIncomingMediaCheckUtc = null;
-            config.Region = $('#region').value.trim().toUpperCase(); config.MaxConcurrentLookups = Number($('#concurrency').value || 3); config.RefreshIntervalHours = Number($('#refreshHours').value || 168);
-            config.TmdbApiKey = $('#tmdbKey').value.trim(); config.WatchmodeApiKey = $('#watchmodeKey').value.trim();
-            api('POST', 'settings', config).then(function () { Dashboard.alert('Settings saved. The scheduled full-refresh interval is refreshed after a Jellyfin restart; manual and new-media checks work immediately.'); renderScanLibraries(); }, function (error) { showRequestError('Could not save settings', error); });
-        });
-        setInterval(updateStatus, 3000);
+        $('#saveTagEditsButton').addEventListener('click', function () { var edits = Object.keys(pendingTagEdits); Promise.all(edits.map(function (id) { return api('PUT', 'items/' + id, pendingTagEdits[id]); })).then(function () { pendingTagEdits = {}; Dashboard.alert('Tag changes saved.'); loadItems(); }); });
+        $('#mediaTaggingManagerForm').addEventListener('submit', function (e) { e.preventDefault(); config.LibraryIds = selectedLibraries(); config.TagProviders = $('#tagProviders').checked; config.TagNetworks = $('#tagNetworks').checked; config.ReplaceManagedTags = $('#replaceManagedTags').checked; config.EnableAutomaticRefresh = $('#automaticRefresh').checked; config.EnableNewMediaChecks = $('#newMediaChecks').checked; if (!config.EnableNewMediaChecks) config.LastIncomingMediaCheckUtc = null; config.Regions = selectedRegions(); config.Region = config.Regions[0] || 'US'; config.RefreshIntervalHours = Number($('#refreshHours').value || 168); config.TmdbApiKey = $('#tmdbKey').value.trim(); config.WatchmodeApiKey = $('#watchmodeKey').value.trim(); config.WatchmodeMonthlyLimit = Number($('#watchmodeLimit').value || 0); api('POST', 'settings', config).then(function () { Dashboard.alert('Main settings saved.'); renderScanLibraries(); loadRegions(); loadUsage(); }, function (x) { Dashboard.alert('Could not save settings: ' + err(x)); }); });
+        loadPage(); page.addEventListener('pageshow', loadPage); setInterval(updateStatus, 3000);
     }());
     </script>
 </div>

@@ -3,7 +3,7 @@
 This folder keeps project documentation and planning records separate from the
 plugin source code.
 
-- `API_KEYS.md` — per-server API credential setup, rotation, and custom JSON sources.
+- `API_KEYS.md` — per-server TMDb and Watchmode credential setup and rotation.
 - `CHANGELOG.md` — chronological record of user-visible changes.
 - `JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md` — source-level compatibility audit
   against the active Jellyfin server version.

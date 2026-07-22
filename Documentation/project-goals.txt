@@ -47,10 +47,9 @@ Acceptance criteria:
 [x] Let an administrator select exactly which Jellyfin libraries the plugin may
     access; an empty selection never means all libraries.
 [x] Let an administrator choose provider tags only, network tags only, or both.
-[x] Let an administrator choose the availability region and maximum number of
-    titles checked in parallel.
-[x] Let an administrator configure built-in source credentials and additional
-    authorized JSON sources in the dashboard.
+[x] Let an administrator choose up to three availability regions.
+[x] Let an administrator configure TMDb and Watchmode credentials in the
+    dashboard, including a Watchmode monthly quota limit and usage counter.
 [x] Explain settings, source behavior, refresh behavior, incoming-media checks,
     and restore risk in the dashboard rather than requiring a config-file or
     terminal workflow.
@@ -73,9 +72,7 @@ Acceptance criteria:
 [x] Preserve existing plugin-owned tags when every enabled source fails, rather
     than clearing them because of a temporary outage.
 [x] Use TMDb for regional watch-provider data and television-network metadata.
-[x] Use Watchmode as an optional additional availability source.
-[x] Support administrator-configured JSON endpoints for additional licensed or
-    authorized sources without requiring a new plugin build.
+[x] Use Watchmode as a quota-tracked fallback when TMDb has no provider result.
 [ ] Add more first-class source adapters after appropriate review of their
     terms, identifiers, regional coverage, rate limits, and matching quality.
 [ ] Evaluate Streaming Availability API as the first additional availability
@@ -91,7 +88,6 @@ Acceptance criteria:
 4. Manual scans and new incoming media
 --------------------------------------
 
-[x] Provide a "Scan this library" action for each selected library.
 [x] Provide a "Scan all selected libraries" action.
 [x] Refuse scans safely when no source is configured, leaving existing plugin
     tags unchanged.
@@ -120,7 +116,8 @@ Acceptance criteria:
 [x] Provide a configurable refresh interval in hours.
 [x] Show scan state, active title, completed count, total count, percentage,
     and estimated remaining time in the dashboard.
-[x] Limit parallel title checks to an administrator-configurable safe range.
+[x] Use a conservative internal title-check concurrency while preserving the
+    configured Watchmode monthly quota ceiling.
 [x] Document that Jellyfin must be restarted after changing the default
     scheduled-task interval or enabled state.
 
@@ -184,7 +181,7 @@ Acceptance criteria:
 [x] Do not bundle, commit, publish, or share API keys in code, documentation,
     a repository manifest, release files, or screenshots.
 [x] Send TMDb and Watchmode credentials in request headers rather than URLs.
-[x] Document credential setup, rotation, custom JSON sources, and server-data
+[x] Document credential setup, rotation, quota behavior, and server-data
     sensitivity in Documentation/API_KEYS.md.
 [x] Document the requested README conventions without copying another project's
     sections verbatim: centered title and badges, expandable contents, practical

@@ -13,7 +13,7 @@
   <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
   <img alt="Tags: Providers and Networks" src="Assets/Badges/tags.svg" />
-  <img alt="Sources: TMDb, Watchmode, and Custom JSON" src="Assets/Badges/sources.svg" />
+  <img alt="Sources: TMDb and Watchmode" src="Assets/Badges/sources.svg" />
   <img alt="Refresh: Manual or Scheduled" src="Assets/Badges/refresh.svg" />
 </p>
 
@@ -38,7 +38,6 @@
 - [Library Overview and Manual Edits](#library-overview-and-manual-edits)
 - [Safety Backups and Undo](#safety-backups-and-undo)
 - [Automatic Refresh](#automatic-refresh)
-- [Custom JSON Sources](#custom-json-sources)
 - [Project Structure](#project-structure)
 - [Known Limitations](#known-limitations)
 - [Responsible Use and Availability Disclaimer](#responsible-use-and-availability-disclaimer)
@@ -67,9 +66,9 @@ It works with the existing Jellyfin library. It does not download media, alter f
 - Writes provider tags, network tags, or both, based on the configured mode.
 - Adds multiple classifications when they overlap.
 - Uses TMDb for regional watch-provider data and TV-network metadata when configured.
-- Uses Watchmode as an optional additional availability source when configured.
-- Accepts administrator-configured JSON endpoints for additional licensed sources.
-- Provides a **Scan this library** button for every selected library and a **Scan all selected libraries** action.
+- Uses Watchmode as a quota-tracked fallback availability source when TMDb has
+  no provider result for a title.
+- Provides a **Scan all selected libraries** action.
 - Shows the item currently being checked, completed count, percentage, and an estimated remaining time while a scan runs.
 - Adds a **Library overview** dashboard tab for filtering selected-library titles by provider, network, tagged state, or a provider-plus-network combination.
 - Lets an administrator replace a title's plugin-owned provider and network tags manually.
@@ -95,12 +94,13 @@ When **Replace tags managed by this plugin** is enabled, the plugin replaces onl
 | Source | What it contributes | Credentials | Current status |
 | --- | --- | --- | --- |
 | TMDb | Regional streaming providers; TV networks | TMDb API Read Access Token | Built in |
-| Watchmode | Additional regional streaming sources | Watchmode API key | Built in |
-| Custom JSON | Provider and/or network names from a compatible endpoint | Defined per source | Built in |
+| Watchmode | Quota-tracked fallback regional streaming sources | Watchmode API key | Built in |
 | Streaming Availability API | Strong candidate for future first-class integration, with catalog coverage across supported countries | Its own API key | Not bundled yet |
 | TVMaze / TheTVDB | Potential network and TV-metadata fallbacks, subject to identifier coverage and API terms | Varies | Not bundled yet |
 
-TMDb and Watchmode should be viewed as complementary, not as guarantees that every service in every country will be present. The configured region matters. A provider that is correct in one region can be unavailable in another.
+TMDb is queried first. Watchmode is a quota-tracked fallback when TMDb has no
+provider result. Availability can be selected for up to three regions, and a
+provider correct in one country can be unavailable in another.
 
 ## API Keys and Server Privacy
 
@@ -110,7 +110,7 @@ The plugin asks for credentials in its Jellyfin dashboard settings page. They ar
 
 Jellyfin's plugin configuration should still be treated as sensitive server data. Protect access to the Jellyfin dashboard, its configuration/data directory, backups, and logs. The plugin does not claim to encrypt API keys at rest.
 
-For step-by-step setup, key rotation, and a safe custom-source example, read [API_KEYS.md](Documentation/API_KEYS.md).
+For step-by-step setup and key rotation, read [API_KEYS.md](Documentation/API_KEYS.md).
 
 <details>
 <summary><strong>Get a TMDb API Read Access Token — usually only a few minutes</strong></summary>
@@ -129,7 +129,7 @@ If the form asks for application information, these truthful values are appropri
 | Application URL | `https://github.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin` |
 | Application summary / description | `A self-hosted Jellyfin plugin for my personal media library. It uses the TMDb API to identify regional watch providers and television networks for titles already in my library. Each server administrator supplies and stores their own private TMDb API Read Access Token in that server's plugin settings. The plugin does not distribute, share, or expose TMDb API credentials.` |
 
-After TMDb approves the application, copy the **API Read Access Token**—not the older API-key value—and paste it only into **Dashboard → Plugins → Media Tagging Manager Jellyfin Plugin → Settings & sources**. Never put the token in a GitHub issue, screenshot, README, release archive, or this repository.
+After TMDb approves the application, copy the **API Read Access Token**—not the older API-key value—and paste it only into **Dashboard → Media Tagging Manager → Main Settings → API Settings**. Never put the token in a GitHub issue, screenshot, README, release archive, or this repository.
 
 The plugin sends the token only in an HTTPS authorization header during TMDb requests. It does not ship a shared project key, and one person's token is never needed by another Jellyfin server.
 
@@ -143,7 +143,7 @@ To build and use the current project, you need:
 - **.NET SDK 9.0** — required to build this `net9.0` plugin project.
 - **Jellyfin administrator access** — required for plugin settings, scans, and manual tag edits.
 - **Internet access from the Jellyfin server** — only for the sources you explicitly enable.
-- **At least one enabled source** — TMDb, Watchmode, or a configured custom JSON source. A scan refuses to run without one, so it cannot accidentally clear existing plugin tags.
+- **At least one enabled source** — TMDb or Watchmode. A scan refuses to run without one, so it cannot accidentally clear existing plugin tags.
 
 ## Build and Install
 
@@ -175,11 +175,11 @@ The public manifest only tells Jellyfin which plugin release to download. It con
 
 After a user adds the public manifest URL in Jellyfin and installs the plugin, it appears with no availability source enabled. The server administrator then opens the plugin settings, chooses their own sources, and enters their own credentials. This keeps every server's rate limits, billing, revocation, and access under that server owner's control.
 
-The repository now has a real, checksum-backed test manifest for `0.1.0.9-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete. The complete source-level compatibility review is in [the Jellyfin 10.11.11 audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md).
+The repository now has a real, checksum-backed test manifest for `0.1.0.10-test`. It points to an actual test ZIP and contains no API keys. A stable manifest entry will replace this test entry only after real Jellyfin-server testing is complete. The complete source-level compatibility review is in [the Jellyfin 10.11.11 audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md).
 
 ## Test Prerelease Catalog
 
-`0.1.0.9-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
+`0.1.0.10-test` is a public catalog-install test build, **not** a stable release. It exists so the real Jellyfin installation flow can be tested before the first stable package is published.
 
 To test it, add this repository URL in Jellyfin:
 
@@ -191,22 +191,21 @@ Then refresh the plugin catalog and install **Media Tagging Manager Jellyfin Plu
 
 ## First-Time Setup
 
-1. Open the **Settings & sources** section.
+1. Open the **Main Settings** tab.
 2. Select the libraries the plugin may scan.
 3. Choose **Tag providers**, **Tag networks**, or both.
-4. Set the two-letter availability region, such as `US`, `GB`, `CA`, or `AU`.
-5. Add a TMDb Read Access Token, a Watchmode key, a custom JSON source, or any combination of those.
-6. Choose how many titles may be checked in parallel. Start conservatively if your source plan has a low rate limit.
+4. Select up to three availability countries.
+5. Add a TMDb Read Access Token and, if desired, a Watchmode key and monthly limit.
 7. Save settings.
-8. Open **Scan** and run one library or all selected libraries.
+8. Open **Scan** and run all selected libraries.
 9. Optionally enable **Check newly added media after Jellyfin library scans** for future incoming titles. It is off by default.
 
 ## Scanning and Progress
 
 The Scan tab keeps the manual action close to the selected libraries:
 
-- **Scan this library** checks one selected library.
 - **Scan all selected libraries** checks every selected library.
+- **Stop Scan** requests cancellation of the current dashboard-initiated scan.
 - The status area shows the active title, completed and total counts, progress percentage, and an estimated remaining time.
 
 Only movie and TV-series items are automatically queried in this first version. Episodes inherit their series-level availability context rather than creating a noisy duplicate availability scan for every episode.
@@ -257,28 +256,6 @@ The **Check newly added media after Jellyfin library scans** setting is separate
 - **Off:** no automatic API check runs for incoming media. Manual scans and the optional scheduled full refresh still work.
 - **First enable:** the plugin records a starting point rather than re-checking the entire existing library. Run a manual full scan once if you want older titles checked too.
 
-## Custom JSON Sources
-
-Custom sources let the plugin grow without embedding an unapproved or fragile scraper for every service. Each source defines:
-
-- a name
-- an enabled state
-- a URL template
-- optional `Authorization` header content
-- a dot-separated JSON path for provider names
-- a dot-separated JSON path for network names
-
-Available URL tokens are:
-
-```text
-{tmdb}
-{imdb}
-{type}
-{region}
-```
-
-Provider and network paths must resolve to either a single JSON string or an array of strings. See [API_KEYS.md](Documentation/API_KEYS.md) for a non-secret example. Only connect endpoints whose API terms allow this use.
-
 ## Project Structure
 
 ```text
@@ -292,7 +269,7 @@ Media Tagging Manager/
 ├── Plugin.cs               plugin identity and dashboard registration
 └── ServiceRegistrator.cs   Jellyfin dependency-injection registration
 Documentation/              project documentation and trackers
-├── API_KEYS.md             administrator credential and custom-source guide
+├── API_KEYS.md             administrator credential setup guide
 ├── CHANGELOG.md            unreleased and future release notes
 ├── goal-testing.txt        live-server testing checklist and results log
 └── project-goals.txt       product goals and acceptance behavior

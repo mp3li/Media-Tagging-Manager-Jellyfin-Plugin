@@ -39,10 +39,9 @@ Date testing began:
 [ ] Confirm the published assembly is named Jellyfin.Plugin.MediaTaggingManager.dll.
 [ ] Install the DLL manually in a dedicated Jellyfin plugin directory.
 [ ] Restart Jellyfin and confirm the plugin loads without server startup errors.
-[ ] Confirm the Dashboard -> Plugins entry displays "Media Tagging Manager
-    Jellyfin Plugin".
+[ ] Confirm the Dashboard -> Plugins entry displays "Media Tagging Manager".
 [ ] Open the plugin dashboard page and confirm all three areas are available:
-    Scan, Settings & sources, and Library overview.
+    Main Settings, View Tags, and Scan.
 [ ] Confirm the plugin's existing stable GUID retains settings after replacing
     an older local build with a newer local build.
 
@@ -54,7 +53,7 @@ Acceptance criteria:
 2. Library selection and settings persistence
 ----------------------------------------------
 
-[~] Confirm all configured Jellyfin libraries are listed in Settings & sources.
+[~] Confirm all configured Jellyfin libraries are listed in Main Settings.
 [ ] Select one test library, save, leave the page, and confirm the selection
     persists after reopening the dashboard.
 [ ] Restart Jellyfin and confirm the selection persists.
@@ -64,9 +63,7 @@ Acceptance criteria:
     permission to scan every library.
 [ ] Confirm an unselected library is absent from Scan controls and is never
     changed by Scan all selected libraries.
-[ ] Confirm the region field saves and reloads correctly.
-[ ] Confirm parallel-title value saves, reloads, and accepts only the supported
-    range.
+[ ] Confirm up to three TMDb availability-country selections save and reload.
 [ ] Confirm provider-only mode saves and reloads.
 [ ] Confirm network-only mode saves and reloads.
 [ ] Confirm combined provider-and-network mode saves and reloads.
@@ -81,12 +78,10 @@ Acceptance criteria:
 
 [ ] Configure a valid TMDb API Read Access Token through the dashboard.
 [ ] Configure a valid Watchmode API key through the dashboard.
-[ ] Configure one valid custom JSON source using the documented response shape.
 [ ] Confirm a blank TMDb field disables TMDb without affecting another enabled
     source.
 [ ] Confirm a blank Watchmode field disables Watchmode without affecting
     another enabled source.
-[ ] Confirm a disabled custom source is not queried.
 [ ] Confirm the plugin refuses a manual scan when every source is disabled or
     missing credentials.
 [ ] Confirm that refusal leaves existing Provider: and Network: tags unchanged.
@@ -95,11 +90,11 @@ Acceptance criteria:
 [ ] Inspect source code, published DLL directory, backup files, and any private
     manifest used for testing; confirm no real API key is present.
 [ ] Confirm source credentials are entered only in the Jellyfin dashboard and
-    remain absent from README examples and custom-source templates.
+    remain absent from README examples and release files.
 [ ] Confirm normal source requests send credentials in HTTP headers rather than
     including them in request URLs, where server-side inspection is possible.
-[ ] Record source-plan limits and confirm the configured parallel-title value is
-    appropriate for them.
+[ ] Set a Watchmode monthly limit, confirm the visible usage counter resets for
+    a new calendar month, and confirm fallback requests stop at that limit.
 
 Acceptance criteria:
 - Every server uses its own credentials.
@@ -130,7 +125,7 @@ Acceptance criteria:
     alongside newly found tags.
 [ ] Confirm a source response with no external identifier available does not
     invent a provider or network.
-[ ] Confirm the configured country region changes availability results only as
+[ ] Confirm the configured availability countries change provider results only
     the source supports; record any expected regional difference.
 
 Acceptance criteria:
@@ -141,11 +136,8 @@ Acceptance criteria:
 5. Manual scans, scan status, and performance
 ---------------------------------------------
 
-[ ] Click Scan this library and confirm only that library is checked.
 [ ] Click Scan all selected libraries and confirm each selected library is
     checked.
-[ ] Confirm a pre-scan automatic backup is created before a manual one-library
-    scan changes tags.
 [ ] Confirm a single pre-scan backup is created before an all-selected-library
     scan changes tags.
 [ ] During a multi-item scan, confirm the dashboard shows running state.
@@ -153,9 +145,7 @@ Acceptance criteria:
 [ ] Confirm completed count, total count, and percentage are credible.
 [ ] Confirm the ETA appears after sufficient progress and is reasonably close
     on a multi-item test library.
-[ ] Confirm the configured parallel-title value produces stable behavior and
-    does not overwhelm the source or Jellyfin server.
-[ ] Test cancellation from Jellyfin where available and record final status,
+[ ] Click Stop Scan and record final status,
     partial tag state, and backup availability.
 [ ] Confirm a scan error is shown as a non-fatal status and does not make the
     Jellyfin dashboard unusable.

@@ -21,6 +21,8 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly ILibraryManager _libraryManager;
     private readonly ITaskManager _taskManager;
     private readonly ManualScanRequestQueue _manualScanRequests;
+    private readonly TmdbAvailabilitySource _tmdb;
+    private readonly WatchmodeQuotaTracker _watchmodeQuota;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -29,7 +31,9 @@ public sealed class ProviderNetworkController : ControllerBase
         TagBackupManager backups,
         ILibraryManager libraryManager,
         ITaskManager taskManager,
-        ManualScanRequestQueue manualScanRequests)
+        ManualScanRequestQueue manualScanRequests,
+        TmdbAvailabilitySource tmdb,
+        WatchmodeQuotaTracker watchmodeQuota)
     {
         _scanner = scanner;
         _state = state;
@@ -37,6 +41,8 @@ public sealed class ProviderNetworkController : ControllerBase
         _libraryManager = libraryManager;
         _taskManager = taskManager;
         _manualScanRequests = manualScanRequests;
+        _tmdb = tmdb;
+        _watchmodeQuota = watchmodeQuota;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -62,6 +68,15 @@ public sealed class ProviderNetworkController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Gets TMDb's official watch-provider regions for the settings dropdowns.</summary>
+    [HttpGet("regions")]
+    public async Task<ActionResult<IReadOnlyCollection<AvailabilityRegionDto>>> GetRegions(CancellationToken cancellationToken) =>
+        Ok(await _tmdb.GetAvailableRegionsAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Gets the current locally tracked Watchmode monthly usage.</summary>
+    [HttpGet("watchmode-usage")]
+    public ActionResult<WatchmodeUsageDto> GetWatchmodeUsage() => Ok(_watchmodeQuota.GetUsage());
+
     /// <summary>Returns active scan status, including an estimated remaining duration.</summary>
     [HttpGet("status")]
     public ActionResult<ScanProgress> GetStatus() => Ok(_state.GetProgress());
@@ -81,6 +96,15 @@ public sealed class ProviderNetworkController : ControllerBase
     {
         _manualScanRequests.EnqueueAllLibraries();
         _taskManager.QueueScheduledTask<ManualScanTask>();
+        return Accepted();
+    }
+
+    /// <summary>Cancels the current dashboard-initiated scan and clears requests that have not begun.</summary>
+    [HttpPost("scan/cancel")]
+    public IActionResult CancelScan()
+    {
+        _manualScanRequests.Clear();
+        _taskManager.CancelIfRunning<ManualScanTask>();
         return Accepted();
     }
 

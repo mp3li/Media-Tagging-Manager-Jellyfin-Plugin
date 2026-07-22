@@ -46,9 +46,8 @@ were checked against the providers' own public documentation instead.
 
 | Source | Current implementation | Source rule applied | Result |
 | --- | --- | --- | --- |
-| TMDb | Uses Bearer Read Access Token, movie/TV watch-provider endpoints, and TV details for `networks`. | TMDb documents watch-provider availability as country-specific and requires JustWatch attribution. The dashboard now includes that attribution. | Supported, subject to each user's TMDb key and data coverage |
-| Watchmode | Uses the documented `X-API-Key` header, IMDb ID accepted by its title-sources endpoint, and `?regions=XX`. | Watchmode documents the header as preferred, its title-sources endpoint as accepting IMDb IDs, and `regions` as the regional filter. It also documents plan quota headers. | Supported, subject to the user's plan/quota |
-| Administrator-configured JSON | Makes GET requests to the administrator's own endpoint template and reads configured dot paths. | This is deliberately a generic adapter, not a claim of compatibility with any particular third-party provider. | Supported only for endpoints the administrator is authorized to call |
+| TMDb | Uses Bearer Read Access Token, movie/TV watch-provider endpoints, TV details for `networks`, and the official available-regions endpoint for up to three country choices. | TMDb documents watch-provider availability as country-specific and requires JustWatch attribution. The dashboard includes that attribution. | Supported, subject to each user's TMDb key and data coverage |
+| Watchmode | Uses the documented `X-API-Key` header, IMDb ID accepted by its title-sources endpoint, selected regions, and account-quota usage header. It is queried only when TMDb has no provider result. | Watchmode documents the header as preferred, its title-sources endpoint as accepting IMDb IDs, `regions` as the regional filter, and the quota headers. | Supported, subject to the user's plan/quota |
 
 External references:
 

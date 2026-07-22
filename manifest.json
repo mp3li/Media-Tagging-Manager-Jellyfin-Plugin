@@ -8,12 +8,12 @@
     "category": "Metadata",
     "versions": [
       {
-        "version": "0.1.0.9",
-        "changelog": "0.1.0.9-test uses Jellyfin Web 10.11.11's documented ApiClient.getJSON reader for settings and library data, and shortens the Dashboard menu label. Test only; not a stable release.",
+        "version": "0.1.0.10",
+        "changelog": "0.1.0.10-test adds the requested Main Settings, View Tags, and Scan page-style tabs; three TMDb availability countries; Watchmode quota-tracked fallback; and scan stop/undo controls. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.9-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.9-test.zip",
-        "checksum": "a4652947b662e1b512d771b3bc5b22d3",
-        "timestamp": "2026-07-22T04:45:00Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.10-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.10-test.zip",
+        "checksum": "0e962d3886b8c35de22ab2f333848a6b",
+        "timestamp": "2026-07-22T06:00:00Z"
       }
     ]
   }

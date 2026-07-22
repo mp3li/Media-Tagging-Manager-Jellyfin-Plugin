@@ -15,4 +15,12 @@ public sealed class ManualScanRequestQueue
 
     /// <summary>Attempts to read the next dashboard request.</summary>
     public bool TryDequeue(out Guid? libraryId) => _requests.TryDequeue(out libraryId);
+
+    /// <summary>Discards requests that have not started after an administrator cancels a scan.</summary>
+    public void Clear()
+    {
+        while (_requests.TryDequeue(out _))
+        {
+        }
+    }
 }

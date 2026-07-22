@@ -246,12 +246,28 @@ public sealed class ProviderNetworkScanner
 
     private async Task ScanItemAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
     {
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
         var ids = new ExternalIds(
             GetProviderId(item, "Tmdb"),
             GetProviderId(item, "Imdb"),
             item.GetType().Name);
 
-        var results = await Task.WhenAll(_sources.Select(source => LookupSafelyAsync(source, ids, cancellationToken))).ConfigureAwait(false);
+        var results = new List<SourceLookupResult>();
+        var tmdb = _sources.FirstOrDefault(source => string.Equals(source.Name, "TMDb", StringComparison.Ordinal));
+        if (tmdb is not null)
+        {
+            results.Add(await LookupSafelyAsync(tmdb, ids, cancellationToken).ConfigureAwait(false));
+        }
+
+        // Watchmode is the quota-limited fallback. It is queried only when TMDb
+        // did not find any provider for this item, or when TMDb is disabled.
+        var primaryProvidersFound = results.SelectMany(result => result.Tags).Any(tag => tag.Kind == TagKind.Provider);
+        var watchmode = _sources.FirstOrDefault(source => string.Equals(source.Name, "Watchmode", StringComparison.Ordinal));
+        if (configuration.TagProviders && !primaryProvidersFound && watchmode is not null)
+        {
+            results.Add(await LookupSafelyAsync(watchmode, ids, cancellationToken).ConfigureAwait(false));
+        }
+
         var tags = results.SelectMany(result => result.Tags).ToArray();
         await ApplyTagsAsync(
             item,
@@ -295,7 +311,9 @@ public sealed class ProviderNetworkScanner
         await Parallel.ForEachAsync(items, new ParallelOptions
         {
             CancellationToken = cancellationToken,
-            MaxDegreeOfParallelism = Math.Clamp(configuration.MaxConcurrentLookups, 1, 12)
+            // A conservative fixed concurrency replaces the exposed setting.
+            // Watchmode quota reservation is serialized separately.
+            MaxDegreeOfParallelism = 3
         }, async (entry, token) =>
         {
             _state.Report(Volatile.Read(ref completed), entry.Item.Name);
@@ -310,8 +328,7 @@ public sealed class ProviderNetworkScanner
     private static void EnsureSourceConfigured(Configuration.PluginConfiguration configuration)
     {
         if (string.IsNullOrWhiteSpace(configuration.TmdbApiKey)
-            && string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey)
-            && !configuration.CustomSources.Any(static source => source.Enabled && !string.IsNullOrWhiteSpace(source.UrlTemplate)))
+            && string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey))
         {
             throw new InvalidOperationException("Configure at least one enabled source before scanning. Existing plugin tags were left unchanged.");
         }
