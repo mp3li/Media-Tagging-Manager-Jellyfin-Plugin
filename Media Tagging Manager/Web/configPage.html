@@ -100,8 +100,11 @@
         var $ = function (selector) { return page.querySelector(selector); };
         var url = function (path) { return ApiClient.getUrl('MediaTaggingManager/' + path); };
         var api = function (method, path, data) {
-            return ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' })
-                .then(unwrapPayload);
+            // Jellyfin Web 10.11.11's official ApiClient.getJSON helper parses
+            // JSON GET responses. ApiClient.ajax otherwise returns a Response
+            // object unless dataType: 'json' is explicitly supplied.
+            if (method === 'GET') return ApiClient.getJSON(url(path));
+            return ApiClient.ajax({ type: method, url: url(path), data: data ? JSON.stringify(data) : undefined, contentType: 'application/json' });
         };
         var escapeHtml = function (value) { var element = document.createElement('span'); element.textContent = value || ''; return element.innerHTML; };
         var errorMessage = function (error) {
@@ -115,22 +118,6 @@
             if (object[pascalName] !== undefined) return object[pascalName];
             var camelName = pascalName.charAt(0).toLowerCase() + pascalName.slice(1);
             return object[camelName];
-        };
-        // Jellyfin dashboard builds may return a JSON response directly or wrap
-        // it in a transport object's data/responseJSON/result field. Normalize
-        // that boundary once so every plugin endpoint is handled consistently.
-        var unwrapPayload = function (response) {
-            var current = response;
-            for (var depth = 0; depth < 3; depth++) {
-                if (typeof current === 'string') {
-                    try { current = JSON.parse(current); } catch (error) { return current; }
-                }
-                if (!current || typeof current !== 'object' || Array.isArray(current) || property(current, 'Configuration') !== undefined) return current;
-                var next = current.data !== undefined ? current.data : current.responseJSON !== undefined ? current.responseJSON : current.result;
-                if (next === undefined || next === current) return current;
-                current = next;
-            }
-            return current;
         };
         var normalizeConfiguration = function (raw) {
             return {

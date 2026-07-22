@@ -29,8 +29,10 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
     [
         new PluginPageInfo
         {
-            Name = Name,
-            DisplayName = Name,
+            // Keep the catalog/plugin title descriptive, while using the concise
+            // label requested for Jellyfin's Dashboard plugin menu.
+            Name = "Media Tagging Manager",
+            DisplayName = "Media Tagging Manager",
             EnableInMainMenu = true,
             EmbeddedResourcePath = "Jellyfin.Plugin.MediaTaggingManager.Web.configPage.html"
         }

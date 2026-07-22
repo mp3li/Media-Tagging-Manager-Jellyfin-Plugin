@@ -6,14 +6,29 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
-## [0.1.0.8-test] - 2026-07-21
+## [0.1.0.9-test] - 2026-07-21
 
 ### Fixed
 
-- Normalized the JSON transport wrapper returned by Jellyfin 10.11.11's
-  dashboard client before reading plugin settings, libraries, status, backups,
-  and overview data. This addresses the visible message that the configuration
-  object was missing despite the endpoint responding.
+- Replaced the incorrect dashboard response-wrapper workaround with Jellyfin Web
+  10.11.11's documented JSON-read pattern: `ApiClient.getJSON()` for every
+  plugin GET endpoint. This parses the actual settings response before reading
+  its configuration and selectable libraries.
+- Shortened the Dashboard plugin-menu label to **Media Tagging Manager** while
+  retaining the full catalog and page title.
+
+### Test-release notes
+
+- This supersedes `0.1.0.8-test` and remains a public test build, not a stable
+  release.
+
+## [0.1.0.8-test] - 2026-07-21
+
+### Attempted fix
+
+- Added a response-wrapper workaround for the 10.11.11 dashboard client. Live
+  testing showed it did not parse `ApiClient.ajax()`'s returned `Response`.
+  The precise `ApiClient.getJSON()` correction is in `0.1.0.9-test`.
 
 ### Test-release notes
 

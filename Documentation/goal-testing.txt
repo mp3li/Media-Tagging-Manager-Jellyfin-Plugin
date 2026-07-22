@@ -329,4 +329,12 @@ GetVirtualFolders(true); the plugin now mirrors that call and handles either
 supported API JSON capitalization style. The untested 0.1.0.6-test build was
 superseded by 0.1.0.8-test, which adds the documented Dashboard menu entry,
 task-manager scan flow, and a fix for the dashboard response wrapper that
-reported a missing configuration object. Retest with 0.1.0.8-test is required.
+reported a missing configuration object.
+2026-07-21 | Test 2 — library selection retest | Fail; fifth fix pending
+retest | Jellyfin 10.11.11, plugin 0.1.0.8-test | The Dashboard menu entry
+appeared, confirming the new assembly loaded. The library list remained absent,
+and the page still reported that its settings response lacked a configuration
+object. Inspection of the exact Jellyfin Web 10.11.11 source established that
+ApiClient.ajax returns an unparsed Response unless JSON parsing is requested.
+The plugin now uses the documented ApiClient.getJSON helper for every GET
+endpoint. Retest with 0.1.0.9-test is required.
