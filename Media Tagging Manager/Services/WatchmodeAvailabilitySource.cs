@@ -92,7 +92,9 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
             var regions = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
             var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
             var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
-            var note = string.Join(" ", new[] { providerNote, networkNote }.Where(value => !string.IsNullOrWhiteSpace(value)));
+            var note = string.Join(" ", new[] { providerNote, networkNote }
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal));
             return new SourceCatalogResult(
                 providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),

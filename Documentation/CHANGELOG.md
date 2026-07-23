@@ -6,6 +6,21 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.23-test] - 2026-07-22
+
+### Changed
+
+- Removed source-status messages from above the provider and network searches.
+- Combined only explicit same-service provider spelling aliases: Apple TV Plus,
+  Disney Plus/Disney +, and Discovery Plus/Discovery + now use canonical names.
+  Separate storefronts, subscriptions, plan tiers, and profile variants remain
+  distinct choices.
+
+### Test-release notes
+
+- This supersedes `0.1.0.22-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.22-test] - 2026-07-22
 
 ### Added

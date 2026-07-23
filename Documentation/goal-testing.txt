@@ -152,6 +152,11 @@ Acceptance criteria:
     catalog when the corresponding keys are configured.
 [ ] Before scanning any media, confirm Select Networks loads Watchmode's full
     TV-network catalog when a Watchmode API key is configured.
+[ ] Confirm exact provider spelling aliases are listed and tagged only once:
+    `Disney Plus`/`Disney +` as `Disney+`, and `Discovery +` as `Discovery+`.
+    Confirm distinct offerings such as Apple TV+ versus a store/rent-buy entry,
+    Prime Video versus Amazon rent/buy, and Netflix plan/profile entries remain
+    separate choices.
 [ ] After a selected-library scan, confirm newly discovered provider and
     network values remain listed even if a selection sync removes their tags.
 [ ] Confirm Select All and Select None affect every provider checkbox without

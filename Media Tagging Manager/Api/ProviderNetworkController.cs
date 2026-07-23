@@ -152,8 +152,10 @@ public sealed class ProviderNetworkController : ControllerBase
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
         var networks = discovered.Networks.Concat(watchmode.Networks)
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Network, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
         return Ok(new TagChoicesDto(
             providers,

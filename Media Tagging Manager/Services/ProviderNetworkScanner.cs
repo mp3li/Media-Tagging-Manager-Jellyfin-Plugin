@@ -311,9 +311,15 @@ public sealed class ProviderNetworkScanner
                 foreach (var item in _libraryManager.GetItemList(query))
                 {
                     var existing = item.Tags ?? [];
-                    var retained = existing.Where(tag => !IsTagKind(tag, kind) || selected.Contains(RemoveTagPrefix(tag, kind))).ToArray();
+                    var retained = existing
+                        .Select(tag => IsTagKind(tag, kind)
+                            ? TagNaming.Format(kind, TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind)))
+                            : tag)
+                        .Where(tag => !IsTagKind(tag, kind) || selected.Contains(RemoveTagPrefix(tag, kind)))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
                     var removed = existing.Length - retained.Length;
-                    if (removed == 0)
+                    if (existing.SequenceEqual(retained, StringComparer.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -468,14 +474,14 @@ public sealed class ProviderNetworkScanner
         bool forceManagedReplacement = false)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-        var selectedProviderNames = new HashSet<string>(configuration.SelectedProviderNames ?? [], StringComparer.OrdinalIgnoreCase);
-        var selectedNetworkNames = new HashSet<string>(configuration.SelectedNetworkNames ?? [], StringComparer.OrdinalIgnoreCase);
+        var selectedProviderNames = new HashSet<string>((configuration.SelectedProviderNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)), StringComparer.OrdinalIgnoreCase);
+        var selectedNetworkNames = new HashSet<string>((configuration.SelectedNetworkNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)), StringComparer.OrdinalIgnoreCase);
         var selected = values
             .Where(value => (value.Kind == TagKind.Provider && configuration.TagProviders) || (value.Kind == TagKind.Network && configuration.TagNetworks))
             .Where(value => value.Kind != TagKind.Provider || !configuration.RestrictProvidersToSelected || selectedProviderNames.Contains(value.Name))
             .Where(value => value.Kind != TagKind.Network || !configuration.RestrictNetworksToSelected || selectedNetworkNames.Contains(value.Name))
             .Where(value => !string.IsNullOrWhiteSpace(value.Name))
-            .Select(value => TagNaming.Format(value.Kind, value.Name))
+            .Select(value => TagNaming.Format(value.Kind, TagNameNormalizer.Normalize(value.Kind, value.Name)))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -520,8 +526,8 @@ public sealed class ProviderNetworkScanner
 
             var knownProviders = configuration.KnownProviderNames ?? [];
             var knownNetworks = configuration.KnownNetworkNames ?? [];
-            var updatedProviders = knownProviders.Concat(providers).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(static name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
-            var updatedNetworks = knownNetworks.Concat(networks).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(static name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+            var updatedProviders = knownProviders.Concat(providers).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+            var updatedNetworks = knownNetworks.Concat(networks).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
             if (updatedProviders.SequenceEqual(knownProviders, StringComparer.OrdinalIgnoreCase)
                 && updatedNetworks.SequenceEqual(knownNetworks, StringComparer.OrdinalIgnoreCase))
             {

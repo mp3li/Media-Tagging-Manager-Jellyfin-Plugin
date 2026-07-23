@@ -186,7 +186,10 @@ This independent settings section loads the complete movie and TV
 watch-provider catalogs from TMDb for the selected countries, plus Watchmode's
 provider catalog when its key is configured. That means providers can be chosen
 before the first media scan. Previously discovered provider values remain
-listed too.
+listed too. Exact spelling aliases for the same provider are combined—for
+example, `Disney Plus` and `Disney +` become `Disney+`, and `Discovery +`
+becomes `Discovery+`. Meaningfully different offerings, such as subscription
+versus rent/buy services or distinct plan tiers, remain separate choices.
 
 Use **Sync with Only Selected Providers** when your selected libraries already
 have more provider tags than you want. It creates a backup, deletes provider
