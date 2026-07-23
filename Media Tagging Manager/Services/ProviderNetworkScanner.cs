@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.MediaTaggingManager.Models;
@@ -16,6 +17,7 @@ public sealed class ProviderNetworkScanner
     private readonly ScanStateStore _state;
     private readonly TagBackupManager _backups;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
+    private readonly object _knownTagLock = new();
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkScanner"/> class.</summary>
     public ProviderNetworkScanner(
@@ -176,6 +178,7 @@ public sealed class ProviderNetworkScanner
             var tags = providers.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Provider, value, "Manual"))
                 .Concat(networks.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Network, value, "Manual")));
             await ApplyTagsAsync(item, libraryId, tags, ["Manual"], true, cancellationToken, forceManagedReplacement: true).ConfigureAwait(false);
+            RememberKnownTags(providers, networks);
         }
         finally
         {
@@ -246,7 +249,80 @@ public sealed class ProviderNetworkScanner
             .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase);
     }
 
-    private async Task ScanItemAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
+    /// <summary>Returns names discovered by scans plus all matching current tags in selected libraries.</summary>
+    public TagChoicesDto GetTagChoices()
+    {
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+        var items = GetDashboardItems(null, null, null, null).ToArray();
+        return new TagChoicesDto(
+            (configuration.KnownProviderNames ?? []).Concat(items.SelectMany(item => item.Providers)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+            (configuration.KnownNetworkNames ?? []).Concat(items.SelectMany(item => item.Networks)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray());
+    }
+
+    /// <summary>Removes unselected tags of one kind from selected libraries without contacting any source.</summary>
+    public async Task<TagSyncResult> SyncWithOnlySelectedAsync(TagKind kind, IEnumerable<string> selectedNames, CancellationToken cancellationToken)
+    {
+        await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            if (configuration.LibraryIds.Length == 0)
+            {
+                throw new InvalidOperationException("Select and save at least one library before synchronizing tags.");
+            }
+
+            var selected = NormalizeNames(selectedNames);
+            if (kind == TagKind.Provider)
+            {
+                configuration.SelectedProviderNames = selected;
+                configuration.RestrictProvidersToSelected = true;
+            }
+            else
+            {
+                configuration.SelectedNetworkNames = selected;
+                configuration.RestrictNetworksToSelected = true;
+            }
+
+            Plugin.Instance?.SaveConfiguration(configuration);
+            await _backups.CreateAsync($"Before {kind.ToString().ToLowerInvariant()} selection sync", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
+
+            var tagsRemoved = 0;
+            var mediaItemsChanged = 0;
+            foreach (var libraryId in configuration.LibraryIds)
+            {
+                var query = new InternalItemsQuery
+                {
+                    ParentId = libraryId,
+                    Recursive = true,
+                    IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
+                };
+
+                foreach (var item in _libraryManager.GetItemList(query))
+                {
+                    var existing = item.Tags ?? [];
+                    var retained = existing.Where(tag => !IsTagKind(tag, kind) || selected.Contains(RemoveTagPrefix(tag, kind))).ToArray();
+                    var removed = existing.Length - retained.Length;
+                    if (removed == 0)
+                    {
+                        continue;
+                    }
+
+                    item.Tags = retained;
+                    await _libraryManager.UpdateItemAsync(item, item, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
+                    tagsRemoved += removed;
+                    mediaItemsChanged++;
+                }
+            }
+
+            return new TagSyncResult(tagsRemoved, mediaItemsChanged);
+        }
+        finally
+        {
+            _scanLock.Release();
+        }
+    }
+
+    private async Task<IReadOnlyCollection<SourceTag>> ScanItemAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
         var ids = new ExternalIds(
@@ -278,6 +354,7 @@ public sealed class ProviderNetworkScanner
             results.Select(result => result.Source),
             results.All(result => string.IsNullOrWhiteSpace(result.Note)),
             cancellationToken).ConfigureAwait(false);
+        return tags;
     }
 
     private async Task ScanLibraryLockedAsync(
@@ -310,6 +387,8 @@ public sealed class ProviderNetworkScanner
     {
         _state.Start(items.Count);
         var completed = 0;
+        var discoveredProviders = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+        var discoveredNetworks = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
         await Parallel.ForEachAsync(items, new ParallelOptions
         {
             CancellationToken = cancellationToken,
@@ -319,11 +398,23 @@ public sealed class ProviderNetworkScanner
         }, async (entry, token) =>
         {
             _state.Report(Volatile.Read(ref completed), entry.Item.Name);
-            await ScanItemAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
+            var tags = await ScanItemAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
+            foreach (var tag in tags)
+            {
+                if (tag.Kind == TagKind.Provider)
+                {
+                    discoveredProviders.TryAdd(tag.Name, 0);
+                }
+                else
+                {
+                    discoveredNetworks.TryAdd(tag.Name, 0);
+                }
+            }
             var count = Interlocked.Increment(ref completed);
             _state.Report(count, entry.Item.Name);
             jellyfinProgress?.Report(items.Count == 0 ? 100 : count * 100d / items.Count);
         }).ConfigureAwait(false);
+        RememberKnownTags(discoveredProviders.Keys, discoveredNetworks.Keys);
         _state.Complete();
     }
 
@@ -366,8 +457,12 @@ public sealed class ProviderNetworkScanner
         bool forceManagedReplacement = false)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+        var selectedProviderNames = new HashSet<string>(configuration.SelectedProviderNames ?? [], StringComparer.OrdinalIgnoreCase);
+        var selectedNetworkNames = new HashSet<string>(configuration.SelectedNetworkNames ?? [], StringComparer.OrdinalIgnoreCase);
         var selected = values
             .Where(value => (value.Kind == TagKind.Provider && configuration.TagProviders) || (value.Kind == TagKind.Network && configuration.TagNetworks))
+            .Where(value => value.Kind != TagKind.Provider || !configuration.RestrictProvidersToSelected || selectedProviderNames.Contains(value.Name))
+            .Where(value => value.Kind != TagKind.Network || !configuration.RestrictNetworksToSelected || selectedNetworkNames.Contains(value.Name))
             .Where(value => !string.IsNullOrWhiteSpace(value.Name))
             .Select(value => TagNaming.Format(value.Kind, value.Name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -401,4 +496,43 @@ public sealed class ProviderNetworkScanner
 
     private static string? GetProviderId(BaseItem item, string name) =>
         item.ProviderIds is not null && item.ProviderIds.TryGetValue(name, out var value) ? value : null;
+
+    private void RememberKnownTags(IEnumerable<string> providers, IEnumerable<string> networks)
+    {
+        lock (_knownTagLock)
+        {
+            var configuration = Plugin.Instance?.Configuration;
+            if (configuration is null)
+            {
+                return;
+            }
+
+            var knownProviders = configuration.KnownProviderNames ?? [];
+            var knownNetworks = configuration.KnownNetworkNames ?? [];
+            var updatedProviders = knownProviders.Concat(providers).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(static name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+            var updatedNetworks = knownNetworks.Concat(networks).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(static name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+            if (updatedProviders.SequenceEqual(knownProviders, StringComparer.OrdinalIgnoreCase)
+                && updatedNetworks.SequenceEqual(knownNetworks, StringComparer.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            configuration.KnownProviderNames = updatedProviders;
+            configuration.KnownNetworkNames = updatedNetworks;
+            Plugin.Instance?.SaveConfiguration(configuration);
+        }
+    }
+
+    private static string[] NormalizeNames(IEnumerable<string> names) => names
+        .Where(static name => !string.IsNullOrWhiteSpace(name))
+        .Select(static name => name.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    private static bool IsTagKind(string tag, TagKind kind) => kind == TagKind.Provider
+        ? tag.StartsWith(TagNaming.ProviderPrefix, StringComparison.OrdinalIgnoreCase)
+        : tag.StartsWith(TagNaming.NetworkPrefix, StringComparison.OrdinalIgnoreCase);
+
+    private static string RemoveTagPrefix(string tag, TagKind kind) => tag[(kind == TagKind.Provider ? TagNaming.ProviderPrefix : TagNaming.NetworkPrefix).Length..];
 }

@@ -131,6 +131,18 @@ Acceptance criteria:
     invent a provider or network.
 [ ] Confirm the configured availability countries change provider results only
     the source supports; record any expected regional difference.
+[ ] After a selected-library scan, confirm Select Providers and Networks lists
+    every provider and network discovered by the plugin for those libraries.
+[ ] Confirm selections remain available in those lists after a selection sync
+    removes their current tags.
+[ ] Select a subset of providers, run Sync with Only Selected Providers, and
+    confirm a backup is created, only unselected `Provider:` tags are removed,
+    no source request is made, and `Network:`/unrelated tags remain unchanged.
+[ ] Select a subset of networks, run Sync with Only Selected Networks, and
+    confirm a backup is created, only unselected `Network:` tags are removed,
+    no source request is made, and `Provider:`/unrelated tags remain unchanged.
+[ ] After each selection sync, scan again and confirm only the selected kind's
+    chosen values are applied in future scans.
 
 Acceptance criteria:
 - Tags are clear, overlap-friendly, and safe to filter in Jellyfin.

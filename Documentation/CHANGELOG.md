@@ -6,6 +6,27 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.14-test] - 2026-07-22
+
+### Added
+
+- Two-column provider and network selection controls that remember all values
+  discovered in selected-library scans, even after a cleanup removes current
+  tags.
+- No-source-lookup synchronization actions for providers and networks. Each
+  creates a backup, removes only unselected plugin-owned tags of its own kind,
+  and makes future scans honor the chosen list.
+
+### Fixed
+
+- Saved TMDb and Watchmode credentials now use the active Jellyfin theme's
+  normal input background instead of a hard-coded dark autofill color.
+
+### Test-release notes
+
+- This supersedes `0.1.0.13-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.13-test] - 2026-07-22
 
 ### Fixed

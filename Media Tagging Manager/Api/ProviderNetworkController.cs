@@ -125,6 +125,20 @@ public sealed class ProviderNetworkController : ControllerBase
         [FromQuery] string? network,
         [FromQuery] bool? isTagged) => Ok(_scanner.GetDashboardItems(libraryId, provider, network, isTagged));
 
+    /// <summary>Returns provider and network names discovered for the selected-library selection controls.</summary>
+    [HttpGet("tag-choices")]
+    public ActionResult<TagChoicesDto> GetTagChoices() => Ok(_scanner.GetTagChoices());
+
+    /// <summary>Removes unselected provider tags without looking up or changing any source data.</summary>
+    [HttpPost("sync/providers")]
+    public async Task<ActionResult<TagSyncResult>> SyncProviders([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
+        Ok(await _scanner.SyncWithOnlySelectedAsync(TagKind.Provider, request.Names ?? [], cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Removes unselected network tags without looking up or changing any source data.</summary>
+    [HttpPost("sync/networks")]
+    public async Task<ActionResult<TagSyncResult>> SyncNetworks([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
+        Ok(await _scanner.SyncWithOnlySelectedAsync(TagKind.Network, request.Names ?? [], cancellationToken).ConfigureAwait(false));
+
     /// <summary>Replaces an item's plugin-owned tags with administrator-entered values.</summary>
     [HttpPut("items/{itemId:guid}")]
     public async Task<IActionResult> UpdateItem(Guid itemId, [FromBody] ManualTagsRequest request, CancellationToken cancellationToken)
@@ -179,6 +193,13 @@ public sealed class ManualTagsRequest
 
     /// <summary>Gets or sets network names.</summary>
     public string[]? Networks { get; set; }
+}
+
+/// <summary>Provider or network names selected for a no-lookup synchronization action.</summary>
+public sealed class TagSelectionRequest
+{
+    /// <summary>Gets or sets the names to retain.</summary>
+    public string[]? Names { get; set; }
 }
 
 /// <summary>Optional administrator label for a manually created complete tag backup.</summary>

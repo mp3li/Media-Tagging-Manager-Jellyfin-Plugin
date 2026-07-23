@@ -41,6 +41,24 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets whether tags previously created by this plugin are removed before every update.</summary>
     public bool ReplaceManagedTags { get; set; } = true;
 
+    /// <summary>Gets or sets provider names selected for an optional future-scan allow-list.</summary>
+    public string[] SelectedProviderNames { get; set; } = [];
+
+    /// <summary>Gets or sets network names selected for an optional future-scan allow-list.</summary>
+    public string[] SelectedNetworkNames { get; set; } = [];
+
+    /// <summary>Gets or sets whether provider tags are restricted to <see cref="SelectedProviderNames"/>.</summary>
+    public bool RestrictProvidersToSelected { get; set; }
+
+    /// <summary>Gets or sets whether network tags are restricted to <see cref="SelectedNetworkNames"/>.</summary>
+    public bool RestrictNetworksToSelected { get; set; }
+
+    /// <summary>Gets or sets provider names previously discovered by scans for the selection controls.</summary>
+    public string[] KnownProviderNames { get; set; } = [];
+
+    /// <summary>Gets or sets network names previously discovered by scans for the selection controls.</summary>
+    public string[] KnownNetworkNames { get; set; } = [];
+
     /// <summary>Gets or sets the monthly Watchmode request limit selected by the server administrator.</summary>
     public int WatchmodeMonthlyLimit { get; set; } = 2500;
 

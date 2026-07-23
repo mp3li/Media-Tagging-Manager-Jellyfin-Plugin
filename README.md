@@ -163,6 +163,21 @@ Choose whether to create **Provider tags**, **Network tags**, or both.
 
 Your existing Jellyfin tags added without this plugin are never removed. The plugin only adds new tags and, if you enable removal of outdated tags, only removes tags that it added.
 
+#### Select Providers and Networks
+
+After the plugin scans selected libraries, this two-column area lists every
+provider and network it has discovered there, including values later removed by
+a selection sync. It becomes more complete as more selected-library media is
+scanned; it does not claim to be a finite worldwide catalog of every network.
+
+Choose the values you want to keep, then use **Sync with Only Selected
+Providers** or **Sync with Only Selected Networks**. Each action creates a
+backup, saves the chosen list for future scans, and removes only unselected
+plugin-owned tags of that same kind. It does not contact TMDb, Watchmode, or
+any other source, and it never removes the other kind of tag or unrelated
+Jellyfin tags. Selecting none is an intentional way to remove all
+plugin-owned tags of that one kind from selected libraries.
+
 #### Newly Added Media Settings
 
 Turn on **Scan newly added media in my libraries using this plugin** to check newly added Movies and Series after a normal Jellyfin library scan. Turn it off to prevent automatic API checks for incoming media; manual and scheduled full scans remain available.
@@ -187,7 +202,7 @@ The Scan tab lists the libraries currently selected in Main Settings and lets yo
 
 - **Scan All Selected Libraries** checks every selected library.
 - **Stop Scan** requests cancellation of the current dashboard-initiated scan.
-- The status area shows the active title, completed and total counts, progress percentage, and an estimated remaining time.
+- The status area shows the active title, completed and total counts, progress percentage, and an estimated remaining time. When it finishes, it retains a summary of checked items, new tags, and tagged media items.
 - The Backup Settings section provides the same create, undo, restore, and delete controls as Main Settings, so you can create a safety backup immediately before scanning.
 
 Only Movies and Series are automatically queried. Episodes inherit their series-level availability context rather than triggering a duplicate scan for every episode.

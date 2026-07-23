@@ -28,6 +28,12 @@ public sealed record AvailabilityRegionsResponse(IReadOnlyCollection<Availabilit
 /// <summary>Current locally tracked Watchmode usage for the administrator dashboard.</summary>
 public sealed record WatchmodeUsageDto(int Used, int Limit, string Month, bool IsLimitReached);
 
+/// <summary>All provider and network names known from selected-library scans and current tags.</summary>
+public sealed record TagChoicesDto(IReadOnlyCollection<string> Providers, IReadOnlyCollection<string> Networks);
+
+/// <summary>Result of removing one kind of plugin-owned tag without contacting any source.</summary>
+public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);
+
 /// <summary>Progress visible in the dashboard while a scan runs.</summary>
 public sealed class ScanProgress
 {

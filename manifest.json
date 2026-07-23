@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.13",
-        "changelog": "0.1.0.13-test fixes scan ETA, shows completed-scan tag/item totals, and corrects the View Tags overview for selected libraries. Test only; not a stable release.",
+        "version": "0.1.0.14",
+        "changelog": "0.1.0.14-test adds discovered provider/network selection lists, no-source cleanup sync actions, and active-theme credential input styling. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.13-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.13-test.zip",
-        "checksum": "dc57ad0058452e8581e49b2a455ebf6b",
-        "timestamp": "2026-07-22T23:54:50Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.14-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.14-test.zip",
+        "checksum": "e3573a817b0dc9a657f04aaa48c504dc",
+        "timestamp": "2026-07-23T03:33:16Z"
       }
     ]
   }
