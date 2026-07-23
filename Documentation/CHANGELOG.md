@@ -6,6 +6,20 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.18-test] - 2026-07-22
+
+### Added
+
+- Independent **Select All** and **Select None** controls for both the provider
+  and network catalogs.
+- Independent provider and network search boxes that filter their own long
+  checkbox lists without changing selections.
+
+### Test-release notes
+
+- This supersedes `0.1.0.17-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.17-test] - 2026-07-22
 
 ### Fixed

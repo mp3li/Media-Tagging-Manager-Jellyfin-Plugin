@@ -138,6 +138,11 @@ Acceptance criteria:
     TV-network catalog when a Watchmode API key is configured.
 [ ] After a selected-library scan, confirm newly discovered provider and
     network values remain listed even if a selection sync removes their tags.
+[ ] Confirm Select All and Select None affect every provider checkbox without
+    changing network checkboxes, and the equivalent network controls affect
+    only networks.
+[ ] Search providers and networks independently; confirm each search filters
+    only its own list and does not clear existing checkbox selections.
 [ ] Confirm selections remain available in those lists after a selection sync
     removes their current tags.
 [ ] Select a subset of providers, run Sync with Only Selected Providers, and
