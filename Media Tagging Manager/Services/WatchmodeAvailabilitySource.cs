@@ -34,9 +34,9 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         }
 
         // Watchmode documents IMDb-ID title-source requests as costing two credits.
-        if (!_quota.TryReserve(2))
+        if (!_quota.TryReserve(2, out var quotaReason))
         {
-            return new SourceLookupResult(Name, [], "The configured Watchmode monthly limit has been reached.");
+            return new SourceLookupResult(Name, [], quotaReason);
         }
 
         var requestedRegion = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
@@ -90,8 +90,13 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         try
         {
             var regions = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
-            await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
-            await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var note = string.Join(" ", new[] { providerNote, networkNote }.Where(value => !string.IsNullOrWhiteSpace(value)));
+            return new SourceCatalogResult(
+                providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+                networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+                string.IsNullOrWhiteSpace(note) ? null : note);
         }
         catch (HttpRequestException exception)
         {
@@ -108,26 +113,28 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
                 $"Watchmode reference catalogs returned unexpected data: {exception.Message}");
         }
 
-        return new SourceCatalogResult(
-            providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
-            networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray());
     }
 
-    private async Task AddCatalogNamesAsync(string uri, string propertyName, ISet<string> names, string apiKey, CancellationToken cancellationToken)
+    private async Task<string?> AddCatalogNamesAsync(string uri, string propertyName, ISet<string> names, string apiKey, CancellationToken cancellationToken)
     {
+        if (!_quota.TryReserve(1, out var quotaReason))
+        {
+            return quotaReason;
+        }
+
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Add("X-API-Key", apiKey);
         using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         _quota.RecordServerUsage(TryParseHeader(response, "X-Account-Quota-Used"));
         if (!response.IsSuccessStatusCode)
         {
-            return;
+            return $"Watchmode reference catalog returned HTTP {(int)response.StatusCode}.";
         }
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
         if (document.RootElement.ValueKind != JsonValueKind.Array)
         {
-            return;
+            return "Watchmode reference catalog returned unexpected data.";
         }
 
         foreach (var item in document.RootElement.EnumerateArray())
@@ -137,6 +144,8 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
                 names.Add(name.GetString()!.Trim());
             }
         }
+
+        return null;
     }
 
     private static int? TryParseHeader(HttpResponseMessage response, string header) =>

@@ -71,6 +71,17 @@ public sealed class ProviderNetworkController : ControllerBase
             return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");
         }
 
+        if (!string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey)
+            && !DateOnly.TryParseExact(
+                configuration.WatchmodeQuotaResetsOn,
+                "yyyy-MM-dd",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out _))
+        {
+            return BadRequest("Enter Watchmode's Quota Resets On date in YYYY-MM-DD format before saving a Watchmode API key.");
+        }
+
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
         plugin.UpdateConfiguration(configuration);
         return NoContent();
@@ -90,7 +101,7 @@ public sealed class ProviderNetworkController : ControllerBase
         return Ok(new AvailabilityRegionsResponse(regions, message));
     }
 
-    /// <summary>Gets the current locally tracked Watchmode monthly usage.</summary>
+    /// <summary>Gets the current locally tracked Watchmode 30-day-cycle usage.</summary>
     [HttpGet("watchmode-usage")]
     public ActionResult<WatchmodeUsageDto> GetWatchmodeUsage() => Ok(_watchmodeQuota.GetUsage());
 

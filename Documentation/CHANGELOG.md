@@ -6,6 +6,21 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.21-test] - 2026-07-22
+
+### Changed
+
+- Replaced calendar-month Watchmode quota tracking with 30-day cycles anchored
+  to the administrator-entered **Quota Resets On** date.
+- Added the requested Watchmode reset-date guidance and a visible active-cycle
+  status. Provider/network reference-catalog requests now use the same quota
+  guard as title lookups.
+
+### Test-release notes
+
+- This supersedes `0.1.0.20-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.20-test] - 2026-07-22
 
 ### Added

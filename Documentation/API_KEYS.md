@@ -45,9 +45,10 @@ when TMDb does not return provider availability for a title.
 1. Create a Watchmode API account and obtain a key for the plan you intend to use.
 2. Paste it into **Watchmode API key**.
 3. Confirm that the library items have IMDb IDs; Watchmode lookups need them in the current adapter.
-4. Set the **Watchmode monthly request limit** to the allowance you want this
-   server to use. The dashboard tracks usage for the current calendar month and
-   stops fallback lookups at that limit.
+4. Set the **Watchmode request limit per 30-day cycle** to the allowance you
+   want this server to use. Then enter the date Watchmode displays as **Quota
+   Resets On**. The dashboard tracks the active 30-day cycle from that date and
+   stops fallback lookups at the selected limit.
 
 The plugin sends this key in the `X-API-Key` HTTP header. It does not place it in a request URL.
 

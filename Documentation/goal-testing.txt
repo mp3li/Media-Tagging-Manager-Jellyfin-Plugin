@@ -107,8 +107,10 @@ Acceptance criteria:
     remain absent from README examples and release files.
 [ ] Confirm normal source requests send credentials in HTTP headers rather than
     including them in request URLs, where server-side inspection is possible.
-[ ] Set a Watchmode monthly limit, confirm the visible usage counter resets for
-    a new calendar month, and confirm fallback requests stop at that limit.
+[ ] Set a Watchmode request limit and enter the account's **Quota Resets On**
+    date. Confirm the visible usage counter identifies the correct 30-day cycle
+    (including a reset date of 2026-08-21), does not reset at a calendar-month
+    boundary, and stops title and catalog requests at the selected limit.
 
 Acceptance criteria:
 - Every server uses its own credentials.

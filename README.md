@@ -130,7 +130,10 @@ Enter API credentials for the sources you want to use. Credentials are stored in
 
 - **TMDb API Read Access Token** is the primary source for regional streaming providers and television networks.
 - **Watchmode API Key** is an optional fallback for a title where TMDb returns no provider. It requires an IMDb ID.
-- **Watchmode monthly request limit** is a safety cap. The plugin tracks its own usage and stops sending Watchmode requests when that cap is reached.
+- **Watchmode request limit per 30-day cycle** is a safety cap. Enter the date
+  shown as **Quota Resets On** in your Watchmode account; the plugin uses that
+  date to identify the active 30-day cycle, track its own usage, and stop
+  sending Watchmode requests when the selected cap is reached.
 
 The dashboard sends built-in-source credentials in request headers, not in source URLs. Jellyfin’s plugin configuration should still be treated as sensitive server data; protect access to the Jellyfin dashboard, its data directory, backups, and logs. The plugin does not claim to encrypt API keys at rest.
 

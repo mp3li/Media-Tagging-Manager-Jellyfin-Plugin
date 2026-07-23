@@ -49,7 +49,8 @@ Acceptance criteria:
 [x] Let an administrator choose provider tags only, network tags only, or both.
 [x] Let an administrator choose up to three availability regions.
 [x] Let an administrator configure TMDb and Watchmode credentials in the
-    dashboard, including a Watchmode monthly quota limit and usage counter.
+    dashboard, including a Watchmode 30-day quota limit, reset-date input, and
+    usage counter.
 [x] Explain settings, source behavior, refresh behavior, incoming-media checks,
     and restore risk in the dashboard rather than requiring a config-file or
     terminal workflow.
@@ -117,7 +118,7 @@ Acceptance criteria:
 [x] Show scan state, active title, completed count, total count, percentage,
     and estimated remaining time in the dashboard.
 [x] Use a conservative internal title-check concurrency while preserving the
-    configured Watchmode monthly quota ceiling.
+    configured Watchmode 30-day quota ceiling.
 [x] Document that Jellyfin must be restarted after changing the default
     scheduled-task interval or enabled state.
 

@@ -65,12 +65,15 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets network names previously discovered by scans for the selection controls.</summary>
     public string[] KnownNetworkNames { get; set; } = [];
 
-    /// <summary>Gets or sets the monthly Watchmode request limit selected by the server administrator.</summary>
+    /// <summary>Gets or sets the Watchmode request limit selected by the server administrator for each 30-day quota cycle.</summary>
     public int WatchmodeMonthlyLimit { get; set; } = 2500;
 
-    /// <summary>Gets or sets the UTC year-month for which Watchmode requests are tracked.</summary>
-    public string WatchmodeUsageMonth { get; set; } = string.Empty;
+    /// <summary>Gets or sets Watchmode's displayed quota-reset date in ISO format.</summary>
+    public string WatchmodeQuotaResetsOn { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets the number of Watchmode requests used during <see cref="WatchmodeUsageMonth"/>.</summary>
+    /// <summary>Gets or sets the ISO start date of the Watchmode 30-day cycle for the stored usage counter.</summary>
+    public string WatchmodeUsageCycleStart { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the number of Watchmode requests used during <see cref="WatchmodeUsageCycleStart"/>.</summary>
     public int WatchmodeRequestsUsed { get; set; }
 }

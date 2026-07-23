@@ -26,7 +26,7 @@ public sealed record AvailabilityRegionDto(string Code, string Name);
 public sealed record AvailabilityRegionsResponse(IReadOnlyCollection<AvailabilityRegionDto> Regions, string? Message);
 
 /// <summary>Current locally tracked Watchmode usage for the administrator dashboard.</summary>
-public sealed record WatchmodeUsageDto(int Used, int Limit, string Month, bool IsLimitReached);
+public sealed record WatchmodeUsageDto(int Used, int Limit, string CycleStart, string ResetsOn, bool IsConfigured, bool IsLimitReached);
 
 /// <summary>All provider and network names known from selected-library scans and current tags.</summary>
 public sealed record TagChoicesDto(
