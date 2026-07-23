@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.21",
-        "changelog": "0.1.0.21-test tracks Watchmode limits in 30-day cycles anchored to the Quota Resets On date. Test only; not a stable release.",
+        "version": "0.1.0.22",
+        "changelog": "0.1.0.22-test limits TMDb to 35 requests per second and backs off/retries HTTP 429 responses. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.21-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.21-test.zip",
-        "checksum": "5b45d18dc9bf5253b15cf07c64fc05fa",
-        "timestamp": "2026-07-23T04:28:14Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.22-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.22-test.zip",
+        "checksum": "af0542762268e40c38ffb99801d2a630",
+        "timestamp": "2026-07-23T04:32:08Z"
       }
     ]
   }

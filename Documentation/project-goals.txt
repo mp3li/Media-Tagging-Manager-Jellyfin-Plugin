@@ -74,6 +74,8 @@ Acceptance criteria:
     than clearing them because of a temporary outage.
 [x] Use TMDb for regional watch-provider data and television-network metadata.
 [x] Use Watchmode as a quota-tracked fallback when TMDb has no provider result.
+[x] Keep TMDb requests below its published anti-bulk guidance with a shared
+    35-requests-per-second gate, and temporarily back off on HTTP 429.
 [ ] Add more first-class source adapters after appropriate review of their
     terms, identifiers, regional coverage, rate limits, and matching quality.
 [ ] Evaluate Streaming Availability API as the first additional availability

@@ -71,6 +71,11 @@ When the setting to remove outdated plugin-assigned tags is enabled, the plugin 
 
 Availability can be selected for up to three countries. A provider available in one country may be unavailable in another.
 
+TMDb requests share a plugin-wide 35-requests-per-second gate. If TMDb returns
+HTTP 429, the plugin temporarily pauses every TMDb path and retries the affected
+read request up to two times, using the response's `Retry-After` value when one
+is supplied.
+
 ## Requirements
 
 - **Jellyfin 10.11.11** — the current plugin build targets this Jellyfin version.

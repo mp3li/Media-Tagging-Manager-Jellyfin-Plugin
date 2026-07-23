@@ -8,9 +8,14 @@ namespace Jellyfin.Plugin.MediaTaggingManager.Services;
 public sealed class TmdbAvailabilitySource : IAvailabilitySource
 {
     private readonly HttpClient _httpClient;
+    private readonly TmdbRequestGate _requestGate;
 
     /// <summary>Initializes a new instance of the <see cref="TmdbAvailabilitySource"/> class.</summary>
-    public TmdbAvailabilitySource(HttpClient httpClient) => _httpClient = httpClient;
+    public TmdbAvailabilitySource(HttpClient httpClient, TmdbRequestGate requestGate)
+    {
+        _httpClient = httpClient;
+        _requestGate = requestGate;
+    }
 
     /// <inheritdoc />
     public string Name => "TMDb";
@@ -24,8 +29,7 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             return [];
         }
 
-        using var request = CreateRequest("https://api.themoviedb.org/3/watch/providers/regions?language=en-US", token);
-        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync("https://api.themoviedb.org/3/watch/providers/regions?language=en-US", token, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
             return [];
@@ -63,8 +67,7 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
                 foreach (var type in new[] { "movie", "tv" })
                 {
                     var uri = $"https://api.themoviedb.org/3/watch/providers/{type}?language=en-US&watch_region={Uri.EscapeDataString(region)}";
-                    using var request = CreateRequest(uri, configuration.TmdbApiKey);
-                    using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                    using var response = await SendAsync(uri, configuration.TmdbApiKey, cancellationToken).ConfigureAwait(false);
                     if (!response.IsSuccessStatusCode)
                     {
                         continue;
@@ -118,8 +121,7 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
         var providersUri = $"https://api.themoviedb.org/3/{type}/{id}/watch/providers";
         string? issue = null;
 
-        using var providersRequest = CreateRequest(providersUri, configuration.TmdbApiKey);
-        using var providersResponse = await _httpClient.SendAsync(providersRequest, cancellationToken).ConfigureAwait(false);
+        using var providersResponse = await SendAsync(providersUri, configuration.TmdbApiKey, cancellationToken).ConfigureAwait(false);
         if (providersResponse.IsSuccessStatusCode)
         {
             using var document = JsonDocument.Parse(await providersResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
@@ -159,8 +161,7 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
         if (type == "tv")
         {
             var detailsUri = $"https://api.themoviedb.org/3/tv/{id}";
-            using var detailsRequest = CreateRequest(detailsUri, configuration.TmdbApiKey);
-            using var detailsResponse = await _httpClient.SendAsync(detailsRequest, cancellationToken).ConfigureAwait(false);
+            using var detailsResponse = await SendAsync(detailsUri, configuration.TmdbApiKey, cancellationToken).ConfigureAwait(false);
             if (detailsResponse.IsSuccessStatusCode)
             {
                 using var document = JsonDocument.Parse(await detailsResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
@@ -190,6 +191,9 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return request;
     }
+
+    private Task<HttpResponseMessage> SendAsync(string uri, string token, CancellationToken cancellationToken) =>
+        _requestGate.SendAsync(_httpClient, () => CreateRequest(uri, token), cancellationToken);
 
     private static IReadOnlyCollection<string> GetRegions(Configuration.PluginConfiguration configuration)
     {

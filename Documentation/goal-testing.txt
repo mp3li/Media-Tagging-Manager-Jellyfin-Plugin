@@ -107,6 +107,10 @@ Acceptance criteria:
     remain absent from README examples and release files.
 [ ] Confirm normal source requests send credentials in HTTP headers rather than
     including them in request URLs, where server-side inspection is possible.
+[ ] Confirm a multi-library scan never starts more than 35 TMDb requests in one
+    second. With a controlled HTTP 429 test response, confirm all TMDb requests
+    temporarily pause, honor a Retry-After value when provided, and retry the
+    affected read no more than twice.
 [ ] Set a Watchmode request limit and enter the account's **Quota Resets On**
     date. Confirm the visible usage counter identifies the correct 30-day cycle
     (including a reset date of 2026-08-21), does not reset at a calendar-month

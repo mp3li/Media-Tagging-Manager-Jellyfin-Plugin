@@ -6,6 +6,20 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.22-test] - 2026-07-22
+
+### Added
+
+- Added a shared TMDb request gate capped at 35 requests per second.
+- TMDb HTTP 429 responses now trigger a temporary plugin-wide cooldown and up
+  to two safe read retries, honoring a `Retry-After` response value when one is
+  supplied.
+
+### Test-release notes
+
+- This supersedes `0.1.0.21-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.21-test] - 2026-07-22
 
 ### Changed
