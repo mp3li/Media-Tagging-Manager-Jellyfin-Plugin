@@ -198,6 +198,9 @@ Acceptance criteria:
     only networks.
 [ ] Search providers and networks independently; confirm each search filters
     only its own list and does not clear existing checkbox selections.
+[ ] Save Network and Provider Settings with a large catalog available; confirm
+    the Provider and Network picker rows return promptly even while optional
+    catalog logos are being cached in the background.
 [ ] Confirm selections remain available in those lists after a selection sync
     removes their current tags.
 [ ] Select a Provider subset and use Save Provider Selections; confirm it saves

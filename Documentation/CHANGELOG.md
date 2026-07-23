@@ -6,6 +6,19 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.31-test] - 2026-07-23
+
+### Fixed
+
+- Provider and Network catalog names now return before optional catalog-logo
+  caching completes, preventing a large logo cache from blanking the pickers
+  after settings are saved.
+
+### Test-release notes
+
+- This supersedes `0.1.0.30-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.30-test] - 2026-07-23
 
 ### Fixed

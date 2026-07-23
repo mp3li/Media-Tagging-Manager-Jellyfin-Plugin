@@ -181,7 +181,10 @@ public sealed class ProviderNetworkController : ControllerBase
         var discovered = _scanner.GetTagChoices();
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
-        await CacheCatalogLogosAsync(tmdb, watchmode, cancellationToken).ConfigureAwait(false);
+        // Catalog names must reach the dashboard immediately. Downloading
+        // hundreds of optional logos here used to hold the response open long
+        // enough for a picker reload to fail after saving settings.
+        CacheCatalogLogosInBackground(tmdb, watchmode);
         var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
             .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
@@ -394,6 +397,22 @@ public sealed class ProviderNetworkController : ControllerBase
             .Concat(watchmode.ProviderLogoUrls ?? new Dictionary<string, string>())
             .Select(pair => new SourceTag(TagKind.Provider, pair.Key, "Reference catalog", false, pair.Value));
         await _logos.CacheAsync(tags, cancellationToken).ConfigureAwait(false);
+    }
+
+    private void CacheCatalogLogosInBackground(SourceCatalogResult tmdb, SourceCatalogResult watchmode)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await CacheCatalogLogosAsync(tmdb, watchmode, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Catalog logos are optional. A cache failure must never block
+                // the names needed to configure tags.
+            }
+        });
     }
 
     private static bool TryParseKind(string value, out TagKind kind) => Enum.TryParse(value, true, out kind)
