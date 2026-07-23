@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.32",
-        "changelog": "0.1.0.32-test adds explicit logo-loading actions, cache limits/status, and selective logo deletion. Test only; not a stable release.",
+        "version": "0.1.0.33",
+        "changelog": "0.1.0.33-test preloads Provider and Network picker logos before a media scan when the source supplies a TMDb network mapping. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.32-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.32-test.zip",
-        "checksum": "d7793f741ad673a73b0bebd133b46ef7",
-        "timestamp": "2026-07-23T09:11:58Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.33-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.33-test.zip",
+        "checksum": "cec30c5dbf112ad9d83950dc9e75eb2e",
+        "timestamp": "2026-07-23T19:02:01Z"
       }
     ]
   }

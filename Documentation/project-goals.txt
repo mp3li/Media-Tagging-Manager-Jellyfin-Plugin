@@ -104,8 +104,6 @@ Acceptance criteria:
     35-requests-per-second gate, and temporarily back off on HTTP 429.
 [ ] Add more first-class source adapters after appropriate review of their
     terms, identifiers, regional coverage, rate limits, and matching quality.
-[ ] Evaluate Streaming Availability API as the first additional availability
-    adapter and TVMaze/TheTVDB as possible network-metadata fallbacks.
 
 Acceptance criteria:
 - A source result can add more than one provider and more than one network.
@@ -178,8 +176,6 @@ Acceptance criteria:
 [ ] Expand the overview and source adapters beyond movies and TV series to
     additional Jellyfin media types where a reliable availability/network model
     exists.
-[ ] Add durable per-item scan history, per-source provenance, last-check times,
-    and richer manual-edit controls instead of prompt-based editing.
 
 Acceptance criteria:
 - A user can find titles with one provider, one network, or a specific
@@ -255,8 +251,9 @@ Acceptance criteria:
 [x] Maintain Documentation/project-goals.txt acceptance tracker.
 [x] Build successfully against the Jellyfin 10.11.11 test-server version with
     zero warnings.
-[x] Add an explicit GPL-3.0-or-later open-source license appropriate for Jellyfin plugin
-    distribution.
+[x] Add an explicit source-available noncommercial license that retains project
+    credit on redistributed forks and requires written permission for commercial
+    use.
 [x] Package a test Release ZIP, calculate its real checksum, and publish a
     clearly labeled repository manifest for catalog-install testing.
 [ ] Add a release workflow that packages, checksums, and updates the manifest

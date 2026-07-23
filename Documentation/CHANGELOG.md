@@ -6,6 +6,23 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.33-test] - 2026-07-23
+
+### Changed
+
+- **Load All Logos** now preloads Network picker logos before a media scan by
+  using the documented TMDb network IDs returned by the Network catalog. A
+  network remains blank only when its source catalog has no TMDb mapping or
+  TMDb has no logo for that network.
+- Replaced the incomplete GPL notice with the Media Tagging Manager
+  Noncommercial License 1.0. It permits noncommercial forks and redistribution
+  with retained credit, while requiring written permission for commercial use.
+
+### Test-release notes
+
+- This supersedes `0.1.0.32-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.32-test] - 2026-07-23
 
 ### Added
@@ -568,7 +585,7 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 - Safeguards that preserve existing plugin-managed tags when no source is configured or all enabled sources fail.
 - Documentation/API_KEYS.md with per-server credential setup, safe rotation guidance, and a non-secret custom JSON example.
 - Documentation/project-goals.txt for product-scope and delivery tracking.
-- GPL-3.0-or-later licensing and package metadata for the public source repository.
+- Initial license and package metadata for the public source repository.
 - A compact README TMDb credential walkthrough, truthful application-form wording, and visible TMDb attribution in the plugin settings.
 
 ### Changed

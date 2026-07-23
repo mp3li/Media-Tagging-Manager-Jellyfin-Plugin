@@ -52,7 +52,8 @@ public sealed record SourceCatalogResult(
     IReadOnlyCollection<string> Providers,
     IReadOnlyCollection<string> Networks,
     string? Note = null,
-    IReadOnlyDictionary<string, string>? ProviderLogoUrls = null);
+    IReadOnlyDictionary<string, string>? ProviderLogoUrls = null,
+    IReadOnlyDictionary<string, int>? NetworkTmdbIds = null);
 
 /// <summary>Result of removing one kind of plugin-owned tag without contacting any source.</summary>
 public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);

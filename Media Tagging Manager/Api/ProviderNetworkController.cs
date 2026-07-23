@@ -473,7 +473,7 @@ public sealed class ProviderNetworkController : ControllerBase
             {
                 var tmdb = await _tmdb.GetReferenceCatalogAsync(CancellationToken.None).ConfigureAwait(false);
                 var watchmode = await _watchmode.GetReferenceCatalogAsync(CancellationToken.None).ConfigureAwait(false);
-                var tags = (tmdb.ProviderLogoUrls ?? new Dictionary<string, string>())
+                IEnumerable<SourceTag> tags = (tmdb.ProviderLogoUrls ?? new Dictionary<string, string>())
                     .Concat(watchmode.ProviderLogoUrls ?? new Dictionary<string, string>())
                     .Select(pair => new SourceTag(TagKind.Provider, pair.Key, "Reference catalog", false, pair.Value));
                 if (selectedProvidersOnly)
@@ -481,6 +481,11 @@ public sealed class ProviderNetworkController : ControllerBase
                     var selected = new HashSet<string>((Plugin.Instance?.Configuration.SelectedProviderNames ?? [])
                         .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)), StringComparer.OrdinalIgnoreCase);
                     tags = tags.Where(tag => selected.Contains(TagNameNormalizer.Normalize(TagKind.Provider, tag.Name)));
+                }
+                else
+                {
+                    var networks = await _tmdb.GetNetworkLogoTagsAsync(watchmode.NetworkTmdbIds ?? new Dictionary<string, int>(), CancellationToken.None).ConfigureAwait(false);
+                    tags = tags.Concat(networks);
                 }
 
                 var uniqueTags = tags.GroupBy(tag => (tag.Kind, Name: TagNameNormalizer.Normalize(tag.Kind, tag.Name)))

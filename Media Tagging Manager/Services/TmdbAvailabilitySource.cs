@@ -223,6 +223,45 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
         return new SourceCatalogResult(names.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(), [], null, logos);
     }
 
+    /// <summary>Gets TMDb network-logo URLs for known network IDs without looking up any Jellyfin media item.</summary>
+    public async Task<IReadOnlyCollection<SourceTag>> GetNetworkLogoTagsAsync(IReadOnlyDictionary<string, int> networkTmdbIds, CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token) || networkTmdbIds.Count == 0)
+        {
+            return [];
+        }
+
+        var tags = new List<SourceTag>();
+        foreach (var pair in networkTmdbIds.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                using var response = await SendAsync($"https://api.themoviedb.org/3/network/{pair.Value}", token, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    continue;
+                }
+
+                using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+                if (document.RootElement.TryGetProperty("logo_path", out var logoPath) && !string.IsNullOrWhiteSpace(logoPath.GetString()))
+                {
+                    tags.Add(new SourceTag(TagKind.Network, pair.Key, Name, false, TmdbLogoUrl(logoPath.GetString()!)));
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // A missing optional logo must not stop the rest of the catalog preload.
+            }
+            catch (JsonException)
+            {
+                // A malformed optional logo response must not stop the rest of the catalog preload.
+            }
+        }
+
+        return tags;
+    }
+
     /// <inheritdoc />
     public async Task<SourceLookupResult> LookupAsync(ExternalIds ids, CancellationToken cancellationToken)
     {

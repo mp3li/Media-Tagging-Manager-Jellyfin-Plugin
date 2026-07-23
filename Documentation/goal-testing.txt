@@ -195,8 +195,9 @@ Acceptance criteria:
 [ ] Confirm a source-supplied logo larger than 2 MB is skipped without stopping
     the relevant media-tag scan or logo-load operation.
 [ ] Click Load All Logos and confirm it loads source-catalog Provider logos
-    without scanning media or changing tags. Confirm network logos are cached
-    only when a source supplies one during a title lookup.
+    and Network logos before any media scan, without changing media tags.
+    Confirm only Networks with a documented TMDb mapping and TMDb logo remain
+    eligible for a pre-scan Network logo.
 [ ] Save a Provider selection, click Load Logos for Selected Providers, and
     confirm only selected-provider logo candidates are processed.
 [ ] Use Delete Specific Logos to select one or more cached entries and confirm
@@ -444,7 +445,9 @@ Acceptance criteria:
     their own source credentials only through the plugin dashboard.
 [ ] Review the public tracked-file set for secrets, local output, DLL build
     output, backups, test artifacts, sessions, and operating-system metadata.
-[ ] Add and review an explicit open-source license before public release.
+[ ] Review the custom noncommercial license and confirm the repository clearly
+    preserves the required project credit and prohibits commercial use without
+    written permission.
 
 Acceptance criteria:
 - The public installation mechanism works before it is public.

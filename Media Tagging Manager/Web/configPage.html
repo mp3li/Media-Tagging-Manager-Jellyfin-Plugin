@@ -82,7 +82,7 @@
                     <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="enableLogoCaching" /> <span>Save and use provider and network logos</span></label>
                     <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="logoCacheLimit">Maximum logo cache size (MB)</label><input is="emby-input" id="logoCacheLimit" type="number" min="10" max="1024" /><div class="fieldDescription">Each source logo is limited to 2 MB. The default total cache limit is 100 MB.</div></div>
                     <p id="logoCacheStatus" class="fieldDescription">Logo cache status will load shortly.</p>
-                    <p class="fieldDescription">Load All Logos loads source-catalog Provider logos. Network logos are cached whenever a source supplies one during a title lookup; a full source network catalog does not always include a logo for every network.</p>
+                    <p class="fieldDescription">Load All Logos loads Provider logos and preloads Network logos before any media scan whenever the source catalog supplies a TMDb network ID. A network remains without a logo only when the source has no matching TMDb ID or TMDb has no logo for it.</p>
                     <div class="mtm-actions"><button is="emby-button" type="button" class="raised" id="loadAllLogosButton">Load All Logos</button><button is="emby-button" type="button" class="raised" id="loadSelectedProviderLogosButton">Load Logos for Selected Providers</button><button is="emby-button" type="button" class="raised" id="deleteSpecificLogosButton">Delete Specific Logos</button><button is="emby-button" type="button" class="raised" id="deleteCachedLogosButton">Delete Cached Logos</button></div>
                 </section>
 

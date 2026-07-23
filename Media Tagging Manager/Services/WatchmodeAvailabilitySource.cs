@@ -105,11 +105,12 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         var providers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var networks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var providerLogos = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var networkTmdbIds = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         try
         {
             var regions = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
-            var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, providerLogos, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
-            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, null, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, providerLogos, null, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, null, networkTmdbIds, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
             var note = string.Join(" ", new[] { providerNote, networkNote }
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.Ordinal));
@@ -117,7 +118,8 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
                 providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 string.IsNullOrWhiteSpace(note) ? null : note,
-                providerLogos);
+                providerLogos,
+                networkTmdbIds);
         }
         catch (HttpRequestException exception)
         {
@@ -125,7 +127,8 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
                 providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 $"Watchmode reference catalogs could not be loaded: {exception.Message}",
-                providerLogos);
+                providerLogos,
+                networkTmdbIds);
         }
         catch (JsonException exception)
         {
@@ -133,7 +136,8 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
                 providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 $"Watchmode reference catalogs returned unexpected data: {exception.Message}",
-                providerLogos);
+                providerLogos,
+                networkTmdbIds);
         }
 
     }
@@ -143,6 +147,7 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         string propertyName,
         ISet<string> names,
         IDictionary<string, string>? logos,
+        IDictionary<string, int>? networkTmdbIds,
         string apiKey,
         CancellationToken cancellationToken)
     {
@@ -177,6 +182,14 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
                     && !string.IsNullOrWhiteSpace(logo.GetString()))
                 {
                     logos.TryAdd(sourceName, logo.GetString()!);
+                }
+
+                if (networkTmdbIds is not null
+                    && item.TryGetProperty("tmdb_id", out var tmdbId)
+                    && tmdbId.TryGetInt32(out var parsedTmdbId)
+                    && parsedTmdbId > 0)
+                {
+                    networkTmdbIds.TryAdd(sourceName, parsedTmdbId);
                 }
             }
         }

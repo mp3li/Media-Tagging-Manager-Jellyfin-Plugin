@@ -184,14 +184,14 @@ from 10 MB to 1 GB (100 MB by default). Logo Settings displays the current
 file count, storage use, configured limit, and any active loading progress.
 
 Use **Load All Logos** to explicitly cache every source-catalog Provider logo
-available from the configured sources. Use **Load Logos for Selected
-Providers** to cache only the saved Provider selection. Network logos are
-cached when TMDb or Watchmode supplies one during a title lookup; a complete
-source network catalog does not always include a logo for every network.
-Neither load action scans media or changes tags. Use **Delete Specific Logos**
-to choose individual cache entries to remove, or **Delete Cached Logos** to
-explicitly remove every cached and manually uploaded logo. These actions do
-not modify media tags.
+and preload Network logos before any media scan whenever the Network catalog
+supplies a TMDb network ID. Use **Load Logos for Selected Providers** to cache
+only the saved Provider selection. A network remains without a logo only when
+the source has no matching TMDb ID or TMDb has no logo for it. Neither load
+action scans media or changes tags. Use **Delete Specific Logos** to choose
+individual cache entries to remove, or **Delete Cached Logos** to explicitly
+remove every cached and manually uploaded logo. These actions do not modify
+media tags.
 
 ### Network and Provider Settings
 
@@ -396,4 +396,9 @@ Use only your own API accounts and sources you are allowed to query. Review each
 
 ## License
 
-Media Tagging Manager Jellyfin Plugin by mp3li is licensed under the [GNU General Public License v3.0 or later](LICENSE) (`GPL-3.0-or-later`).
+Media Tagging Manager Jellyfin Plugin by mp3li is source-available under the
+[Media Tagging Manager Noncommercial License 1.0](LICENSE). Personal and other
+noncommercial use, modification, and redistribution are permitted when the
+credit and repository link are retained. Commercial use, paid redistribution,
+paid hosting, paid installation, paid support, and commercial bundling require
+prior written permission from mp3li.
