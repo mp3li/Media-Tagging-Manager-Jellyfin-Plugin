@@ -6,6 +6,27 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.32-test] - 2026-07-23
+
+### Added
+
+- Added explicit **Load All Logos** and **Load Logos for Selected Providers**
+  background actions. They do not scan media or modify tags.
+- Added visible cache/loading status, a configurable 10 MB–1 GB total cache
+  limit (100 MB by default), a 2 MB per-source-logo limit, and selective
+  cached-logo deletion.
+
+### Changed
+
+- Source catalog Provider logos now load only when an administrator explicitly
+  chooses a logo-loading action, so Provider/Network picker responses remain
+  independent of bulk image downloads.
+
+### Test-release notes
+
+- This supersedes `0.1.0.31-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.31-test] - 2026-07-23
 
 ### Fixed

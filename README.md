@@ -179,8 +179,19 @@ pages and collection making.
 
 Uncheck **Save and use provider and network logos**, then select **Save Main
 Settings**, to stop this plugin from downloading, saving, or displaying logos.
-Use **Delete Cached Logos** afterward to explicitly remove every cached and
-manually uploaded logo. That action does not modify any media tags.
+Each source logo is capped at 2 MB, and the total cache limit is configurable
+from 10 MB to 1 GB (100 MB by default). Logo Settings displays the current
+file count, storage use, configured limit, and any active loading progress.
+
+Use **Load All Logos** to explicitly cache every source-catalog Provider logo
+available from the configured sources. Use **Load Logos for Selected
+Providers** to cache only the saved Provider selection. Network logos are
+cached when TMDb or Watchmode supplies one during a title lookup; a complete
+source network catalog does not always include a logo for every network.
+Neither load action scans media or changes tags. Use **Delete Specific Logos**
+to choose individual cache entries to remove, or **Delete Cached Logos** to
+explicitly remove every cached and manually uploaded logo. These actions do
+not modify media tags.
 
 ### Network and Provider Settings
 

@@ -26,6 +26,7 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly WatchmodeAvailabilitySource _watchmode;
     private readonly WatchmodeQuotaTracker _watchmodeQuota;
     private readonly ProviderNetworkLogoCache _logos;
+    private readonly LogoLoadStateStore _logoLoadState;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -38,7 +39,8 @@ public sealed class ProviderNetworkController : ControllerBase
         TmdbAvailabilitySource tmdb,
         WatchmodeAvailabilitySource watchmode,
         WatchmodeQuotaTracker watchmodeQuota,
-        ProviderNetworkLogoCache logos)
+        ProviderNetworkLogoCache logos,
+        LogoLoadStateStore logoLoadState)
     {
         _scanner = scanner;
         _state = state;
@@ -50,6 +52,7 @@ public sealed class ProviderNetworkController : ControllerBase
         _watchmode = watchmode;
         _watchmodeQuota = watchmodeQuota;
         _logos = logos;
+        _logoLoadState = logoLoadState;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -92,6 +95,7 @@ public sealed class ProviderNetworkController : ControllerBase
             "NetworkOnly" or "StreamingAppOnly" or "Both" => configuration.TvNetworkAppTaggingMode,
             _ => "NetworkOnly"
         };
+        configuration.LogoCacheLimitMegabytes = Math.Clamp(configuration.LogoCacheLimitMegabytes, 10, 1024);
         configuration.SelectedProviderNames = (configuration.SelectedProviderNames ?? [])
             .Where(static name => !string.IsNullOrWhiteSpace(name))
             .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
@@ -181,10 +185,6 @@ public sealed class ProviderNetworkController : ControllerBase
         var discovered = _scanner.GetTagChoices();
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
-        // Catalog names must reach the dashboard immediately. Downloading
-        // hundreds of optional logos here used to hold the response open long
-        // enough for a picker reload to fail after saving settings.
-        CacheCatalogLogosInBackground(tmdb, watchmode);
         var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
             .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
@@ -281,6 +281,69 @@ public sealed class ProviderNetworkController : ControllerBase
     public async Task<IActionResult> DeleteCachedLogos(CancellationToken cancellationToken)
     {
         await _logos.DeleteAllAsync(cancellationToken).ConfigureAwait(false);
+        return NoContent();
+    }
+
+    /// <summary>Returns current provider/network logo-cache storage and loading state.</summary>
+    [HttpGet("logos/status")]
+    public async Task<ActionResult<LogoCacheStatus>> GetLogoStatus(CancellationToken cancellationToken)
+    {
+        var usage = await _logos.GetUsageAsync(cancellationToken).ConfigureAwait(false);
+        var limit = Math.Clamp(Plugin.Instance?.Configuration.LogoCacheLimitMegabytes ?? 100, 10, 1024);
+        return Ok(new LogoCacheStatus(usage.Count, usage.Bytes, limit, _logoLoadState.GetProgress()));
+    }
+
+    /// <summary>Lists cached provider/network logos for selective administrator deletion.</summary>
+    [HttpGet("logos")]
+    public async Task<ActionResult<IReadOnlyCollection<CachedLogoDto>>> GetCachedLogos(CancellationToken cancellationToken) =>
+        Ok(await _logos.GetAllAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Starts loading every source-supplied provider logo without changing media tags.</summary>
+    [HttpPost("logos/load/all")]
+    public IActionResult LoadAllLogos()
+    {
+        try
+        {
+            StartLogoLoad(selectedProvidersOnly: false);
+            return Accepted();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
+    /// <summary>Starts loading source-supplied logos for the saved Provider selection without changing media tags.</summary>
+    [HttpPost("logos/load/selected-providers")]
+    public IActionResult LoadSelectedProviderLogos()
+    {
+        var selected = Plugin.Instance?.Configuration.SelectedProviderNames ?? [];
+        if (selected.Length == 0)
+        {
+            return BadRequest("Select and save at least one Provider before loading selected Provider logos.");
+        }
+
+        try
+        {
+            StartLogoLoad(selectedProvidersOnly: true);
+            return Accepted();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
+    /// <summary>Deletes one cached Provider or Network logo without changing media tags.</summary>
+    [HttpDelete("logos/{kind}/{name}")]
+    public async Task<IActionResult> DeleteCachedLogo(string kind, string name, CancellationToken cancellationToken)
+    {
+        if (!TryParseKind(kind, out var tagKind) || string.IsNullOrWhiteSpace(name))
+        {
+            return BadRequest("Choose a Provider or Network logo.");
+        }
+
+        await _logos.DeleteAsync(tagKind, name, cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -391,26 +454,45 @@ public sealed class ProviderNetworkController : ControllerBase
         return meaningful.Length == 0 ? null : string.Join(" ", meaningful);
     }
 
-    private async Task CacheCatalogLogosAsync(SourceCatalogResult tmdb, SourceCatalogResult watchmode, CancellationToken cancellationToken)
+    private void StartLogoLoad(bool selectedProvidersOnly)
     {
-        var tags = (tmdb.ProviderLogoUrls ?? new Dictionary<string, string>())
-            .Concat(watchmode.ProviderLogoUrls ?? new Dictionary<string, string>())
-            .Select(pair => new SourceTag(TagKind.Provider, pair.Key, "Reference catalog", false, pair.Value));
-        await _logos.CacheAsync(tags, cancellationToken).ConfigureAwait(false);
-    }
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("The plugin configuration is unavailable.");
+        if (!configuration.EnableLogoCaching)
+        {
+            throw new InvalidOperationException("Enable logo saving in Logo Settings before loading logos.");
+        }
 
-    private void CacheCatalogLogosInBackground(SourceCatalogResult tmdb, SourceCatalogResult watchmode)
-    {
+        if (!_logoLoadState.TryStart())
+        {
+            throw new InvalidOperationException("A logo-loading operation is already running.");
+        }
+
         _ = Task.Run(async () =>
         {
             try
             {
-                await CacheCatalogLogosAsync(tmdb, watchmode, CancellationToken.None).ConfigureAwait(false);
+                var tmdb = await _tmdb.GetReferenceCatalogAsync(CancellationToken.None).ConfigureAwait(false);
+                var watchmode = await _watchmode.GetReferenceCatalogAsync(CancellationToken.None).ConfigureAwait(false);
+                var tags = (tmdb.ProviderLogoUrls ?? new Dictionary<string, string>())
+                    .Concat(watchmode.ProviderLogoUrls ?? new Dictionary<string, string>())
+                    .Select(pair => new SourceTag(TagKind.Provider, pair.Key, "Reference catalog", false, pair.Value));
+                if (selectedProvidersOnly)
+                {
+                    var selected = new HashSet<string>((Plugin.Instance?.Configuration.SelectedProviderNames ?? [])
+                        .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)), StringComparer.OrdinalIgnoreCase);
+                    tags = tags.Where(tag => selected.Contains(TagNameNormalizer.Normalize(TagKind.Provider, tag.Name)));
+                }
+
+                var uniqueTags = tags.GroupBy(tag => (tag.Kind, Name: TagNameNormalizer.Normalize(tag.Kind, tag.Name)))
+                    .Select(group => group.First())
+                    .ToArray();
+                _logoLoadState.SetTotal(uniqueTags.Length);
+                await _logos.CacheAsync(uniqueTags, CancellationToken.None, _logoLoadState.Report).ConfigureAwait(false);
+                _logoLoadState.Complete();
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                // Catalog logos are optional. A cache failure must never block
-                // the names needed to configure tags.
+                _logoLoadState.Complete("Logo loading stopped: " + exception.Message);
             }
         });
     }

@@ -60,6 +60,28 @@ public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);
 /// <summary>Result of adding administrator-selected plugin-owned tags.</summary>
 public sealed record TagApplyResult(int TagsAdded, int MediaItemsChanged);
 
+/// <summary>Progress visible while administrator-requested logo caching runs.</summary>
+public sealed class LogoLoadProgress
+{
+    /// <summary>Gets or sets whether a logo-loading operation is active.</summary>
+    public bool IsRunning { get; set; }
+
+    /// <summary>Gets or sets the number of source-supplied logos selected for processing.</summary>
+    public int Total { get; set; }
+
+    /// <summary>Gets or sets the number of source-supplied logos processed.</summary>
+    public int Completed { get; set; }
+
+    /// <summary>Gets or sets a user-facing completion or failure message.</summary>
+    public string Message { get; set; } = "No logo load is currently running.";
+}
+
+/// <summary>One cached provider or network logo available for selective deletion.</summary>
+public sealed record CachedLogoDto(TagKind Kind, string Name, long Bytes, string ContentType);
+
+/// <summary>Current logo-cache storage and background-load status.</summary>
+public sealed record LogoCacheStatus(int FileCount, long Bytes, int LimitMegabytes, LogoLoadProgress LoadProgress);
+
 /// <summary>A Provider or Network tag in selected libraries that is neither plugin-known nor recognized by enabled source catalogs.</summary>
 public sealed record UnknownTaggedNameDto(TagKind Kind, string Name, int MediaItemCount);
 

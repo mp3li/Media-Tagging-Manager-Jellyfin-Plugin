@@ -91,6 +91,9 @@ Acceptance criteria:
     in the Provider list and the network to be selected in the Network list.
 [x] Cache no more than one source-supplied logo per normalized Provider name
     and per normalized Network name for dashboard and compatible-plugin reuse.
+[x] Provide explicit logo-loading controls, a configurable total cache limit,
+    per-logo size limit, storage/progress status, and selective cached-logo
+    deletion without scanning media or changing tags.
 [x] Allow a server administrator to assign an official name and one uploaded
     logo to an unknown prefixed Provider or Network tag without rewriting its
     existing media tags.
