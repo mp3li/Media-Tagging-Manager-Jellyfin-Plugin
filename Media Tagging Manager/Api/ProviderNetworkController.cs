@@ -96,6 +96,7 @@ public sealed class ProviderNetworkController : ControllerBase
             _ => "NetworkOnly"
         };
         configuration.LogoCacheLimitMegabytes = Math.Clamp(configuration.LogoCacheLimitMegabytes, 10, 1024);
+        configuration.WatchmodeRequestsUsed = Math.Max(0, configuration.WatchmodeRequestsUsed);
         configuration.SelectedProviderNames = (configuration.SelectedProviderNames ?? [])
             .Where(static name => !string.IsNullOrWhiteSpace(name))
             .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
@@ -103,7 +104,8 @@ public sealed class ProviderNetworkController : ControllerBase
             .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
         plugin.UpdateConfiguration(configuration);
-        return Ok(configuration);
+        _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
+        return Ok(plugin.Configuration);
     }
 
     /// <summary>Gets TMDb's official watch-provider regions for the settings dropdowns.</summary>
@@ -254,7 +256,7 @@ public sealed class ProviderNetworkController : ControllerBase
             Name = name.Trim(),
             OfficialName = request.OfficialName.Trim()
         });
-        plugin.SaveConfiguration(plugin.Configuration);
+        plugin.SaveConfigurationWithRecovery();
         return NoContent();
     }
 

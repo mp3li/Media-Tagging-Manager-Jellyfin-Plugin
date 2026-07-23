@@ -110,7 +110,7 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         {
             var regions = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
             var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, providerLogos, null, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
-            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, null, networkTmdbIds, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, null, networkTmdbIds, configuration.WatchmodeApiKey, cancellationToken, GetRegions(configuration)).ConfigureAwait(false);
             var note = string.Join(" ", new[] { providerNote, networkNote }
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.Ordinal));
@@ -149,7 +149,8 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         IDictionary<string, string>? logos,
         IDictionary<string, int>? networkTmdbIds,
         string apiKey,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlyCollection<string>? allowedOriginCountries = null)
     {
         if (!_quota.TryReserve(1, out var quotaReason))
         {
@@ -173,6 +174,14 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
 
         foreach (var item in document.RootElement.EnumerateArray())
         {
+            if (allowedOriginCountries is not null
+                && (!item.TryGetProperty("origin_country", out var originCountry)
+                    || string.IsNullOrWhiteSpace(originCountry.GetString())
+                    || !allowedOriginCountries.Contains(originCountry.GetString()!, StringComparer.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
             if (item.TryGetProperty(propertyName, out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
             {
                 var sourceName = name.GetString()!.Trim();

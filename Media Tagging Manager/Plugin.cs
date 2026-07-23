@@ -47,6 +47,16 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         ConfigurationRecovery.Save(_applicationPaths, Configuration);
     }
 
+    /// <summary>
+    /// Saves a configuration mutation made by a background service and refreshes
+    /// the server-local recovery mirror at the same time.
+    /// </summary>
+    public void SaveConfigurationWithRecovery()
+    {
+        base.SaveConfiguration(Configuration);
+        ConfigurationRecovery.Save(_applicationPaths, Configuration);
+    }
+
     /// <inheritdoc />
     public IEnumerable<PluginPageInfo> GetPages() =>
     [

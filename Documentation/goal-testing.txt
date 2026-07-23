@@ -126,6 +126,9 @@ Acceptance criteria:
     date. Confirm the visible usage counter identifies the correct 30-day cycle
     (including a reset date of 2026-08-21), does not reset at a calendar-month
     boundary, and stops title and catalog requests at the selected limit.
+[ ] Enter an administrator-confirmed **Current API Usage** value (for example,
+    106) and save. Confirm the value survives a page reload and that later
+    Watchmode requests add to that baseline rather than restarting from zero.
 
 Acceptance criteria:
 - Every server uses its own credentials.
@@ -524,3 +527,11 @@ credentials and saved selections. Version 0.1.0.35-test adds a server-local
 current/previous settings recovery mirror and validates the primary XML before
 Jellyfin can replace it with defaults. Retest by updating a configured server
 is required.
+2026-07-23 | Test 3 / Test 4 — Watchmode usage and catalog scope | Fail; fix
+pending retest | Jellyfin 10.11.11, plugin 0.1.0.35-test | Configuration loss
+reset the locally tracked Watchmode count even though the Watchmode account
+reported 106 requests. The next build adds an editable Current API Usage
+baseline. Review of the supplied picker output also found that the Network
+picker was receiving Watchmode's entire worldwide catalog; the next build
+filters it to the selected availability countries using Watchmode's documented
+origin-country value. Retest required.

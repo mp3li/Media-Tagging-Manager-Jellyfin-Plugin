@@ -102,6 +102,9 @@ Acceptance criteria:
     carrying that tag before deciding whether to map it.
 [x] Keep TMDb requests below its published anti-bulk guidance with a shared
     35-requests-per-second gate, and temporarily back off on HTTP 429.
+[x] Let an administrator seed or correct the current Watchmode API usage for
+    the active 30-day cycle, then add future plugin-tracked usage to that
+    administrator-confirmed starting number.
 [ ] Add more first-class source adapters after appropriate review of their
     terms, identifiers, regional coverage, rate limits, and matching quality.
 

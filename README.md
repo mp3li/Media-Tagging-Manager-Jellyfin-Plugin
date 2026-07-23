@@ -142,6 +142,10 @@ Enter API credentials for the sources you want to use. Credentials are stored in
   shown as **Quota Resets On** in your Watchmode account; the plugin uses that
   date to identify the active 30-day cycle, track its own usage, and stop
   sending Watchmode requests when the selected cap is reached.
+- **Current API Usage** lets you enter or correct the current usage shown in
+  your Watchmode account for that active cycle. The plugin adds its future
+  tracked requests to that starting value; Watchmode's quota headers take
+  precedence when the service returns them.
 
 The dashboard sends built-in-source credentials in request headers, not in source URLs. Jellyfin’s plugin configuration should still be treated as sensitive server data; protect access to the Jellyfin dashboard, its data directory, backups, and logs. The plugin does not claim to encrypt API keys at rest.
 
@@ -181,7 +185,10 @@ Uncheck **Save and use provider and network logos**, then select **Save Main
 Settings**, to stop this plugin from downloading, saving, or displaying logos.
 Each source logo is capped at 2 MB, and the total cache limit is configurable
 from 10 MB to 1 GB (100 MB by default). Logo Settings displays the current
-file count, storage use, configured limit, and any active loading progress.
+file count, storage use, configured limit, a live processed/total count, and a
+progress bar while a load is active. When a load completes, the dashboard
+refreshes its pickers and Library Overview so newly cached logos appear
+without a manual page reload.
 
 Use **Load All Logos** to explicitly cache every source-catalog Provider logo
 and preload Network logos before any media scan whenever the Network catalog
@@ -248,10 +255,12 @@ actually wanted.
 #### Select Networks
 
 This separate settings section loads Watchmode's complete TV-network catalog
-when its key is configured, plus networks previously discovered by the plugin.
-It therefore supports choosing network names before the first media scan. On a
-Watchmode fallback lookup, title-level network names are written only as
-`Network:` tags and current availability is written only as `Provider:` tags.
+for the selected availability countries when its key is configured, plus
+networks previously discovered by the plugin. It therefore supports choosing
+network names before the first media scan without presenting Watchmode's entire
+worldwide catalog. On a Watchmode fallback lookup, title-level network names
+are written only as `Network:` tags and current availability is written only as
+`Provider:` tags.
 
 Use **Sync with Only Selected Networks** when your selected libraries already
 have more network tags than you want. It creates a backup, deletes network tags

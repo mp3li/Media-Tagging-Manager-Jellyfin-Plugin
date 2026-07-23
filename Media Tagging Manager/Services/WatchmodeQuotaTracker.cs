@@ -28,7 +28,7 @@ public sealed class WatchmodeQuotaTracker
             }
 
             configuration.WatchmodeRequestsUsed += credits;
-            Plugin.Instance?.SaveConfiguration(configuration);
+            Plugin.Instance?.SaveConfigurationWithRecovery();
             reason = null;
             return true;
         }
@@ -51,7 +51,7 @@ public sealed class WatchmodeQuotaTracker
                 configuration.WatchmodeRequestsUsed = Math.Max(0, serverUsed);
             }
 
-            Plugin.Instance?.SaveConfiguration(configuration);
+            Plugin.Instance?.SaveConfigurationWithRecovery();
         }
     }
 
@@ -68,11 +68,27 @@ public sealed class WatchmodeQuotaTracker
 
             if (ResetCycleIfNeeded(configuration, cycleStart))
             {
-                Plugin.Instance?.SaveConfiguration(configuration);
+                Plugin.Instance?.SaveConfigurationWithRecovery();
             }
 
             var limit = Math.Max(0, configuration.WatchmodeMonthlyLimit);
             return new WatchmodeUsageDto(configuration.WatchmodeRequestsUsed, limit, cycleStart, resetsOn, true, configuration.WatchmodeRequestsUsed >= limit);
+        }
+    }
+
+    /// <summary>Sets the administrator-confirmed usage for the current Watchmode cycle.</summary>
+    public void SetManualUsage(int usage)
+    {
+        lock (_lock)
+        {
+            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            if (TryGetCurrentCycle(configuration, out var cycleStart, out _))
+            {
+                configuration.WatchmodeUsageCycleStart = cycleStart;
+            }
+
+            configuration.WatchmodeRequestsUsed = Math.Max(0, usage);
+            Plugin.Instance?.SaveConfigurationWithRecovery();
         }
     }
 

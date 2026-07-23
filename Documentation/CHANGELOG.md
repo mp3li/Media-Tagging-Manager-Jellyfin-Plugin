@@ -6,6 +6,28 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.36-test] - 2026-07-23
+
+### Fixed
+
+- Added an editable **Current API Usage** field beside Watchmode's quota-reset
+  date. An administrator can seed or correct the current 30-day-cycle count;
+  later plugin requests add to that value, while authoritative Watchmode quota
+  headers still correct it when supplied.
+- Filtered Watchmode's Network picker catalog to the selected availability
+  countries using its `origin_country` metadata instead of displaying the full
+  worldwide catalog.
+- Added a visible logo-loading progress bar and count. When loading completes,
+  the dashboard refreshes cached provider/network logos into its pickers and
+  Library Overview.
+- Background configuration mutations, including Watchmode usage updates, now
+  refresh the server-local settings recovery mirror.
+
+### Test-release notes
+
+- This supersedes `0.1.0.35-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.35-test] - 2026-07-23
 
 ### Fixed
