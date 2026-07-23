@@ -6,6 +6,19 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.34-test] - 2026-07-23
+
+### Fixed
+
+- Included the Media Tagging Manager Noncommercial License 1.0 with the test
+  ZIP so the installed DLL is accompanied by its license terms and required
+  credit.
+
+### Test-release notes
+
+- This supersedes `0.1.0.33-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.33-test] - 2026-07-23
 
 ### Changed
