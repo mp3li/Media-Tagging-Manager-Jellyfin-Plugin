@@ -50,6 +50,10 @@ Date testing began:
     configuration XML is missing or unreadable, confirm the server-local
     current or previous recovery mirror restores those values instead of
     loading blank defaults.
+[ ] Confirm an update that presents a valid but empty default configuration
+    restores the most meaningful current or previous recovery copy, including
+    API credentials, every saved preference, and Watchmode usage. Confirm the
+    visible API Settings recovery-status message reports which copy was used.
 
 Acceptance criteria:
 - The plugin loads and its dashboard is reachable without manually editing
@@ -535,3 +539,11 @@ baseline. Review of the supplied picker output also found that the Network
 picker was receiving Watchmode's entire worldwide catalog; the next build
 filters it to the selected availability countries using Watchmode's documented
 origin-country value. Retest required.
+2026-07-23 | Test 2 / Test 12 — settings persistence regression | Fail;
+urgent fix pending retest | Jellyfin version not recorded, plugin
+0.1.0.36-test | Updating again cleared both API credentials and every saved
+preference. The original recovery guard only restored missing or unreadable
+configuration XML; it did not detect a valid blank default written during an
+update. Version 0.1.0.37-test selects the most meaningful current/previous
+server-local recovery copy when that blank-default state appears and reports
+the decision in the dashboard. Retest required.

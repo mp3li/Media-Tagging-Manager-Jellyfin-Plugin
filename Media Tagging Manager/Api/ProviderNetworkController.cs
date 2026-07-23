@@ -63,6 +63,7 @@ public sealed class ProviderNetworkController : ControllerBase
         return Ok(new
         {
             Configuration = plugin.Configuration,
+            RecoveryStatus = Jellyfin.Plugin.MediaTaggingManager.Configuration.ConfigurationRecovery.Status,
             // Match Jellyfin's own LibraryStructureController, which asks for
             // all virtual folders by passing true.
             Libraries = _libraryManager.GetVirtualFolders(true).Select(folder => new { folder.ItemId, folder.Name })
@@ -103,6 +104,7 @@ public sealed class ProviderNetworkController : ControllerBase
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+        configuration.LastSettingsSavedUtc = DateTime.UtcNow;
         plugin.UpdateConfiguration(configuration);
         _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
         return Ok(plugin.Configuration);

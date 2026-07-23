@@ -6,6 +6,24 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.37-test] - 2026-07-23
+
+### Fixed
+
+- Corrected the settings-recovery decision for a valid but empty default
+  configuration created during an update. The plugin now restores the most
+  meaningful available current/previous server-local recovery copy rather than
+  accepting a blank default and replacing saved credentials and preferences.
+- Added an explicit dashboard-save timestamp, so a deliberately cleared
+  configuration is not mistaken for an update reset.
+- Added a non-sensitive **Settings recovery status** message in API Settings
+  that reports whether the current or previous recovery copy was used.
+
+### Test-release notes
+
+- This supersedes `0.1.0.36-test` and is an urgent settings-persistence
+  regression fix. It remains a public test build, not a stable release.
+
 ## [0.1.0.36-test] - 2026-07-23
 
 ### Fixed
