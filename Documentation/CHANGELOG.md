@@ -6,6 +6,23 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.35-test] - 2026-07-23
+
+### Fixed
+
+- Added an update-safe, server-local settings recovery mirror. Before Jellyfin
+  can replace a missing or unreadable plugin configuration XML with defaults,
+  the plugin restores the last successfully saved configuration mirror.
+- The recovery mirror retains the current and immediately preceding saved
+  settings, including library choices, API credentials, tag selections, and
+  other administrator settings. It is stored only in the server's data area,
+  never in a package, manifest, backup, or repository file.
+
+### Test-release notes
+
+- This supersedes `0.1.0.34-test` and must be tested by updating an existing
+  configured installation before it can be considered validated.
+
 ## [0.1.0.34-test] - 2026-07-23
 
 ### Fixed

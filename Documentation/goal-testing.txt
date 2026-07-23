@@ -45,6 +45,11 @@ Date testing began:
     Collections Tags Settings, View and Edit Tags, and Scan.
 [ ] Confirm the plugin's existing stable GUID retains settings after replacing
     an older local build with a newer local build.
+[ ] Confirm a catalog update retains API credentials, library selections,
+    tag selections, regions, and automation settings. If the primary Jellyfin
+    configuration XML is missing or unreadable, confirm the server-local
+    current or previous recovery mirror restores those values instead of
+    loading blank defaults.
 
 Acceptance criteria:
 - The plugin loads and its dashboard is reachable without manually editing
@@ -512,3 +517,10 @@ items. The next build records and displays those totals; retest required.
 selected library's media after scanning. The overview query now reads each
 selected Jellyfin library directly and carries its configured library ID into
 the dashboard result; retest required.
+2026-07-23 | Test 2 / Test 12 — settings persistence | Fail; recovery fix
+pending retest | Jellyfin 10.11.11, plugin version not recorded | A test
+catalog update presented a blank plugin configuration, including missing API
+credentials and saved selections. Version 0.1.0.35-test adds a server-local
+current/previous settings recovery mirror and validates the primary XML before
+Jellyfin can replace it with defaults. Retest by updating a configured server
+is required.

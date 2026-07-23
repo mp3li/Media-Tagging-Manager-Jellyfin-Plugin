@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.34",
-        "changelog": "0.1.0.34-test includes the custom noncommercial LICENSE alongside the DLL. Test only; not a stable release.",
+        "version": "0.1.0.35",
+        "changelog": "0.1.0.35-test adds server-local settings recovery so a missing or unreadable configuration cannot reset saved credentials or selections during a future update. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.34-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.34-test.zip",
-        "checksum": "39be2ef7bd71d3e83047e816491e05e1",
-        "timestamp": "2026-07-23T19:09:06Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.35-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.35-test.zip",
+        "checksum": "e45a58f4177c3042f5b7c9a287ad7338",
+        "timestamp": "2026-07-23T20:01:48Z"
       }
     ]
   }
