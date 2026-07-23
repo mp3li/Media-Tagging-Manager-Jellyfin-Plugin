@@ -17,6 +17,7 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<TagDestinationWriter>();
         serviceCollection.AddSingleton<TagBackupManager>();
         serviceCollection.AddSingleton<WatchmodeQuotaTracker>();
+        serviceCollection.AddSingleton<ProviderNetworkLogoCache>();
         serviceCollection.AddSingleton<ProviderNetworkScanner>();
         serviceCollection.AddSingleton<ManualScanRequestQueue>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, RefreshAvailabilityTask>();

@@ -17,6 +17,7 @@ public sealed class ProviderNetworkScanner
     private readonly ScanStateStore _state;
     private readonly TagBackupManager _backups;
     private readonly TagDestinationWriter _destinations;
+    private readonly ProviderNetworkLogoCache _logos;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly object _knownTagLock = new();
 
@@ -26,13 +27,15 @@ public sealed class ProviderNetworkScanner
         IEnumerable<IAvailabilitySource> sources,
         ScanStateStore state,
         TagBackupManager backups,
-        TagDestinationWriter destinations)
+        TagDestinationWriter destinations,
+        ProviderNetworkLogoCache logos)
     {
         _libraryManager = libraryManager;
         _sources = sources.ToArray();
         _state = state;
         _backups = backups;
         _destinations = destinations;
+        _logos = logos;
     }
 
     /// <summary>Scans a configured library. Only movies and series receive tags; episodes inherit their series context.</summary>
@@ -268,6 +271,45 @@ public sealed class ProviderNetworkScanner
             (configuration.KnownNetworkNames ?? []).Concat(items.SelectMany(item => item.Networks)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray());
     }
 
+    /// <summary>Returns only prefixed Provider/Network tags that are not plugin-known or source-recognized.</summary>
+    public IReadOnlyCollection<UnknownTaggedNameDto> GetUnknownTaggedNames(
+        IEnumerable<string> recognizedProviders,
+        IEnumerable<string> recognizedNetworks)
+    {
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+        var knownProviders = new HashSet<string>((configuration.KnownProviderNames ?? []).Concat(recognizedProviders)
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)), StringComparer.OrdinalIgnoreCase);
+        var knownNetworks = new HashSet<string>((configuration.KnownNetworkNames ?? []).Concat(recognizedNetworks)
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)), StringComparer.OrdinalIgnoreCase);
+        var unknown = new Dictionary<(TagKind Kind, string Name), int>();
+        foreach (var item in GetDashboardItems(null, null, null, null))
+        {
+            foreach (var name in item.Providers)
+            {
+                var normalized = TagNameNormalizer.Normalize(TagKind.Provider, name);
+                if (!knownProviders.Contains(normalized))
+                {
+                    unknown[(TagKind.Provider, name)] = unknown.GetValueOrDefault((TagKind.Provider, name)) + 1;
+                }
+            }
+
+            foreach (var name in item.Networks)
+            {
+                var normalized = TagNameNormalizer.Normalize(TagKind.Network, name);
+                if (!knownNetworks.Contains(normalized))
+                {
+                    unknown[(TagKind.Network, name)] = unknown.GetValueOrDefault((TagKind.Network, name)) + 1;
+                }
+            }
+        }
+
+        return unknown
+            .Select(pair => new UnknownTaggedNameDto(pair.Key.Kind, pair.Key.Name, pair.Value))
+            .OrderBy(item => item.Kind)
+            .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
     /// <summary>Removes unselected tags of one kind from selected libraries without contacting any source.</summary>
     public async Task<TagSyncResult> SyncWithOnlySelectedAsync(TagKind kind, IEnumerable<string> selectedNames, CancellationToken cancellationToken)
     {
@@ -489,13 +531,16 @@ public sealed class ProviderNetworkScanner
             .Select(value => value with { Name = TagNameNormalizer.Normalize(value.Kind, value.Name) })
             .ToArray();
         var hasTvNetworkApp = normalized.Any(static value => value.Kind == TagKind.Provider && value.IsTvNetworkApp);
-        var selected = normalized
+        var selectedValues = normalized
             .Where(value => (value.Kind == TagKind.Provider && configuration.TagProviders) || (value.Kind == TagKind.Network && configuration.TagNetworks))
             .Where(value => !value.IsTvNetworkApp || !string.Equals(configuration.TvNetworkAppTaggingMode, "NetworkOnly", StringComparison.Ordinal))
             .Where(value => !hasTvNetworkApp || !string.Equals(configuration.TvNetworkAppTaggingMode, "StreamingAppOnly", StringComparison.Ordinal) || value.Kind != TagKind.Network)
             .Where(value => value.Kind != TagKind.Provider || !configuration.RestrictProvidersToSelected || selectedProviderNames.Contains(value.Name))
             .Where(value => value.Kind != TagKind.Network || !configuration.RestrictNetworksToSelected || selectedNetworkNames.Contains(value.Name))
             .Where(value => !string.IsNullOrWhiteSpace(value.Name))
+            .ToArray();
+        await _logos.CacheAsync(selectedValues, cancellationToken).ConfigureAwait(false);
+        var selected = selectedValues
             .Select(value => TagNaming.Format(value.Kind, value.Name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)

@@ -6,6 +6,39 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.27-test] - 2026-07-23
+
+### Added
+
+- Provider and Network picker rows and View Tags now use a server-side cache
+  of source-supplied logos. The cache keeps one image per normalized tag name,
+  not one image per media item, and exposes those cached images to compatible
+  local plugins.
+- Added **Logo Settings** to stop logo use/saving and explicitly delete all
+  cached or manually uploaded logos without changing media tags.
+- Added **Unknown Providers and Networks**, limited to unknown prefixed
+  `Provider:`/`Network:` tags. It supports persistent official-name mappings
+  and a single manually uploaded PNG, JPEG, or SVG logo per mapping.
+- Added a reserved, empty **Genre Settings** dashboard tab.
+- Added a one-click **Clear Filters** action and a collapsed-by-default
+  Library Overview in **View and Edit Tags**.
+
+### Changed
+
+- Clarified that TMDb and Watchmode can each return an actual title-level
+  Network tag, and that the TV Network Streaming Apps **Both** mode requires
+  selecting the app under Providers and its network under Networks.
+- Reorganized dashboard settings into **Main Settings** and **Network and
+  Provider Settings**, each with a dedicated save action. Scheduled Tasks
+  Settings are now also available on Scan with their own save action and stay
+  synchronized with Main Settings.
+- Renamed **View Tags** to **View and Edit Tags**.
+
+### Test-release notes
+
+- This supersedes `0.1.0.26-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.26-test] - 2026-07-22
 
 ### Added

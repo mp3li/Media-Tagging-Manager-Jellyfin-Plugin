@@ -2,6 +2,7 @@ using Jellyfin.Plugin.MediaTaggingManager.Models;
 using Jellyfin.Plugin.MediaTaggingManager.ScheduledTasks;
 using Jellyfin.Plugin.MediaTaggingManager.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Tasks;
@@ -24,6 +25,7 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly TmdbAvailabilitySource _tmdb;
     private readonly WatchmodeAvailabilitySource _watchmode;
     private readonly WatchmodeQuotaTracker _watchmodeQuota;
+    private readonly ProviderNetworkLogoCache _logos;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -35,7 +37,8 @@ public sealed class ProviderNetworkController : ControllerBase
         ManualScanRequestQueue manualScanRequests,
         TmdbAvailabilitySource tmdb,
         WatchmodeAvailabilitySource watchmode,
-        WatchmodeQuotaTracker watchmodeQuota)
+        WatchmodeQuotaTracker watchmodeQuota,
+        ProviderNetworkLogoCache logos)
     {
         _scanner = scanner;
         _state = state;
@@ -46,6 +49,7 @@ public sealed class ProviderNetworkController : ControllerBase
         _tmdb = tmdb;
         _watchmode = watchmode;
         _watchmodeQuota = watchmodeQuota;
+        _logos = logos;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -172,6 +176,7 @@ public sealed class ProviderNetworkController : ControllerBase
         var discovered = _scanner.GetTagChoices();
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
+        await CacheCatalogLogosAsync(tmdb, watchmode, cancellationToken).ConfigureAwait(false);
         var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
             .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
@@ -183,6 +188,80 @@ public sealed class ProviderNetworkController : ControllerBase
             networks,
             CombineCatalogNotes(tmdb.Note, watchmode.Note),
             watchmode.Note));
+    }
+
+    /// <summary>Serves a previously cached source-supplied provider or network logo for dashboard reuse.</summary>
+    [HttpGet("logos/{kind}/{name}")]
+    public async Task<IActionResult> GetLogo(string kind, string name, CancellationToken cancellationToken)
+    {
+        if (!Enum.TryParse<TagKind>(kind, true, out var tagKind)
+            || tagKind is not TagKind.Provider and not TagKind.Network)
+        {
+            return NotFound();
+        }
+
+        var logo = await _logos.OpenAsync(tagKind, name, cancellationToken).ConfigureAwait(false);
+        return logo is null ? NotFound() : File(logo.Stream, logo.ContentType);
+    }
+
+    /// <summary>Returns only prefixed Provider/Network tags in selected libraries that the plugin does not recognize.</summary>
+    [HttpGet("unknown-tags")]
+    public async Task<ActionResult<IReadOnlyCollection<UnknownTaggedNameDto>>> GetUnknownTags(CancellationToken cancellationToken)
+    {
+        var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
+        var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
+        return Ok(_scanner.GetUnknownTaggedNames(
+            tmdb.Providers.Concat(watchmode.Providers),
+            tmdb.Networks.Concat(watchmode.Networks)));
+    }
+
+    /// <summary>Saves a canonical name for one otherwise unknown Provider or Network tag without modifying media tags.</summary>
+    [HttpPut("unknown-tags/{kind}/{name}")]
+    public IActionResult SaveUnknownTagMapping(string kind, string name, [FromBody] UnknownTagMappingRequest request)
+    {
+        if (!TryParseKind(kind, out var tagKind) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(request.OfficialName))
+        {
+            return BadRequest("Choose a Provider or Network tag and enter its official name.");
+        }
+
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        plugin.Configuration.UnknownTagMappings ??= [];
+        plugin.Configuration.UnknownTagMappings.RemoveAll(mapping => string.Equals(mapping.Kind, tagKind.ToString(), StringComparison.OrdinalIgnoreCase)
+            && string.Equals(mapping.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+        plugin.Configuration.UnknownTagMappings.Add(new Configuration.UnknownTagMapping
+        {
+            Kind = tagKind.ToString(),
+            Name = name.Trim(),
+            OfficialName = request.OfficialName.Trim()
+        });
+        plugin.SaveConfiguration(plugin.Configuration);
+        return NoContent();
+    }
+
+    /// <summary>Saves one administrator-selected logo for an unknown-tag mapping.</summary>
+    [HttpPost("unknown-tags/{kind}/{name}/logo")]
+    public async Task<IActionResult> UploadUnknownTagLogo(string kind, string name, [FromForm] IFormFile logo, CancellationToken cancellationToken)
+    {
+        if (!TryParseKind(kind, out var tagKind) || logo is null || logo.Length == 0 || logo.Length > 2 * 1024 * 1024)
+        {
+            return BadRequest("Choose a Provider or Network logo file no larger than 2 MB.");
+        }
+
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("The plugin configuration is unavailable.");
+        var officialName = configuration.UnknownTagMappings?
+            .FirstOrDefault(mapping => string.Equals(mapping.Kind, tagKind.ToString(), StringComparison.OrdinalIgnoreCase)
+                && string.Equals(mapping.Name, name, StringComparison.OrdinalIgnoreCase))?.OfficialName ?? name;
+        await using var stream = logo.OpenReadStream();
+        await _logos.SaveUploadedAsync(tagKind, officialName, stream, logo.ContentType, cancellationToken).ConfigureAwait(false);
+        return NoContent();
+    }
+
+    /// <summary>Deletes every cached source or administrator-uploaded logo without changing media tags.</summary>
+    [HttpDelete("logos")]
+    public async Task<IActionResult> DeleteCachedLogos(CancellationToken cancellationToken)
+    {
+        await _logos.DeleteAllAsync(cancellationToken).ConfigureAwait(false);
+        return NoContent();
     }
 
     /// <summary>Removes unselected provider tags without looking up or changing any source data.</summary>
@@ -271,6 +350,17 @@ public sealed class ProviderNetworkController : ControllerBase
         var meaningful = notes.Where(note => !string.IsNullOrWhiteSpace(note)).ToArray();
         return meaningful.Length == 0 ? null : string.Join(" ", meaningful);
     }
+
+    private async Task CacheCatalogLogosAsync(SourceCatalogResult tmdb, SourceCatalogResult watchmode, CancellationToken cancellationToken)
+    {
+        var tags = (tmdb.ProviderLogoUrls ?? new Dictionary<string, string>())
+            .Concat(watchmode.ProviderLogoUrls ?? new Dictionary<string, string>())
+            .Select(pair => new SourceTag(TagKind.Provider, pair.Key, "Reference catalog", false, pair.Value));
+        await _logos.CacheAsync(tags, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static bool TryParseKind(string value, out TagKind kind) => Enum.TryParse(value, true, out kind)
+        && kind is TagKind.Provider or TagKind.Network;
 }
 
 /// <summary>Manual provider/network edits submitted from the dashboard.</summary>
@@ -288,6 +378,13 @@ public sealed class TagSelectionRequest
 {
     /// <summary>Gets or sets the names to retain.</summary>
     public string[]? Names { get; set; }
+}
+
+/// <summary>A canonical display name submitted for an otherwise unknown tag.</summary>
+public sealed class UnknownTagMappingRequest
+{
+    /// <summary>Gets or sets the official/canonical provider or network name.</summary>
+    public string OfficialName { get; set; } = string.Empty;
 }
 
 /// <summary>Optional administrator label for a manually created complete tag backup.</summary>

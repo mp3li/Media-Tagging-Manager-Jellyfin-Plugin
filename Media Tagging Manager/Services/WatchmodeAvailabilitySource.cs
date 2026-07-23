@@ -104,37 +104,47 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
 
         var providers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var networks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var providerLogos = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
             var regions = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
-            var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
-            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, providerLogos, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, null, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
             var note = string.Join(" ", new[] { providerNote, networkNote }
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.Ordinal));
             return new SourceCatalogResult(
                 providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
-                string.IsNullOrWhiteSpace(note) ? null : note);
+                string.IsNullOrWhiteSpace(note) ? null : note,
+                providerLogos);
         }
         catch (HttpRequestException exception)
         {
             return new SourceCatalogResult(
                 providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
-                $"Watchmode reference catalogs could not be loaded: {exception.Message}");
+                $"Watchmode reference catalogs could not be loaded: {exception.Message}",
+                providerLogos);
         }
         catch (JsonException exception)
         {
             return new SourceCatalogResult(
                 providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                 networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
-                $"Watchmode reference catalogs returned unexpected data: {exception.Message}");
+                $"Watchmode reference catalogs returned unexpected data: {exception.Message}",
+                providerLogos);
         }
 
     }
 
-    private async Task<string?> AddCatalogNamesAsync(string uri, string propertyName, ISet<string> names, string apiKey, CancellationToken cancellationToken)
+    private async Task<string?> AddCatalogNamesAsync(
+        string uri,
+        string propertyName,
+        ISet<string> names,
+        IDictionary<string, string>? logos,
+        string apiKey,
+        CancellationToken cancellationToken)
     {
         if (!_quota.TryReserve(1, out var quotaReason))
         {
@@ -160,7 +170,14 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         {
             if (item.TryGetProperty(propertyName, out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
             {
-                names.Add(name.GetString()!.Trim());
+                var sourceName = name.GetString()!.Trim();
+                names.Add(sourceName);
+                if (logos is not null
+                    && item.TryGetProperty("logo_100px", out var logo)
+                    && !string.IsNullOrWhiteSpace(logo.GetString()))
+                {
+                    logos.TryAdd(sourceName, logo.GetString()!);
+                }
             }
         }
 

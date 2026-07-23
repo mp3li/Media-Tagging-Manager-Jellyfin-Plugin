@@ -60,6 +60,7 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
         }
 
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var logos = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
             foreach (var region in GetRegions(configuration))
@@ -83,7 +84,12 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
                     {
                         if (provider.TryGetProperty("provider_name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
                         {
-                            names.Add(name.GetString()!.Trim());
+                            var providerName = name.GetString()!.Trim();
+                            names.Add(providerName);
+                            if (provider.TryGetProperty("logo_path", out var logoPath) && !string.IsNullOrWhiteSpace(logoPath.GetString()))
+                            {
+                                logos.TryAdd(providerName, TmdbLogoUrl(logoPath.GetString()!));
+                            }
                         }
                     }
                 }
@@ -91,14 +97,14 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
         }
         catch (HttpRequestException exception)
         {
-            return new SourceCatalogResult(names.ToArray(), [], $"TMDb provider catalog could not be loaded: {exception.Message}");
+            return new SourceCatalogResult(names.ToArray(), [], $"TMDb provider catalog could not be loaded: {exception.Message}", logos);
         }
         catch (JsonException exception)
         {
-            return new SourceCatalogResult(names.ToArray(), [], $"TMDb provider catalog returned unexpected data: {exception.Message}");
+            return new SourceCatalogResult(names.ToArray(), [], $"TMDb provider catalog returned unexpected data: {exception.Message}", logos);
         }
 
-        return new SourceCatalogResult(names.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(), []);
+        return new SourceCatalogResult(names.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(), [], null, logos);
     }
 
     /// <inheritdoc />
@@ -145,7 +151,10 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
                         {
                             if (provider.TryGetProperty("provider_name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
                             {
-                                tags.Add(new SourceTag(TagKind.Provider, name.GetString()!, Name));
+                                var logoUrl = provider.TryGetProperty("logo_path", out var logoPath) && !string.IsNullOrWhiteSpace(logoPath.GetString())
+                                    ? TmdbLogoUrl(logoPath.GetString()!)
+                                    : null;
+                                tags.Add(new SourceTag(TagKind.Provider, name.GetString()!, Name, false, logoUrl));
                             }
                         }
                     }
@@ -171,7 +180,10 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
                     {
                         if (network.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
                         {
-                            tags.Add(new SourceTag(TagKind.Network, name.GetString()!, Name));
+                            var logoUrl = network.TryGetProperty("logo_path", out var logoPath) && !string.IsNullOrWhiteSpace(logoPath.GetString())
+                                ? TmdbLogoUrl(logoPath.GetString()!)
+                                : null;
+                            tags.Add(new SourceTag(TagKind.Network, name.GetString()!, Name, false, logoUrl));
                         }
                     }
                 }
@@ -194,6 +206,8 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
 
     private Task<HttpResponseMessage> SendAsync(string uri, string token, CancellationToken cancellationToken) =>
         _requestGate.SendAsync(_httpClient, () => CreateRequest(uri, token), cancellationToken);
+
+    private static string TmdbLogoUrl(string logoPath) => $"https://image.tmdb.org/t/p/w92{logoPath}";
 
     private static IReadOnlyCollection<string> GetRegions(Configuration.PluginConfiguration configuration)
     {

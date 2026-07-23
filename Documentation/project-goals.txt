@@ -54,6 +54,10 @@ Acceptance criteria:
 [x] Explain settings, source behavior, refresh behavior, incoming-media checks,
     and restore risk in the dashboard rather than requiring a config-file or
     terminal workflow.
+[x] Separate Main Settings from Network and Provider Settings, reserve a Genre
+    Settings tab, and give each settings tab its own save action.
+[x] Provide logo settings that can stop logo saving/display and explicitly
+    delete the complete local logo cache without changing media tags.
 
 Acceptance criteria:
 - An administrator can perform normal setup from Dashboard -> Plugins -> Media
@@ -82,7 +86,13 @@ Acceptance criteria:
     for future scans without scanning media or changing current tags.
 [x] Let an administrator choose whether a television network's own streaming
     app is tagged as the Network, the streaming app Provider, or both; never
-    infer a Network tag from an app name.
+    infer a Network tag from an app name. Both requires the app to be selected
+    in the Provider list and the network to be selected in the Network list.
+[x] Cache no more than one source-supplied logo per normalized Provider name
+    and per normalized Network name for dashboard and compatible-plugin reuse.
+[x] Allow a server administrator to assign an official name and one uploaded
+    logo to an unknown prefixed Provider or Network tag without rewriting its
+    existing media tags.
 [x] Keep TMDb requests below its published anti-bulk guidance with a shared
     35-requests-per-second gate, and temporarily back off on HTTP 429.
 [ ] Add more first-class source adapters after appropriate review of their
@@ -149,6 +159,10 @@ Acceptance criteria:
 [x] Filter by provider, network, tagged state, or a provider-plus-network
     combination.
 [x] Support partial-text provider and network filtering.
+[x] Provide a one-click clear-filters action and a collapsed-by-default Library
+    Overview for large selected libraries.
+[x] List only unrecognized `Provider:` and `Network:` tags in the Unknown
+    Providers and Networks section; ordinary Jellyfin tags are excluded.
 [x] Allow an administrator to replace a title's plugin-owned provider and
     network tags manually with comma-separated values.
 [x] Preserve unrelated Jellyfin tags during manual corrections.

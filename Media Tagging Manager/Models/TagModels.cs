@@ -10,8 +10,8 @@ public enum TagKind
     Network
 }
 
-/// <summary>A provider/network value with source provenance and an optional TV-network-app classification.</summary>
-public sealed record SourceTag(TagKind Kind, string Name, string Source, bool IsTvNetworkApp = false);
+/// <summary>A provider/network value with source provenance, optional TV-network-app classification, and source logo URL.</summary>
+public sealed record SourceTag(TagKind Kind, string Name, string Source, bool IsTvNetworkApp = false, string? LogoUrl = null);
 
 /// <summary>Stable external identifiers available for a Jellyfin item.</summary>
 public sealed record ExternalIds(string? Tmdb, string? Imdb, string MediaType);
@@ -36,10 +36,17 @@ public sealed record TagChoicesDto(
     string? NetworkCatalogStatus = null);
 
 /// <summary>Reference names returned from one enabled source's provider and network catalog endpoints.</summary>
-public sealed record SourceCatalogResult(IReadOnlyCollection<string> Providers, IReadOnlyCollection<string> Networks, string? Note = null);
+public sealed record SourceCatalogResult(
+    IReadOnlyCollection<string> Providers,
+    IReadOnlyCollection<string> Networks,
+    string? Note = null,
+    IReadOnlyDictionary<string, string>? ProviderLogoUrls = null);
 
 /// <summary>Result of removing one kind of plugin-owned tag without contacting any source.</summary>
 public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);
+
+/// <summary>A Provider or Network tag in selected libraries that is neither plugin-known nor recognized by enabled source catalogs.</summary>
+public sealed record UnknownTaggedNameDto(TagKind Kind, string Name, int MediaItemCount);
 
 /// <summary>Progress visible in the dashboard while a scan runs.</summary>
 public sealed class ScanProgress

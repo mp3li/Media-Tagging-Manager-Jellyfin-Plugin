@@ -40,8 +40,9 @@ Date testing began:
 [ ] Install the DLL manually in a dedicated Jellyfin plugin directory.
 [ ] Restart Jellyfin and confirm the plugin loads without server startup errors.
 [ ] Confirm the Dashboard -> Plugins entry displays "Media Tagging Manager".
-[ ] Open the plugin dashboard page and confirm all three areas are available:
-    Main Settings, View Tags, and Scan.
+[ ] Open the plugin dashboard page and confirm all five areas are available:
+    Main Settings, Network and Provider Settings, Genre Settings, View and Edit
+    Tags, and Scan.
 [ ] Confirm the plugin's existing stable GUID retains settings after replacing
     an older local build with a newer local build.
 
@@ -82,6 +83,10 @@ Acceptance criteria:
 [ ] Confirm choosing both destinations writes matching tags to Jellyfin and to
     the configured NFO files, and that a backup restore returns the selected
     destination(s) to the saved tag list.
+[ ] Confirm Main Settings, Network and Provider Settings, Logo Settings, and
+    Scan Scheduled Tasks Settings each save their intended configuration without
+    overwriting unrelated saved settings.
+[ ] Confirm the empty Genre Settings tab opens without an error.
 
 Acceptance criteria:
 - Settings persist across a page reload and Jellyfin restart.
@@ -171,7 +176,17 @@ Acceptance criteria:
     Watchmode TV-channel-app result writes its Provider tag and suppresses the
     Network tag for that title.
 [ ] With TV Network Streaming Apps set to Both, confirm both selected tags are
-    written when the APIs return both values.
+    written when the APIs return both values, the streaming app is selected in
+    Select Providers, and the network is selected in Select Networks.
+[ ] Confirm provider and network pickers show the cached source-supplied logo
+    when one exists, and View and Edit Tags reuses the same cached image.
+[ ] Confirm the plugin data folder contains no more than one logo file for a
+    normalized Provider name and one for a normalized Network name, regardless
+    of how many media items use those tags.
+[ ] Turn off logo saving/display, save Logo Settings, and confirm picker and
+    overview logos no longer display or download.
+[ ] Click Delete Cached Logos and confirm source-cached and manually uploaded
+    logos are removed while all media tags remain unchanged.
 [ ] After a selected-library scan, confirm newly discovered provider and
     network values remain listed even if a selection sync removes their tags.
 [ ] Confirm Select All and Select None affect every provider checkbox without
@@ -292,12 +307,23 @@ Acceptance criteria:
 [ ] Filter by provider and network together.
 [ ] Filter for titles that have at least one provider or network.
 [ ] Filter for titles missing both provider and network tags.
+[ ] Click Clear Filters and confirm every filter is reset and all matching
+    selected-library items return.
+[ ] Confirm Library Overview is collapsed by default, expands on request, and
+    returns to the collapsed state with the correct control label.
 [ ] Edit a title manually to add a provider and network.
 [ ] Edit a title manually to remove a provider and network.
 [ ] Confirm the manual edit creates a pre-change backup.
 [ ] Confirm manual editing preserves unrelated existing Jellyfin tags.
 [ ] Confirm the edited title refreshes correctly in the overview.
 [ ] Confirm an edit of a missing/deleted item is handled with a useful error.
+[ ] Confirm Unknown Providers and Networks lists only prefixed `Provider:` and
+    `Network:` tags that are neither plugin-known nor catalog-recognized; confirm
+    ordinary Jellyfin tags never appear there.
+[ ] Assign an official name to an unknown Provider or Network tag and confirm
+    the mapping persists without rewriting the original media tag.
+[ ] Upload PNG, JPEG, and SVG logos for mapped unknown names; confirm each is
+    displayed where logos are enabled and replaces the prior logo for that name.
 
 Acceptance criteria:
 - An administrator can locate, review, and correct supported title tags without

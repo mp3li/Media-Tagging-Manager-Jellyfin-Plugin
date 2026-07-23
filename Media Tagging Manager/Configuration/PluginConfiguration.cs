@@ -62,6 +62,12 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets whether network tags are restricted to <see cref="SelectedNetworkNames"/>.</summary>
     public bool RestrictNetworksToSelected { get; set; }
 
+    /// <summary>Gets or sets whether source and administrator-supplied logos are cached and displayed.</summary>
+    public bool EnableLogoCaching { get; set; } = true;
+
+    /// <summary>Gets or sets administrator-defined canonical names for otherwise unknown Provider or Network tags.</summary>
+    public List<UnknownTagMapping> UnknownTagMappings { get; set; } = [];
+
     /// <summary>Gets or sets provider names previously discovered by scans for the selection controls.</summary>
     public string[] KnownProviderNames { get; set; } = [];
 
@@ -79,4 +85,17 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets the number of Watchmode requests used during <see cref="WatchmodeUsageCycleStart"/>.</summary>
     public int WatchmodeRequestsUsed { get; set; }
+}
+
+/// <summary>An administrator-defined canonical name for an external Provider or Network tag.</summary>
+public sealed class UnknownTagMapping
+{
+    /// <summary>Gets or sets the tag kind: Provider or Network.</summary>
+    public string Kind { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the currently tagged name.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the official/canonical display name.</summary>
+    public string OfficialName { get; set; } = string.Empty;
 }

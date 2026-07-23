@@ -100,7 +100,7 @@ The repository manifest contains plugin-release information only. It never conta
 
 ## Plugin Settings
 
-The plugin is configured from **Dashboard → Media Tagging Manager**. Save changes on the **Main Settings** tab before using the other tabs.
+The plugin is configured from **Dashboard → Media Tagging Manager**. Each settings tab has its own Save button; save that tab before relying on its changes.
 
 ### Main Settings
 
@@ -167,6 +167,20 @@ For Watchmode, create an account and generate an API key through its account das
 
 </details>
 
+#### Logo Settings
+
+This plugin uses provider and network logos by default. Logos appear in the
+provider and network pickers and in the Library Overview. Compatible future
+plugins by the same developer can reuse the locally cached logos for detail
+pages and collection making.
+
+Uncheck **Save and use provider and network logos**, then select **Save Logo
+Settings**, to stop this plugin from downloading, saving, or displaying logos.
+Use **Delete Cached Logos** afterward to explicitly remove every cached and
+manually uploaded logo. That action does not modify any media tags.
+
+### Network and Provider Settings
+
 #### Availability Region Settings
 
 Choose up to three countries used for streaming-availability results. The country choices come from TMDb’s watch-provider regions. Save a valid TMDb API Read Access Token, then reload the page if the complete country list does not appear.
@@ -180,13 +194,14 @@ Choose whether to create **Provider tags**, **Network tags**, or both.
 
 Your existing Jellyfin tags added without this plugin are never removed. The plugin only adds new tags and, if you enable removal of outdated tags, only removes tags that it added.
 
-#### TV Network Streaming Apps
+#### TV Network Streaming Apps Settings
 
 Some television networks have their own streaming apps, such as BBC iPlayer.
 Choose whether those results create the API-returned **Network** tag, the
-streaming-app **Provider** tag, or both. The plugin never turns an app name
-into a Network tag by guessing; a Network tag is written only when TMDb or
-Watchmode returns a title-level network name.
+streaming-app **Provider** tag, or both. TMDb and Watchmode can each return
+Network tags from actual title-level network metadata; the plugin never creates
+a Network tag from an app name alone. To use **Both** fully, select the
+streaming app in **Select Providers** and its network in **Select Networks**.
 
 #### Select Providers
 
@@ -197,6 +212,12 @@ before the first media scan. Previously discovered provider values remain
 listed too. Exact spelling aliases for the same provider are combined—for
 example, `Disney Plus` and `Disney +` become `Disney+`, and `Discovery +`
 becomes `Discovery+`. Other provider variants remain separate choices.
+
+Provider and network names show a source-supplied logo when one is available.
+The server stores at most one cached logo for each normalized `Provider:` name
+and one for each normalized `Network:` name, rather than saving a copy per
+media item. The dashboard reuses that cache, and a future compatible plugin can
+request the same cached image through Media Tagging Manager's local logo API.
 
 Use **Sync with Only Selected Providers** when your selected libraries already
 have more provider tags than you want. It creates a backup, deletes provider
@@ -224,6 +245,9 @@ changes provider or unrelated Jellyfin tags.
 Use **Save Network Selections** to save the Network allow-list for future scans
 without scanning media or changing any existing tags.
 
+Use **Save Network and Provider Settings** to save the regions, tag behavior,
+TV-network streaming-app preference, and both current selection lists together.
+
 #### Newly Added Media Settings
 
 Turn on **Scan newly added media in my libraries using this plugin** to check newly added Movies and Series after a normal Jellyfin library scan. Turn it off to prevent automatic API checks for incoming media; manual and scheduled full scans remain available.
@@ -236,15 +260,41 @@ Turn on the scheduled task and choose a refresh interval in hours to keep provid
 
 Enable the setting to remove outdated plugin-assigned tags if you want a later scan to remove a tag when a provider or network no longer hosts a title. Leaving it off preserves old plugin-created tags. Other Jellyfin tags remain untouched.
 
-### View Tags
+### Genre Settings
+
+The Genre Settings tab is intentionally empty for now, reserving a clear home
+for a future genre-management feature without mixing it into provider or
+network settings.
+
+### View and Edit Tags
 
 Use **Filters** at the top of the tab to narrow the selected-library results by provider, network, tagged state, or a provider-and-network combination.
+Use **Clear Filters** to reset all three filters at once.
 
-The **Library Overview** groups matching Movies and Series by selected library. Use **Edit** to manually replace a title’s plugin-owned provider and network tags, then use **Save Tag Changes** to apply the edits. A backup is created before tag changes are written.
+The **Library Overview** is collapsed by default to keep this tab manageable for
+large libraries. Select its expand control to view grouped matching Movies and
+Series. Use **Edit** to manually replace a title’s plugin-owned provider and
+network tags, then use **Save Tag Changes** to apply the edits. A backup is
+created before tag changes are written.
+
+#### Unknown Providers and Networks
+
+This section lists only `Provider:` and `Network:` tags found in selected
+libraries that the plugin did not previously discover and that are not
+recognized by either enabled API source catalog. It never lists ordinary,
+unrelated Jellyfin tags. Assign an official name to keep variants such as
+`Opera Vision` associated with `OperaVision`, and optionally upload one PNG,
+JPEG, or SVG logo for that official name. The mapping itself does not rename or
+otherwise modify the existing media tags.
 
 ### Scan
 
 The Scan tab lists the libraries currently selected in Main Settings and lets you initiate a full scan for all of them.
+
+For safe archive handling, Backup Settings and Scheduled Tasks Settings are
+available both here and in Main Settings. Their controls remain synchronized.
+Use **Save Scheduled Tasks Settings** on Scan when changing the duplicated
+scheduled-task controls there.
 
 - **Scan All Selected Libraries** checks every selected library after at least
   one saved tag backup exists; otherwise the dashboard instructs you to create
