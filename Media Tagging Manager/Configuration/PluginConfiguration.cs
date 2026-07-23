@@ -56,6 +56,9 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets whether provider tags are restricted to <see cref="SelectedProviderNames"/>.</summary>
     public bool RestrictProvidersToSelected { get; set; }
 
+    /// <summary>Gets or sets whether closely related provider variants are written as one parent-provider tag.</summary>
+    public bool GroupProviderVariants { get; set; }
+
     /// <summary>Gets or sets whether network tags are restricted to <see cref="SelectedNetworkNames"/>.</summary>
     public bool RestrictNetworksToSelected { get; set; }
 

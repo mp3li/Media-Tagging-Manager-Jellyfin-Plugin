@@ -6,6 +6,27 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.24-test] - 2026-07-22
+
+### Added
+
+- Added the optional **Group different types of the same provider** preference.
+  It is off by default and groups only documented Netflix, Apple TV, and
+  Amazon/Prime variants when enabled; exact source distinctions remain
+  available when disabled.
+
+### Fixed
+
+- Provider and network selection sync failures now return and display a safe,
+  specific server explanation instead of only “An unknown error occurred.”
+- Saving Main Settings now persists the current provider and network checkbox
+  selections for future scans.
+
+### Test-release notes
+
+- This supersedes `0.1.0.23-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.23-test] - 2026-07-22
 
 ### Changed

@@ -180,6 +180,20 @@ Choose whether to create **Provider tags**, **Network tags**, or both.
 
 Your existing Jellyfin tags added without this plugin are never removed. The plugin only adds new tags and, if you enable removal of outdated tags, only removes tags that it added.
 
+#### Provider Grouping
+
+**Group different types of the same provider** is off by default. With it off,
+the plugin preserves the source's exact provider distinction, so subscription,
+storefront, plan, and profile variants remain separate tags.
+
+With it on, the plugin uses one simpler tag for each explicitly supported
+provider family. This currently groups Netflix, Netflix Kids, and Netflix
+Standard with Ads as `Netflix`; Apple TV, Apple TV+, Apple TV Store, and Apple
+TV Channels as `Apple TV`; and the listed Amazon/Prime Video variants as
+`Amazon`. It never makes a fuzzy guess that two similarly named services are
+the same. Run a provider scan or **Sync with Only Selected Providers** after
+changing the setting to update existing plugin-owned provider tags.
+
 #### Select Providers
 
 This independent settings section loads the complete movie and TV
@@ -188,8 +202,8 @@ provider catalog when its key is configured. That means providers can be chosen
 before the first media scan. Previously discovered provider values remain
 listed too. Exact spelling aliases for the same provider are combined—for
 example, `Disney Plus` and `Disney +` become `Disney+`, and `Discovery +`
-becomes `Discovery+`. Meaningfully different offerings, such as subscription
-versus rent/buy services or distinct plan tiers, remain separate choices.
+becomes `Discovery+`. Provider families remain separate unless **Provider
+Grouping** is enabled.
 
 Use **Sync with Only Selected Providers** when your selected libraries already
 have more provider tags than you want. It creates a backup, deletes provider

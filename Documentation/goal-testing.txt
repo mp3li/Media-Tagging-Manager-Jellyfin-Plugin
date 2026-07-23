@@ -152,11 +152,20 @@ Acceptance criteria:
     catalog when the corresponding keys are configured.
 [ ] Before scanning any media, confirm Select Networks loads Watchmode's full
     TV-network catalog when a Watchmode API key is configured.
-[ ] Confirm exact provider spelling aliases are listed and tagged only once:
+[ ] With Group different types of the same provider turned off, confirm exact
+    provider spelling aliases are listed and tagged only once:
     `Disney Plus`/`Disney +` as `Disney+`, and `Discovery +` as `Discovery+`.
     Confirm distinct offerings such as Apple TV+ versus a store/rent-buy entry,
     Prime Video versus Amazon rent/buy, and Netflix plan/profile entries remain
     separate choices.
+[ ] With Group different types of the same provider turned off, confirm the
+    documented Netflix, Apple TV, and Amazon/Prime variants remain separate
+    provider choices and tags.
+[ ] Turn on Group different types of the same provider, save, and confirm the
+    provider list uses the documented grouped choices. Run a provider scan or
+    Sync with Only Selected Providers and confirm existing plugin-owned variants
+    become only `Provider: Netflix`, `Provider: Apple TV`, or `Provider: Amazon`
+    as applicable; confirm unrelated provider families remain separate.
 [ ] After a selected-library scan, confirm newly discovered provider and
     network values remain listed even if a selection sync removes their tags.
 [ ] Confirm Select All and Select None affect every provider checkbox without
@@ -169,6 +178,9 @@ Acceptance criteria:
 [ ] Select a subset of providers, run Sync with Only Selected Providers, and
     confirm a backup is created, only unselected `Provider:` tags are removed,
     no source request is made, and `Network:`/unrelated tags remain unchanged.
+[ ] If a provider or network selection sync cannot run, confirm the dashboard
+    displays its specific safe server explanation rather than an unknown-error
+    message, and confirm no tags are changed before a preflight failure.
 [ ] Select a subset of networks, run Sync with Only Selected Networks, and
     confirm a backup is created, only unselected `Network:` tags are removed,
     no source request is made, and `Provider:`/unrelated tags remain unchanged.

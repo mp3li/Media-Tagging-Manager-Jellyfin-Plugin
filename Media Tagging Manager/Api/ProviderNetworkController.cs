@@ -83,8 +83,14 @@ public sealed class ProviderNetworkController : ControllerBase
         }
 
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        configuration.SelectedProviderNames = (configuration.SelectedProviderNames ?? [])
+            .Where(static name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name, configuration.GroupProviderVariants))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         plugin.UpdateConfiguration(configuration);
-        return NoContent();
+        return Ok(configuration);
     }
 
     /// <summary>Gets TMDb's official watch-provider regions for the settings dropdowns.</summary>
@@ -148,11 +154,12 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("tag-choices")]
     public async Task<ActionResult<TagChoicesDto>> GetTagChoices(CancellationToken cancellationToken)
     {
+        var groupProviderVariants = Plugin.Instance?.Configuration.GroupProviderVariants ?? false;
         var discovered = _scanner.GetTagChoices();
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
-            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name, groupProviderVariants))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
         var networks = discovered.Networks.Concat(watchmode.Networks)
             .Select(name => TagNameNormalizer.Normalize(TagKind.Network, name))
@@ -166,13 +173,39 @@ public sealed class ProviderNetworkController : ControllerBase
 
     /// <summary>Removes unselected provider tags without looking up or changing any source data.</summary>
     [HttpPost("sync/providers")]
-    public async Task<ActionResult<TagSyncResult>> SyncProviders([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
-        Ok(await _scanner.SyncWithOnlySelectedAsync(TagKind.Provider, request.Names ?? [], cancellationToken).ConfigureAwait(false));
+    public Task<ActionResult<TagSyncResult>> SyncProviders([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
+        SyncAsync(TagKind.Provider, request.Names ?? [], cancellationToken);
 
     /// <summary>Removes unselected network tags without looking up or changing any source data.</summary>
     [HttpPost("sync/networks")]
-    public async Task<ActionResult<TagSyncResult>> SyncNetworks([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
-        Ok(await _scanner.SyncWithOnlySelectedAsync(TagKind.Network, request.Names ?? [], cancellationToken).ConfigureAwait(false));
+    public Task<ActionResult<TagSyncResult>> SyncNetworks([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
+        SyncAsync(TagKind.Network, request.Names ?? [], cancellationToken);
+
+    private async Task<ActionResult<TagSyncResult>> SyncAsync(TagKind kind, IEnumerable<string> names, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _scanner.SyncWithOnlySelectedAsync(kind, names, cancellationToken).ConfigureAwait(false));
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = $"Could not sync {kind.ToString().ToLowerInvariant()} tags.",
+                Detail = exception.Message,
+                Status = 400
+            });
+        }
+        catch (Exception exception)
+        {
+            return StatusCode(500, new ProblemDetails
+            {
+                Title = $"Could not sync {kind.ToString().ToLowerInvariant()} tags.",
+                Detail = exception.Message,
+                Status = 500
+            });
+        }
+    }
 
     /// <summary>Replaces an item's plugin-owned tags with administrator-entered values.</summary>
     [HttpPut("items/{itemId:guid}")]
