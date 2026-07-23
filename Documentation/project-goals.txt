@@ -73,7 +73,14 @@ Acceptance criteria:
 [x] Preserve existing plugin-owned tags when every enabled source fails, rather
     than clearing them because of a temporary outage.
 [x] Use TMDb for regional watch-provider data and television-network metadata.
-[x] Use Watchmode as a quota-tracked fallback when TMDb has no provider result.
+[x] Use Watchmode as a quota-tracked fallback when TMDb has no requested
+    provider or series-network result, returning current availability as
+    Provider tags and actual title-level network names as Network tags.
+[x] Load complete Provider and Network selection lists before a scan, while
+    keeping their returned title tags as separate classifications.
+[x] Let an administrator choose whether a television network's own streaming
+    app is tagged as the Network, the streaming app Provider, or both; never
+    infer a Network tag from an app name.
 [x] Keep TMDb requests below its published anti-bulk guidance with a shared
     35-requests-per-second gate, and temporarily back off on HTTP 429.
 [ ] Add more first-class source adapters after appropriate review of their
@@ -92,6 +99,7 @@ Acceptance criteria:
 --------------------------------------
 
 [x] Provide a "Scan all selected libraries" action.
+[x] Require an existing tag backup before a dashboard-initiated full scan.
 [x] Refuse scans safely when no source is configured, leaving existing plugin
     tags unchanged.
 [x] Provide a separate setting to check new incoming media after Jellyfin

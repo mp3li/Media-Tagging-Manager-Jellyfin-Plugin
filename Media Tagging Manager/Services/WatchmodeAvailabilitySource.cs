@@ -3,7 +3,7 @@ using Jellyfin.Plugin.MediaTaggingManager.Models;
 
 namespace Jellyfin.Plugin.MediaTaggingManager.Services;
 
-/// <summary>Uses Watchmode's title-source endpoint for optional additional availability coverage.</summary>
+/// <summary>Uses Watchmode's title details and availability endpoints for optional fallback coverage.</summary>
 public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
 {
     private readonly HttpClient _httpClient;
@@ -33,14 +33,15 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
             return new SourceLookupResult(Name, [], "The item has no IMDb ID.");
         }
 
-        // Watchmode documents IMDb-ID title-source requests as costing two credits.
-        if (!_quota.TryReserve(2, out var quotaReason))
+        // Watchmode documents an IMDb-ID details request as two credits and the
+        // appended streaming-source data as one additional credit.
+        if (!_quota.TryReserve(3, out var quotaReason))
         {
             return new SourceLookupResult(Name, [], quotaReason);
         }
 
         var requestedRegion = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
-        var uri = $"https://api.watchmode.com/v1/title/{Uri.EscapeDataString(ids.Imdb)}/sources/?regions={requestedRegion}";
+        var uri = $"https://api.watchmode.com/v1/title/{Uri.EscapeDataString(ids.Imdb)}/details/?append_to_response=sources&regions={requestedRegion}";
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Add("X-API-Key", configuration.WatchmodeApiKey);
         using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
@@ -52,25 +53,41 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
         var tags = new List<SourceTag>();
-        if (document.RootElement.ValueKind != JsonValueKind.Array)
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
         {
             return new SourceLookupResult(Name, tags);
         }
 
-        foreach (var source in document.RootElement.EnumerateArray())
+        if (document.RootElement.TryGetProperty("sources", out var sources) && sources.ValueKind == JsonValueKind.Array)
         {
-            if (!source.TryGetProperty("name", out var name) || string.IsNullOrWhiteSpace(name.GetString()))
+            foreach (var source in sources.EnumerateArray())
             {
-                continue;
-            }
+                if (!source.TryGetProperty("name", out var name) || string.IsNullOrWhiteSpace(name.GetString()))
+                {
+                    continue;
+                }
 
-            if (source.TryGetProperty("region", out var region)
-                && !GetRegions(configuration).Contains(region.GetString() ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+                if (source.TryGetProperty("region", out var region)
+                    && !GetRegions(configuration).Contains(region.GetString() ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var isTvNetworkApp = source.TryGetProperty("type", out var type)
+                    && string.Equals(type.GetString(), "tve", StringComparison.OrdinalIgnoreCase);
+                tags.Add(new SourceTag(TagKind.Provider, name.GetString()!, Name, isTvNetworkApp));
+            }
+        }
+
+        if (document.RootElement.TryGetProperty("network_names", out var networks) && networks.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var network in networks.EnumerateArray())
             {
-                continue;
+                if (network.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(network.GetString()))
+                {
+                    tags.Add(new SourceTag(TagKind.Network, network.GetString()!, Name));
+                }
             }
-
-            tags.Add(new SourceTag(TagKind.Provider, name.GetString()!, Name));
         }
 
         return new SourceLookupResult(Name, tags);

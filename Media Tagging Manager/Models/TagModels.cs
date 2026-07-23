@@ -10,8 +10,8 @@ public enum TagKind
     Network
 }
 
-/// <summary>A provider/network value with source provenance.</summary>
-public sealed record SourceTag(TagKind Kind, string Name, string Source);
+/// <summary>A provider/network value with source provenance and an optional TV-network-app classification.</summary>
+public sealed record SourceTag(TagKind Kind, string Name, string Source, bool IsTvNetworkApp = false);
 
 /// <summary>Stable external identifiers available for a Jellyfin item.</summary>
 public sealed record ExternalIds(string? Tmdb, string? Imdb, string MediaType);

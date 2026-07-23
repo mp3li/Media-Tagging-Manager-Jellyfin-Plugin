@@ -66,7 +66,7 @@ When the setting to remove outdated plugin-assigned tags is enabled, the plugin 
 | Source | What it contributes | Credentials | Status |
 | --- | --- | --- | --- |
 | TMDb | Regional streaming providers and TV-network metadata | TMDb API Read Access Token | Built in; checked first |
-| Watchmode | Quota-tracked fallback regional streaming availability when TMDb finds no provider | Watchmode API key | Built in |
+| Watchmode | Quota-tracked fallback for a requested Provider or series Network result TMDb did not return | Watchmode API key | Built in |
 | Streaming Availability API | Additional streaming-availability coverage | Streaming Availability API key | Planned source |
 
 Availability can be selected for up to three countries. A provider available in one country may be unavailable in another.
@@ -134,7 +134,7 @@ Choose the Jellyfin libraries the plugin may access. Only selected libraries are
 Enter API credentials for the sources you want to use. Credentials are stored in that Jellyfin server’s plugin configuration; never share them or include them in GitHub, screenshots, releases, or backups.
 
 - **TMDb API Read Access Token** is the primary source for regional streaming providers and television networks.
-- **Watchmode API Key** is an optional fallback for a title where TMDb returns no provider. It requires an IMDb ID.
+- **Watchmode API Key** is an optional fallback for a requested Provider or series Network result TMDb does not return. It requires an IMDb ID.
 - **Watchmode request limit per 30-day cycle** is a safety cap. Enter the date
   shown as **Quota Resets On** in your Watchmode account; the plugin uses that
   date to identify the active 30-day cycle, track its own usage, and stop
@@ -180,19 +180,13 @@ Choose whether to create **Provider tags**, **Network tags**, or both.
 
 Your existing Jellyfin tags added without this plugin are never removed. The plugin only adds new tags and, if you enable removal of outdated tags, only removes tags that it added.
 
-#### Provider Grouping
+#### TV Network Streaming Apps
 
-**Group different types of the same provider** is off by default. With it off,
-the plugin preserves the source's exact provider distinction, so subscription,
-storefront, plan, and profile variants remain separate tags.
-
-With it on, the plugin uses one simpler tag for each explicitly supported
-provider family. This currently groups Netflix, Netflix Kids, and Netflix
-Standard with Ads as `Netflix`; Apple TV, Apple TV+, Apple TV Store, and Apple
-TV Channels as `Apple TV`; and the listed Amazon/Prime Video variants as
-`Amazon`. It never makes a fuzzy guess that two similarly named services are
-the same. Run a provider scan or **Sync with Only Selected Providers** after
-changing the setting to update existing plugin-owned provider tags.
+Some television networks have their own streaming apps, such as BBC iPlayer.
+Choose whether those results create the API-returned **Network** tag, the
+streaming-app **Provider** tag, or both. The plugin never turns an app name
+into a Network tag by guessing; a Network tag is written only when TMDb or
+Watchmode returns a title-level network name.
 
 #### Select Providers
 
@@ -202,8 +196,7 @@ provider catalog when its key is configured. That means providers can be chosen
 before the first media scan. Previously discovered provider values remain
 listed too. Exact spelling aliases for the same provider are combined—for
 example, `Disney Plus` and `Disney +` become `Disney+`, and `Discovery +`
-becomes `Discovery+`. Provider families remain separate unless **Provider
-Grouping** is enabled.
+becomes `Discovery+`. Other provider variants remain separate choices.
 
 Use **Sync with Only Selected Providers** when your selected libraries already
 have more provider tags than you want. It creates a backup, deletes provider
@@ -215,7 +208,9 @@ changes network or unrelated Jellyfin tags.
 
 This separate settings section loads Watchmode's complete TV-network catalog
 when its key is configured, plus networks previously discovered by the plugin.
-It therefore supports choosing network names before the first media scan.
+It therefore supports choosing network names before the first media scan. On a
+Watchmode fallback lookup, title-level network names are written only as
+`Network:` tags and current availability is written only as `Provider:` tags.
 
 Use **Sync with Only Selected Networks** when your selected libraries already
 have more network tags than you want. It creates a backup, deletes network tags
@@ -245,7 +240,9 @@ The **Library Overview** groups matching Movies and Series by selected library. 
 
 The Scan tab lists the libraries currently selected in Main Settings and lets you initiate a full scan for all of them.
 
-- **Scan All Selected Libraries** checks every selected library.
+- **Scan All Selected Libraries** checks every selected library after at least
+  one saved tag backup exists; otherwise the dashboard instructs you to create
+  a backup and does not start the scan.
 - **Stop Scan** requests cancellation of the current dashboard-initiated scan.
 - The status area shows the active title, completed and total counts, progress percentage, and an estimated remaining time. When it finishes, it retains a summary of checked items, new tags, and tagged media items.
 - The Backup Settings section provides the same create, undo, restore, and delete controls as Main Settings, so you can create a safety backup immediately before scanning.

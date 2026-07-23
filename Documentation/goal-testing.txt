@@ -152,20 +152,26 @@ Acceptance criteria:
     catalog when the corresponding keys are configured.
 [ ] Before scanning any media, confirm Select Networks loads Watchmode's full
     TV-network catalog when a Watchmode API key is configured.
-[ ] With Group different types of the same provider turned off, confirm exact
-    provider spelling aliases are listed and tagged only once:
+[ ] Confirm exact provider spelling aliases are listed and tagged only once:
     `Disney Plus`/`Disney +` as `Disney+`, and `Discovery +` as `Discovery+`.
     Confirm distinct offerings such as Apple TV+ versus a store/rent-buy entry,
     Prime Video versus Amazon rent/buy, and Netflix plan/profile entries remain
     separate choices.
-[ ] With Group different types of the same provider turned off, confirm the
-    documented Netflix, Apple TV, and Amazon/Prime variants remain separate
-    provider choices and tags.
-[ ] Turn on Group different types of the same provider, save, and confirm the
-    provider list uses the documented grouped choices. Run a provider scan or
-    Sync with Only Selected Providers and confirm existing plugin-owned variants
-    become only `Provider: Netflix`, `Provider: Apple TV`, or `Provider: Amazon`
-    as applicable; confirm unrelated provider families remain separate.
+[ ] Before scanning, confirm both the complete Provider list and complete
+    Network list load independently from their enabled source catalogs.
+[ ] For a Watchmode fallback TV title, confirm Watchmode's current availability
+    is written only as Provider tags and its API-returned `network_names` are
+    written only as Network tags.
+[ ] Confirm the plugin never creates a Network tag from a TV network streaming
+    app name when neither API supplies a title-level network name.
+[ ] With TV Network Streaming Apps set to Network only, confirm a Watchmode
+    TV-channel-app result does not write a Provider tag and writes only an
+    API-returned Network tag.
+[ ] With TV Network Streaming Apps set to Streaming app only, confirm a
+    Watchmode TV-channel-app result writes its Provider tag and suppresses the
+    Network tag for that title.
+[ ] With TV Network Streaming Apps set to Both, confirm both selected tags are
+    written when the APIs return both values.
 [ ] After a selected-library scan, confirm newly discovered provider and
     network values remain listed even if a selection sync removes their tags.
 [ ] Confirm Select All and Select None affect every provider checkbox without
@@ -295,6 +301,9 @@ Acceptance criteria:
 -----------------------------
 
 [ ] Create a named manual backup from settings.
+[ ] With no backup available, click Scan All Selected Libraries and confirm the
+    dashboard refuses to start the scan and instructs the administrator to
+    create a Tag Backup first.
 [ ] Confirm the backup list shows its label, timestamp, and item count.
 [ ] Restart Jellyfin and confirm the backup remains listed.
 [ ] Confirm the saved backup file exists in the plugin data directory.

@@ -282,7 +282,7 @@ public sealed class ProviderNetworkScanner
 
             _destinations.Validate(configuration, configuration.LibraryIds);
 
-            var selected = NormalizeNames(kind, selectedNames, configuration.GroupProviderVariants);
+            var selected = NormalizeNames(kind, selectedNames);
             if (kind == TagKind.Provider)
             {
                 configuration.SelectedProviderNames = selected;
@@ -313,7 +313,7 @@ public sealed class ProviderNetworkScanner
                     var existing = item.Tags ?? [];
                     var retained = existing
                         .Select(tag => IsTagKind(tag, kind)
-                            ? TagNaming.Format(kind, TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind), configuration.GroupProviderVariants))
+                            ? TagNaming.Format(kind, TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind)))
                             : tag)
                         .Where(tag => !IsTagKind(tag, kind) || selected.Contains(RemoveTagPrefix(tag, kind)))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -354,16 +354,25 @@ public sealed class ProviderNetworkScanner
             results.Add(await LookupSafelyAsync(tmdb, ids, cancellationToken).ConfigureAwait(false));
         }
 
-        // Watchmode is the quota-limited fallback. It is queried only when TMDb
-        // did not find any provider for this item, or when TMDb is disabled.
+        // Watchmode is the quota-limited fallback. It is queried only for a
+        // requested kind that TMDb did not return; TMDb stays authoritative for
+        // a kind it did return.
         var primaryProvidersFound = results.SelectMany(result => result.Tags).Any(tag => tag.Kind == TagKind.Provider);
+        var primaryNetworksFound = results.SelectMany(result => result.Tags).Any(tag => tag.Kind == TagKind.Network);
         var watchmode = _sources.FirstOrDefault(source => string.Equals(source.Name, "Watchmode", StringComparison.Ordinal));
-        if (configuration.TagProviders && !primaryProvidersFound && watchmode is not null)
+        var needsProviderFallback = configuration.TagProviders && !primaryProvidersFound;
+        var needsNetworkFallback = configuration.TagNetworks && item is Series && !primaryNetworksFound;
+        if ((needsProviderFallback || needsNetworkFallback) && watchmode is not null)
         {
             results.Add(await LookupSafelyAsync(watchmode, ids, cancellationToken).ConfigureAwait(false));
         }
 
-        var tags = results.SelectMany(result => result.Tags).ToArray();
+        var tags = results
+            .SelectMany(result => result.Tags)
+            .Where(tag => !string.Equals(tag.Source, "Watchmode", StringComparison.Ordinal)
+                || (tag.Kind == TagKind.Provider && !primaryProvidersFound)
+                || (tag.Kind == TagKind.Network && !primaryNetworksFound))
+            .ToArray();
         await ApplyTagsAsync(
             item,
             libraryId,
@@ -474,11 +483,16 @@ public sealed class ProviderNetworkScanner
         bool forceManagedReplacement = false)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-        var selectedProviderNames = new HashSet<string>((configuration.SelectedProviderNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name, configuration.GroupProviderVariants)), StringComparer.OrdinalIgnoreCase);
+        var selectedProviderNames = new HashSet<string>((configuration.SelectedProviderNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)), StringComparer.OrdinalIgnoreCase);
         var selectedNetworkNames = new HashSet<string>((configuration.SelectedNetworkNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)), StringComparer.OrdinalIgnoreCase);
-        var selected = values
-            .Select(value => value with { Name = TagNameNormalizer.Normalize(value.Kind, value.Name, configuration.GroupProviderVariants) })
+        var normalized = values
+            .Select(value => value with { Name = TagNameNormalizer.Normalize(value.Kind, value.Name) })
+            .ToArray();
+        var hasTvNetworkApp = normalized.Any(static value => value.Kind == TagKind.Provider && value.IsTvNetworkApp);
+        var selected = normalized
             .Where(value => (value.Kind == TagKind.Provider && configuration.TagProviders) || (value.Kind == TagKind.Network && configuration.TagNetworks))
+            .Where(value => !value.IsTvNetworkApp || !string.Equals(configuration.TvNetworkAppTaggingMode, "NetworkOnly", StringComparison.Ordinal))
+            .Where(value => !hasTvNetworkApp || !string.Equals(configuration.TvNetworkAppTaggingMode, "StreamingAppOnly", StringComparison.Ordinal) || value.Kind != TagKind.Network)
             .Where(value => value.Kind != TagKind.Provider || !configuration.RestrictProvidersToSelected || selectedProviderNames.Contains(value.Name))
             .Where(value => value.Kind != TagKind.Network || !configuration.RestrictNetworksToSelected || selectedNetworkNames.Contains(value.Name))
             .Where(value => !string.IsNullOrWhiteSpace(value.Name))
@@ -527,7 +541,7 @@ public sealed class ProviderNetworkScanner
 
             var knownProviders = configuration.KnownProviderNames ?? [];
             var knownNetworks = configuration.KnownNetworkNames ?? [];
-            var updatedProviders = knownProviders.Concat(providers).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name, configuration.GroupProviderVariants)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+            var updatedProviders = knownProviders.Concat(providers).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
             var updatedNetworks = knownNetworks.Concat(networks).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
             if (updatedProviders.SequenceEqual(knownProviders, StringComparer.OrdinalIgnoreCase)
                 && updatedNetworks.SequenceEqual(knownNetworks, StringComparer.OrdinalIgnoreCase))
@@ -541,9 +555,9 @@ public sealed class ProviderNetworkScanner
         }
     }
 
-    private static string[] NormalizeNames(TagKind kind, IEnumerable<string> names, bool groupProviderVariants) => names
+    private static string[] NormalizeNames(TagKind kind, IEnumerable<string> names) => names
         .Where(static name => !string.IsNullOrWhiteSpace(name))
-        .Select(name => TagNameNormalizer.Normalize(kind, name, groupProviderVariants))
+        .Select(name => TagNameNormalizer.Normalize(kind, name))
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
         .ToArray();

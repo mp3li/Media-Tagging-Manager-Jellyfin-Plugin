@@ -83,9 +83,14 @@ public sealed class ProviderNetworkController : ControllerBase
         }
 
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        configuration.TvNetworkAppTaggingMode = configuration.TvNetworkAppTaggingMode switch
+        {
+            "NetworkOnly" or "StreamingAppOnly" or "Both" => configuration.TvNetworkAppTaggingMode,
+            _ => "NetworkOnly"
+        };
         configuration.SelectedProviderNames = (configuration.SelectedProviderNames ?? [])
             .Where(static name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name, configuration.GroupProviderVariants))
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -117,8 +122,13 @@ public sealed class ProviderNetworkController : ControllerBase
 
     /// <summary>Queues a Jellyfin-managed scan of one enabled library.</summary>
     [HttpPost("scan/{libraryId:guid}")]
-    public IActionResult ScanLibrary(Guid libraryId)
+    public async Task<IActionResult> ScanLibrary(Guid libraryId, CancellationToken cancellationToken)
     {
+        if (!(await _backups.GetAllAsync(cancellationToken).ConfigureAwait(false)).Any())
+        {
+            return BadRequest("Create a Tag Backup before starting a scan. The scan was not started.");
+        }
+
         _manualScanRequests.EnqueueLibrary(libraryId);
         _taskManager.QueueScheduledTask<ManualScanTask>();
         return Accepted();
@@ -126,8 +136,13 @@ public sealed class ProviderNetworkController : ControllerBase
 
     /// <summary>Queues a Jellyfin-managed scan of all selected libraries.</summary>
     [HttpPost("scan")]
-    public IActionResult ScanAll()
+    public async Task<IActionResult> ScanAll(CancellationToken cancellationToken)
     {
+        if (!(await _backups.GetAllAsync(cancellationToken).ConfigureAwait(false)).Any())
+        {
+            return BadRequest("Create a Tag Backup before starting a scan. The scan was not started.");
+        }
+
         _manualScanRequests.EnqueueAllLibraries();
         _taskManager.QueueScheduledTask<ManualScanTask>();
         return Accepted();
@@ -154,12 +169,11 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("tag-choices")]
     public async Task<ActionResult<TagChoicesDto>> GetTagChoices(CancellationToken cancellationToken)
     {
-        var groupProviderVariants = Plugin.Instance?.Configuration.GroupProviderVariants ?? false;
         var discovered = _scanner.GetTagChoices();
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
         var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
-            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name, groupProviderVariants))
+            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
         var networks = discovered.Networks.Concat(watchmode.Networks)
             .Select(name => TagNameNormalizer.Normalize(TagKind.Network, name))

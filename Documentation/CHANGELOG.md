@@ -6,6 +6,29 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.25-test] - 2026-07-22
+
+### Added
+
+- Added **TV Network Streaming Apps** with three administrator-selected modes:
+  Network only, Streaming app only, and Both. The plugin never invents a
+  Network tag from a streaming-app name.
+- Watchmode fallback title details now use Watchmode's actual per-title
+  `network_names` separately from its current streaming sources.
+- Dashboard-initiated full scans now require an existing tag backup.
+
+### Changed
+
+- Removed the premature automatic provider-family grouping introduced in
+  `0.1.0.24-test`. Exact provider variants remain separate unless an
+  administrator selectively manages their tags.
+- Complete Provider and Network selection lists remain available before scans.
+
+### Test-release notes
+
+- This supersedes `0.1.0.24-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.24-test] - 2026-07-22
 
 ### Added
