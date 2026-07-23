@@ -6,6 +6,25 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.13-test] - 2026-07-22
+
+### Fixed
+
+- Scan ETA now uses a numeric seconds value supplied by the server instead of
+  attempting arithmetic on Jellyfin's serialized duration string.
+- The live View Tags overview now queries each selected library directly and
+  preserves that selected-library identity in its results.
+
+### Added
+
+- Completed scan feedback now remains visible with the checked-item total, the
+  number of tags newly added, and the number of media items that received one.
+
+### Test-release notes
+
+- This supersedes `0.1.0.12-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.12-test] - 2026-07-22
 
 ### Added

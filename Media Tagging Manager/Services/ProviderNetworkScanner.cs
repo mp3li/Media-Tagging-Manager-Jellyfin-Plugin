@@ -72,16 +72,17 @@ public sealed class ProviderNetworkScanner
         try
         {
             await _backups.CreateAsync("Before configured-library scan", libraries, cancellationToken).ConfigureAwait(false);
-            for (var index = 0; index < libraries.Length; index++)
+            var items = libraries.SelectMany(libraryId =>
             {
-                var offset = index;
-                await ScanLibraryLockedAsync(
-                    libraries[index],
-                    configuration,
-                    new Progress<double>(value => progress?.Report((offset * 100d + value) / libraries.Length)),
-                    cancellationToken,
-                    createBackup: false).ConfigureAwait(false);
-            }
+                var query = new InternalItemsQuery
+                {
+                    ParentId = libraryId,
+                    Recursive = true,
+                    IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
+                };
+                return _libraryManager.GetItemList(query).Select(item => (Item: item, LibraryId: libraryId));
+            }).ToArray();
+            await ScanItemsAsync(items, configuration, progress, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception)
         {
@@ -228,15 +229,16 @@ public sealed class ProviderNetworkScanner
     public IEnumerable<TaggedItemDto> GetDashboardItems(Guid? libraryId, string? provider, string? network, bool? isTagged)
     {
         var allowedLibraries = Plugin.Instance?.Configuration.LibraryIds ?? [];
-        var query = new InternalItemsQuery
-        {
-            Recursive = true,
-            IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
-        };
-
-        return _libraryManager.GetItemList(query)
-            .Where(item => allowedLibraries.Contains(item.GetTopParent().Id))
-            .Select(ToDto)
+        return allowedLibraries.SelectMany(libraryId =>
+            {
+                var query = new InternalItemsQuery
+                {
+                    ParentId = libraryId,
+                    Recursive = true,
+                    IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
+                };
+                return _libraryManager.GetItemList(query).Select(item => ToDto(item, libraryId, null, []));
+            })
             .Where(item => libraryId is null || item.LibraryId == libraryId)
             .Where(item => string.IsNullOrWhiteSpace(provider) || item.Providers.Any(value => value.Contains(provider, StringComparison.OrdinalIgnoreCase)))
             .Where(item => string.IsNullOrWhiteSpace(network) || item.Networks.Any(value => value.Contains(network, StringComparison.OrdinalIgnoreCase)))
@@ -369,12 +371,15 @@ public sealed class ProviderNetworkScanner
             .Where(value => !string.IsNullOrWhiteSpace(value.Name))
             .Select(value => TagNaming.Format(value.Kind, value.Name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase);
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         var existing = item.Tags ?? [];
+        var tagsAdded = selected.Count(tag => !existing.Contains(tag, StringComparer.OrdinalIgnoreCase));
         // A failed source must never erase previously known availability. A later healthy scan reconciles it.
         var retained = (configuration.ReplaceManagedTags || forceManagedReplacement) && replaceManagedTags ? existing.Where(tag => !TagNaming.IsManaged(tag)) : existing;
         item.Tags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         await _libraryManager.UpdateItemAsync(item, item, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
+        _state.RecordTagAdditions(tagsAdded);
         _state.Save(ToDto(item, libraryId, DateTimeOffset.UtcNow, sources));
     }
 

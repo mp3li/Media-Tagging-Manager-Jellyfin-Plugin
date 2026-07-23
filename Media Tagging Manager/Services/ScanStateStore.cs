@@ -23,6 +23,8 @@ public sealed class ScanStateStore
                 CurrentTitle = _progress.CurrentTitle,
                 StartedUtc = _progress.StartedUtc,
                 EstimatedRemaining = _progress.EstimatedRemaining,
+                TagsAdded = _progress.TagsAdded,
+                MediaItemsTagged = _progress.MediaItemsTagged,
                 LastError = _progress.LastError
             };
         }
@@ -61,6 +63,26 @@ public sealed class ScanStateStore
             _progress.CurrentTitle = string.Empty;
             _progress.EstimatedRemaining = TimeSpan.Zero;
             _progress.LastError = error;
+        }
+    }
+
+    /// <summary>Records tags newly added to one item while a scan is active.</summary>
+    public void RecordTagAdditions(int count)
+    {
+        if (count <= 0)
+        {
+            return;
+        }
+
+        lock (_progressLock)
+        {
+            if (!_progress.IsRunning)
+            {
+                return;
+            }
+
+            _progress.TagsAdded += count;
+            _progress.MediaItemsTagged++;
         }
     }
 

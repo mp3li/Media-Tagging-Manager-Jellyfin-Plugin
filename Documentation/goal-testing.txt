@@ -59,6 +59,10 @@ Acceptance criteria:
 [ ] Restart Jellyfin and confirm the selection persists.
 [ ] Select more than one test library and confirm all selected libraries remain
     selected after saving and restart.
+[ ] Confirm Save Main Settings saves the plugin's server-wide configuration
+    directly and does not offer a misleading per-user or server-name scope
+    prompt. Provider and network tags are shared metadata for users who can
+    access the selected libraries.
 [ ] Clear every selection and confirm the plugin does not interpret this as
     permission to scan every library.
 [ ] Confirm an unselected library is absent from Scan controls and is never
@@ -145,6 +149,9 @@ Acceptance criteria:
 [ ] Confirm completed count, total count, and percentage are credible.
 [ ] Confirm the ETA appears after sufficient progress and is reasonably close
     on a multi-item test library.
+[ ] Confirm the ETA never displays an invalid value such as `NaN`.
+[ ] Confirm a completed scan stays visible as a completion result and reports
+    checked items, newly added tags, and media items that received a new tag.
 [ ] Click Stop Scan and record final status,
     partial tag state, and backup availability.
 [ ] Confirm a scan error is shown as a non-fatal status and does not make the
@@ -332,3 +339,17 @@ object. Inspection of the exact Jellyfin Web 10.11.11 source established that
 ApiClient.ajax returns an unparsed Response unless JSON parsing is requested.
 The plugin now uses the documented ApiClient.getJSON helper for every GET
 endpoint. Retest with 0.1.0.9-test is required.
+2026-07-22 | Test 5 — scan status | Fail; fix pending retest | Jellyfin
+10.11.11, plugin 0.1.0.12-test | During a 221-item scan, the status displayed
+“about NaN min remaining.” The dashboard treated Jellyfin's serialized
+duration as a numeric value. The next build uses a server-provided numeric
+seconds value and must be retested during a multi-item scan.
+2026-07-22 | Test 5 — completed scan feedback | Fail; fix pending retest |
+Jellyfin 10.11.11, plugin 0.1.0.12-test | The dashboard did not retain a
+completion message or report how many tags were added and to how many media
+items. The next build records and displays those totals; retest required.
+2026-07-22 | Test 8 — Library overview | Fail; fix pending retest | Jellyfin
+10.11.11, plugin 0.1.0.12-test | The View Tags overview did not list the
+selected library's media after scanning. The overview query now reads each
+selected Jellyfin library directly and carries its configured library ID into
+the dashboard result; retest required.

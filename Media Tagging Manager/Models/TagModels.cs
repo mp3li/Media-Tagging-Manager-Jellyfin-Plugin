@@ -49,6 +49,15 @@ public sealed class ScanProgress
     /// <summary>Gets or sets the estimated remaining duration.</summary>
     public TimeSpan? EstimatedRemaining { get; set; }
 
+    /// <summary>Gets the estimated remaining duration as a JavaScript-safe number of seconds.</summary>
+    public double? EstimatedRemainingSeconds => EstimatedRemaining?.TotalSeconds;
+
+    /// <summary>Gets or sets the number of plugin tags newly added by the current or most recent scan.</summary>
+    public int TagsAdded { get; set; }
+
+    /// <summary>Gets or sets the number of media items that received at least one new plugin tag.</summary>
+    public int MediaItemsTagged { get; set; }
+
     /// <summary>Gets or sets the latest non-fatal error.</summary>
     public string? LastError { get; set; }
 }
