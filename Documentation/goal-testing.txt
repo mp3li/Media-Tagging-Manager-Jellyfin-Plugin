@@ -131,8 +131,13 @@ Acceptance criteria:
     invent a provider or network.
 [ ] Confirm the configured availability countries change provider results only
     the source supports; record any expected regional difference.
-[ ] After a selected-library scan, confirm Select Providers and Networks lists
-    every provider and network discovered by the plugin for those libraries.
+[ ] Before scanning any media, confirm Select Providers loads the full TMDb
+    movie/TV provider catalog for the selected regions and the Watchmode source
+    catalog when the corresponding keys are configured.
+[ ] Before scanning any media, confirm Select Networks loads Watchmode's full
+    TV-network catalog when a Watchmode API key is configured.
+[ ] After a selected-library scan, confirm newly discovered provider and
+    network values remain listed even if a selection sync removes their tags.
 [ ] Confirm selections remain available in those lists after a selection sync
     removes their current tags.
 [ ] Select a subset of providers, run Sync with Only Selected Providers, and

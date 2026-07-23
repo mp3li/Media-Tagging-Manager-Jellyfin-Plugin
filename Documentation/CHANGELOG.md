@@ -6,6 +6,22 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.15-test] - 2026-07-22
+
+### Changed
+
+- Replaced the combined selection wrapper with two independent, same-level
+  sections: **Select Providers** and **Select Networks**.
+- Provider choices now load before the first scan from TMDb's movie/TV
+  provider catalogs for selected countries and Watchmode's source catalog.
+- Network choices now load before the first scan from Watchmode's complete
+  TV-network catalog, while retaining names discovered from media scans.
+
+### Test-release notes
+
+- This supersedes `0.1.0.14-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.14-test] - 2026-07-22
 
 ### Added

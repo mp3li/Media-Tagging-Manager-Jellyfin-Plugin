@@ -22,6 +22,7 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly ITaskManager _taskManager;
     private readonly ManualScanRequestQueue _manualScanRequests;
     private readonly TmdbAvailabilitySource _tmdb;
+    private readonly WatchmodeAvailabilitySource _watchmode;
     private readonly WatchmodeQuotaTracker _watchmodeQuota;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
@@ -33,6 +34,7 @@ public sealed class ProviderNetworkController : ControllerBase
         ITaskManager taskManager,
         ManualScanRequestQueue manualScanRequests,
         TmdbAvailabilitySource tmdb,
+        WatchmodeAvailabilitySource watchmode,
         WatchmodeQuotaTracker watchmodeQuota)
     {
         _scanner = scanner;
@@ -42,6 +44,7 @@ public sealed class ProviderNetworkController : ControllerBase
         _taskManager = taskManager;
         _manualScanRequests = manualScanRequests;
         _tmdb = tmdb;
+        _watchmode = watchmode;
         _watchmodeQuota = watchmodeQuota;
     }
 
@@ -125,9 +128,23 @@ public sealed class ProviderNetworkController : ControllerBase
         [FromQuery] string? network,
         [FromQuery] bool? isTagged) => Ok(_scanner.GetDashboardItems(libraryId, provider, network, isTagged));
 
-    /// <summary>Returns provider and network names discovered for the selected-library selection controls.</summary>
+    /// <summary>Returns source-catalog and selected-library provider/network names for the selection controls.</summary>
     [HttpGet("tag-choices")]
-    public ActionResult<TagChoicesDto> GetTagChoices() => Ok(_scanner.GetTagChoices());
+    public async Task<ActionResult<TagChoicesDto>> GetTagChoices(CancellationToken cancellationToken)
+    {
+        var discovered = _scanner.GetTagChoices();
+        var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
+        var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
+        var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+        var networks = discovered.Networks.Concat(watchmode.Networks)
+            .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+        return Ok(new TagChoicesDto(
+            providers,
+            networks,
+            CombineCatalogNotes(tmdb.Note, watchmode.Note),
+            watchmode.Note));
+    }
 
     /// <summary>Removes unselected provider tags without looking up or changing any source data.</summary>
     [HttpPost("sync/providers")]
@@ -183,6 +200,12 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpPost("backups/undo")]
     public async Task<ActionResult<TagBackupSummary>> UndoLatest(CancellationToken cancellationToken) =>
         Ok(await _scanner.UndoLatestBackupAsync(null, cancellationToken).ConfigureAwait(false));
+
+    private static string? CombineCatalogNotes(params string?[] notes)
+    {
+        var meaningful = notes.Where(note => !string.IsNullOrWhiteSpace(note)).ToArray();
+        return meaningful.Length == 0 ? null : string.Join(" ", meaningful);
+    }
 }
 
 /// <summary>Manual provider/network edits submitted from the dashboard.</summary>

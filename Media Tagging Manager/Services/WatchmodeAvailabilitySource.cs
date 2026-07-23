@@ -76,6 +76,69 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         return new SourceLookupResult(Name, tags);
     }
 
+    /// <summary>Gets Watchmode's complete provider and TV-network reference catalogs without matching any Jellyfin media item.</summary>
+    public async Task<SourceCatalogResult> GetReferenceCatalogAsync(CancellationToken cancellationToken)
+    {
+        var configuration = Plugin.Instance?.Configuration;
+        if (configuration is null || string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey))
+        {
+            return new SourceCatalogResult([], [], "Save a Watchmode API Key to load its complete provider and TV-network catalogs before scanning.");
+        }
+
+        var providers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var networks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var regions = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
+            await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+            await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
+        }
+        catch (HttpRequestException exception)
+        {
+            return new SourceCatalogResult(
+                providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+                networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+                $"Watchmode reference catalogs could not be loaded: {exception.Message}");
+        }
+        catch (JsonException exception)
+        {
+            return new SourceCatalogResult(
+                providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+                networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+                $"Watchmode reference catalogs returned unexpected data: {exception.Message}");
+        }
+
+        return new SourceCatalogResult(
+            providers.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
+            networks.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray());
+    }
+
+    private async Task AddCatalogNamesAsync(string uri, string propertyName, ISet<string> names, string apiKey, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.Add("X-API-Key", apiKey);
+        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        _quota.RecordServerUsage(TryParseHeader(response, "X-Account-Quota-Used"));
+        if (!response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        if (document.RootElement.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        foreach (var item in document.RootElement.EnumerateArray())
+        {
+            if (item.TryGetProperty(propertyName, out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+            {
+                names.Add(name.GetString()!.Trim());
+            }
+        }
+    }
+
     private static int? TryParseHeader(HttpResponseMessage response, string header) =>
         response.Headers.TryGetValues(header, out var values) && int.TryParse(values.FirstOrDefault(), out var parsed) ? parsed : null;
 

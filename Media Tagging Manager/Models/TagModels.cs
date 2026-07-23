@@ -29,7 +29,14 @@ public sealed record AvailabilityRegionsResponse(IReadOnlyCollection<Availabilit
 public sealed record WatchmodeUsageDto(int Used, int Limit, string Month, bool IsLimitReached);
 
 /// <summary>All provider and network names known from selected-library scans and current tags.</summary>
-public sealed record TagChoicesDto(IReadOnlyCollection<string> Providers, IReadOnlyCollection<string> Networks);
+public sealed record TagChoicesDto(
+    IReadOnlyCollection<string> Providers,
+    IReadOnlyCollection<string> Networks,
+    string? ProviderCatalogStatus = null,
+    string? NetworkCatalogStatus = null);
+
+/// <summary>Reference names returned from one enabled source's provider and network catalog endpoints.</summary>
+public sealed record SourceCatalogResult(IReadOnlyCollection<string> Providers, IReadOnlyCollection<string> Networks, string? Note = null);
 
 /// <summary>Result of removing one kind of plugin-owned tag without contacting any source.</summary>
 public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);

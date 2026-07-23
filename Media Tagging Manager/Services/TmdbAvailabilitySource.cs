@@ -46,6 +46,58 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             .ToArray();
     }
 
+    /// <summary>Gets TMDb's complete movie and TV watch-provider catalogs for the configured availability countries.</summary>
+    public async Task<SourceCatalogResult> GetReferenceCatalogAsync(CancellationToken cancellationToken)
+    {
+        var configuration = Plugin.Instance?.Configuration;
+        if (configuration is null || string.IsNullOrWhiteSpace(configuration.TmdbApiKey))
+        {
+            return new SourceCatalogResult([], [], "Save a TMDb API Read Access Token to load TMDb's provider catalog.");
+        }
+
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var region in GetRegions(configuration))
+            {
+                foreach (var type in new[] { "movie", "tv" })
+                {
+                    var uri = $"https://api.themoviedb.org/3/watch/providers/{type}?language=en-US&watch_region={Uri.EscapeDataString(region)}";
+                    using var request = CreateRequest(uri, configuration.TmdbApiKey);
+                    using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        continue;
+                    }
+
+                    using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+                    if (!document.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
+                    {
+                        continue;
+                    }
+
+                    foreach (var provider in results.EnumerateArray())
+                    {
+                        if (provider.TryGetProperty("provider_name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                        {
+                            names.Add(name.GetString()!.Trim());
+                        }
+                    }
+                }
+            }
+        }
+        catch (HttpRequestException exception)
+        {
+            return new SourceCatalogResult(names.ToArray(), [], $"TMDb provider catalog could not be loaded: {exception.Message}");
+        }
+        catch (JsonException exception)
+        {
+            return new SourceCatalogResult(names.ToArray(), [], $"TMDb provider catalog returned unexpected data: {exception.Message}");
+        }
+
+        return new SourceCatalogResult(names.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(), []);
+    }
+
     /// <inheritdoc />
     public async Task<SourceLookupResult> LookupAsync(ExternalIds ids, CancellationToken cancellationToken)
     {

@@ -163,20 +163,31 @@ Choose whether to create **Provider tags**, **Network tags**, or both.
 
 Your existing Jellyfin tags added without this plugin are never removed. The plugin only adds new tags and, if you enable removal of outdated tags, only removes tags that it added.
 
-#### Select Providers and Networks
+#### Select Providers
 
-After the plugin scans selected libraries, this two-column area lists every
-provider and network it has discovered there, including values later removed by
-a selection sync. It becomes more complete as more selected-library media is
-scanned; it does not claim to be a finite worldwide catalog of every network.
+This independent settings section loads the complete movie and TV
+watch-provider catalogs from TMDb for the selected countries, plus Watchmode's
+provider catalog when its key is configured. That means providers can be chosen
+before the first media scan. Previously discovered provider values remain
+listed too.
 
-Choose the values you want to keep, then use **Sync with Only Selected
-Providers** or **Sync with Only Selected Networks**. Each action creates a
-backup, saves the chosen list for future scans, and removes only unselected
-plugin-owned tags of that same kind. It does not contact TMDb, Watchmode, or
-any other source, and it never removes the other kind of tag or unrelated
-Jellyfin tags. Selecting none is an intentional way to remove all
-plugin-owned tags of that one kind from selected libraries.
+Use **Sync with Only Selected Providers** when your selected libraries already
+have more provider tags than you want. It creates a backup, deletes provider
+tags for unselected providers, does not remove tags for your chosen providers,
+and saves the choice for future scans. It does not contact any source and never
+changes network or unrelated Jellyfin tags.
+
+#### Select Networks
+
+This separate settings section loads Watchmode's complete TV-network catalog
+when its key is configured, plus networks previously discovered by the plugin.
+It therefore supports choosing network names before the first media scan.
+
+Use **Sync with Only Selected Networks** when your selected libraries already
+have more network tags than you want. It creates a backup, deletes network tags
+for unselected networks, does not remove tags for your chosen networks, and
+saves the choice for future scans. It does not contact any source and never
+changes provider or unrelated Jellyfin tags.
 
 #### Newly Added Media Settings
 
