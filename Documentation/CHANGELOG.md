@@ -6,6 +6,19 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.19-test] - 2026-07-22
+
+### Fixed
+
+- Marked the masked API-token fields as one-time codes and excluded them from
+  common third-party password managers, so Chrome does not offer to save them
+  as a user login when leaving the page.
+
+### Test-release notes
+
+- This supersedes `0.1.0.18-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.18-test] - 2026-07-22
 
 ### Added
