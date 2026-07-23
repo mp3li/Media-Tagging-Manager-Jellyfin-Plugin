@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  A Jellyfin server plugin that checks selected libraries against enabled availability sources, then adds clear, overlap-friendly provider and network tags directly to the titles you already own.
+  A Jellyfin server plugin that checks selected libraries against enabled sources, then adds clear, separate provider, network, genre, keyword, and collection tags directly to the titles you already own.
 </p>
 
 <p align="center">
@@ -55,11 +55,14 @@ The plugin writes normal Jellyfin tags with explicit prefixes:
 Provider: Netflix
 Provider: Prime Video
 Network: BBC One
+Genre: Drama
+Keyword: Time Travel
+Collection: The Hunger Games Collection
 ```
 
 A service where a title can currently be watched is not necessarily the network that originally aired or carries it. A title may have any number of provider tags and network tags at once.
 
-When the setting to remove outdated plugin-assigned tags is enabled, the plugin replaces only tags beginning with `Provider: ` or `Network: `. Genres, studios, collections, and unrelated custom Jellyfin tags remain untouched. If every enabled source is unavailable for a title, existing plugin tags are preserved rather than erased.
+When the setting to remove outdated plugin-assigned tags is enabled, the plugin replaces only tags beginning with `Provider: ` or `Network: `. Genre, Keyword, Collection, studio, and unrelated custom Jellyfin tags remain untouched. If every enabled source is unavailable for a title, existing provider and network tags are preserved rather than erased.
 
 ## Source Coverage
 
@@ -118,7 +121,7 @@ Backups remain in Jellyfin’s plugin data directory through normal server resta
 
 #### Tag Destination(s)
 
-Choose either or both destinations for new provider and network tags.
+Choose either or both destinations for new plugin-managed tags.
 
 - **Here in Jellyfin** saves tags to Jellyfin’s media metadata database. This is the default.
 - **In my NFO files** uses Jellyfin’s configured NFO metadata saver for every selected library. Each selected library must be configured in Jellyfin to save local NFO metadata; the plugin stops before making changes if one is not.
@@ -174,7 +177,7 @@ provider and network pickers and in the Library Overview. Compatible future
 plugins by the same developer can reuse the locally cached logos for detail
 pages and collection making.
 
-Uncheck **Save and use provider and network logos**, then select **Save Logo
+Uncheck **Save and use provider and network logos**, then select **Save Main
 Settings**, to stop this plugin from downloading, saving, or displaying logos.
 Use **Delete Cached Logos** afterward to explicitly remove every cached and
 manually uploaded logo. That action does not modify any media tags.
@@ -248,6 +251,40 @@ without scanning media or changing any existing tags.
 Use **Save Network and Provider Settings** to save the regions, tag behavior,
 TV-network streaming-app preference, and both current selection lists together.
 
+### Genres and Keywords Settings
+
+#### Genre Settings
+
+Choose which TMDb genres may be added as separate `Genre: <name>` tags. The
+scrollable, searchable picker loads before a media scan, supports **Select
+All** and **Select None**, and saves the chosen allow-list for future scans.
+
+**Sync with Only Selected Genres** creates a backup and removes only unselected
+plugin-owned `Genre:` tags in selected libraries. It does not contact an API or
+change Provider, Network, Keyword, Collection, or unrelated Jellyfin tags.
+
+#### Keywords Settings
+
+Enable **Add keywords during scans** to add TMDb title keywords as separate tags
+such as `Keyword: Time Travel`, `Keyword: Broadway`, or `Keyword: Based on
+Novel`. Keywords are added only when this setting was enabled before the scan.
+
+To remove them later, turn off the checkbox and use **Remove Keywords Added by
+This Plugin**. It creates a backup, makes no API request, removes only
+plugin-owned `Keyword:` tags, and leaves every other tag unchanged.
+
+### Collections Tags Settings
+
+Use **Scan Selected Libraries for Collections** to look up direct TMDb movie
+collection membership for movies in the selected libraries. The results are
+grouped by library and can be selected individually or with **Select All** /
+**Select None**. **Add Collection Tags** creates a backup and adds only the
+selected `Collection: <TMDb collection name>` tags after rechecking the direct
+TMDb membership server-side. It is additive and does not infer collection
+membership.
+
+### Main Settings: Automation
+
 #### Newly Added Media Settings
 
 Turn on **Scan newly added media in my libraries using this plugin** to check newly added Movies and Series after a normal Jellyfin library scan. Turn it off to prevent automatic API checks for incoming media; manual and scheduled full scans remain available.
@@ -260,12 +297,6 @@ Turn on the scheduled task and choose a refresh interval in hours to keep provid
 
 Enable the setting to remove outdated plugin-assigned tags if you want a later scan to remove a tag when a provider or network no longer hosts a title. Leaving it off preserves old plugin-created tags. Other Jellyfin tags remain untouched.
 
-### Genre Settings
-
-The Genre Settings tab is intentionally empty for now, reserving a clear home
-for a future genre-management feature without mixing it into provider or
-network settings.
-
 ### View and Edit Tags
 
 Use **Filters** at the top of the tab to narrow the selected-library results by provider, network, tagged state, or a provider-and-network combination.
@@ -273,9 +304,10 @@ Use **Clear Filters** to reset all three filters at once.
 
 The **Library Overview** is collapsed by default to keep this tab manageable for
 large libraries. Select its expand control to view grouped matching Movies and
-Series. Use **Edit** to manually replace a title’s plugin-owned provider and
-network tags, then use **Save Tag Changes** to apply the edits. A backup is
-created before tag changes are written.
+Series. It keeps **Providers**, **Networks**, **Genres**, **Keywords**, and
+**Collections** visibly separate. Use **Edit** to manually replace any of
+those plugin-owned tag types for one title, then use **Save Tag Changes** to
+apply the edits. A backup is created before tag changes are written.
 
 #### Unknown Providers and Networks
 
@@ -287,9 +319,14 @@ unrelated Jellyfin tags. Assign an official name to keep variants such as
 JPEG, or SVG logo for that official name. The mapping itself does not rename or
 otherwise modify the existing media tags.
 
+Use **See Items** beside each result to open the exact selected-library Movies
+or Series carrying that unknown Provider or Network tag.
+
 ### Scan
 
-The Scan tab lists the libraries currently selected in Main Settings and lets you initiate a full scan for all of them.
+The Scan tab lists the libraries currently selected in Main Settings and lets
+you initiate a full tag scan for every selected library and every selected tag
+option on all tabs.
 
 For safe archive handling, Backup Settings and Scheduled Tasks Settings are
 available both here and in Main Settings. Their controls remain synchronized.
@@ -327,7 +364,10 @@ README.md                   project overview and setup guide
 
 ## Known Limitations
 
-- Current automatic querying is limited to **Movies and Series**. Music, books, episodes, and other Jellyfin item kinds are not source adapters in this version.
+- Current automatic provider/network/genre/keyword querying is limited to
+  **Movies and Series**; direct TMDb collection matching is limited to
+  **Movies**. Music, books, episodes, and other Jellyfin item kinds are not
+  source adapters in this version.
 - Availability depends on region, external IDs, API coverage, source plans, and source uptime. Missing data is not proof that a title is unavailable.
 - TMDb TV networks describe TV-network metadata; they are not a universal network authority for every media type.
 - This plugin does not ship third-party API credentials and does not bypass provider logins, DRM, access restrictions, source rate limits, or terms of use.

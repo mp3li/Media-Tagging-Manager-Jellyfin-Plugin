@@ -1,16 +1,25 @@
 namespace Jellyfin.Plugin.MediaTaggingManager.Models;
 
-/// <summary>The two independently selectable kinds of classification.</summary>
+/// <summary>The distinct tag classifications managed by this plugin.</summary>
 public enum TagKind
 {
     /// <summary>A current streaming, rental, purchase, or television provider.</summary>
     Provider,
 
     /// <summary>A broadcast, cable, or production network.</summary>
-    Network
+    Network,
+
+    /// <summary>A source-provided movie or television genre.</summary>
+    Genre,
+
+    /// <summary>A source-provided title keyword.</summary>
+    Keyword,
+
+    /// <summary>A direct TMDb movie collection membership.</summary>
+    Collection
 }
 
-/// <summary>A provider/network value with source provenance, optional TV-network-app classification, and source logo URL.</summary>
+/// <summary>A source value with provenance, optional TV-network-app classification, and source logo URL.</summary>
 public sealed record SourceTag(TagKind Kind, string Name, string Source, bool IsTvNetworkApp = false, string? LogoUrl = null);
 
 /// <summary>Stable external identifiers available for a Jellyfin item.</summary>
@@ -24,6 +33,9 @@ public sealed record AvailabilityRegionDto(string Code, string Name);
 
 /// <summary>TMDb country choices plus any administrator-facing setup guidance.</summary>
 public sealed record AvailabilityRegionsResponse(IReadOnlyCollection<AvailabilityRegionDto> Regions, string? Message);
+
+/// <summary>An official TMDb movie or television genre.</summary>
+public sealed record GenreDto(int Id, string Name);
 
 /// <summary>Current locally tracked Watchmode usage for the administrator dashboard.</summary>
 public sealed record WatchmodeUsageDto(int Used, int Limit, string CycleStart, string ResetsOn, bool IsConfigured, bool IsLimitReached);
@@ -44,6 +56,9 @@ public sealed record SourceCatalogResult(
 
 /// <summary>Result of removing one kind of plugin-owned tag without contacting any source.</summary>
 public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);
+
+/// <summary>Result of adding administrator-selected plugin-owned tags.</summary>
+public sealed record TagApplyResult(int TagsAdded, int MediaItemsChanged);
 
 /// <summary>A Provider or Network tag in selected libraries that is neither plugin-known nor recognized by enabled source catalogs.</summary>
 public sealed record UnknownTaggedNameDto(TagKind Kind, string Name, int MediaItemCount);
@@ -90,8 +105,14 @@ public sealed record TaggedItemDto(
     Guid? LibraryId,
     IReadOnlyCollection<string> Providers,
     IReadOnlyCollection<string> Networks,
+    IReadOnlyCollection<string> Genres,
+    IReadOnlyCollection<string> Keywords,
+    IReadOnlyCollection<string> Collections,
     DateTimeOffset? LastCheckedUtc,
     IReadOnlyCollection<string> Sources);
+
+/// <summary>A direct TMDb collection match for one movie in a selected library.</summary>
+public sealed record CollectionMatchDto(Guid ItemId, Guid LibraryId, string Title, string CollectionName, string Source);
 
 /// <summary>A stored, restorable tag snapshot summary shown in the administrator dashboard.</summary>
 public sealed record TagBackupSummary(Guid Id, string Label, DateTimeOffset CreatedUtc, int ItemCount);

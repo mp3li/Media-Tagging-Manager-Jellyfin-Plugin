@@ -50,6 +50,122 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             .ToArray();
     }
 
+    /// <summary>Gets TMDb's official combined movie and TV genre catalog.</summary>
+    public async Task<IReadOnlyCollection<GenreDto>> GetGenresAsync(CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return [];
+        }
+
+        var genres = new Dictionary<int, string>();
+        foreach (var type in new[] { "movie", "tv" })
+        {
+            using var response = await SendAsync($"https://api.themoviedb.org/3/genre/{type}/list?language=en-US", token, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                continue;
+            }
+
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+            if (!document.RootElement.TryGetProperty("genres", out var values) || values.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var genre in values.EnumerateArray())
+            {
+                if (genre.TryGetProperty("id", out var id) && id.TryGetInt32(out var value)
+                    && genre.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                {
+                    genres[value] = name.GetString()!.Trim();
+                }
+            }
+        }
+
+        return genres.Select(pair => new GenreDto(pair.Key, pair.Value)).OrderBy(genre => genre.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    /// <summary>Gets optional direct TMDb genre and keyword classifications for one title.</summary>
+    public async Task<SourceLookupResult> LookupClassificationsAsync(ExternalIds ids, bool includeGenres, bool includeKeywords, CancellationToken cancellationToken)
+    {
+        var configuration = Plugin.Instance?.Configuration;
+        if (configuration is null || string.IsNullOrWhiteSpace(configuration.TmdbApiKey) || string.IsNullOrWhiteSpace(ids.Tmdb) || (!includeGenres && !includeKeywords))
+        {
+            return new SourceLookupResult(Name, []);
+        }
+
+        var type = ids.MediaType == "Series" ? "tv" : "movie";
+        var id = Uri.EscapeDataString(ids.Tmdb);
+        var tags = new List<SourceTag>();
+        string? issue = null;
+        if (includeGenres)
+        {
+            using var response = await SendAsync($"https://api.themoviedb.org/3/{type}/{id}?language=en-US", configuration.TmdbApiKey, cancellationToken).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+                if (document.RootElement.TryGetProperty("genres", out var genres) && genres.ValueKind == JsonValueKind.Array)
+                {
+                    tags.AddRange(genres.EnumerateArray()
+                        .Where(genre => genre.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                        .Select(genre => new SourceTag(TagKind.Genre, genre.GetProperty("name").GetString()!, Name)));
+                }
+            }
+            else
+            {
+                issue = $"Genre lookup returned HTTP {(int)response.StatusCode}";
+            }
+        }
+
+        if (includeKeywords)
+        {
+            using var response = await SendAsync($"https://api.themoviedb.org/3/{type}/{id}/keywords", configuration.TmdbApiKey, cancellationToken).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+                var property = type == "tv" ? "results" : "keywords";
+                if (document.RootElement.TryGetProperty(property, out var keywords) && keywords.ValueKind == JsonValueKind.Array)
+                {
+                    tags.AddRange(keywords.EnumerateArray()
+                        .Where(keyword => keyword.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                        .Select(keyword => new SourceTag(TagKind.Keyword, keyword.GetProperty("name").GetString()!, Name)));
+                }
+            }
+            else
+            {
+                issue ??= $"Keyword lookup returned HTTP {(int)response.StatusCode}";
+            }
+        }
+
+        return new SourceLookupResult(Name, tags, issue);
+    }
+
+    /// <summary>Gets a direct TMDb movie collection membership without inferring membership.</summary>
+    public async Task<string?> GetCollectionAsync(ExternalIds ids, CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(ids.Tmdb) || ids.MediaType == "Series")
+        {
+            return null;
+        }
+
+        using var response = await SendAsync($"https://api.themoviedb.org/3/movie/{Uri.EscapeDataString(ids.Tmdb)}?language=en-US", token, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        return document.RootElement.TryGetProperty("belongs_to_collection", out var collection)
+            && collection.ValueKind == JsonValueKind.Object
+            && collection.TryGetProperty("name", out var name)
+            && !string.IsNullOrWhiteSpace(name.GetString())
+            ? name.GetString()!.Trim()
+            : null;
+    }
+
     /// <summary>Gets TMDb's complete movie and TV watch-provider catalogs for the configured availability countries.</summary>
     public async Task<SourceCatalogResult> GetReferenceCatalogAsync(CancellationToken cancellationToken)
     {

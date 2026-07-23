@@ -40,9 +40,9 @@ Date testing began:
 [ ] Install the DLL manually in a dedicated Jellyfin plugin directory.
 [ ] Restart Jellyfin and confirm the plugin loads without server startup errors.
 [ ] Confirm the Dashboard -> Plugins entry displays "Media Tagging Manager".
-[ ] Open the plugin dashboard page and confirm all five areas are available:
-    Main Settings, Network and Provider Settings, Genre Settings, View and Edit
-    Tags, and Scan.
+[ ] Open the plugin dashboard page and confirm all six areas are available:
+    Main Settings, Network and Provider Settings, Genres and Keywords Settings,
+    Collections Tags Settings, View and Edit Tags, and Scan.
 [ ] Confirm the plugin's existing stable GUID retains settings after replacing
     an older local build with a newer local build.
 
@@ -86,7 +86,8 @@ Acceptance criteria:
 [ ] Confirm Main Settings, Network and Provider Settings, Logo Settings, and
     Scan Scheduled Tasks Settings each save their intended configuration without
     overwriting unrelated saved settings.
-[ ] Confirm the empty Genre Settings tab opens without an error.
+[ ] Confirm the Genres and Keywords Settings tab opens without an error and
+    saves its settings without overwriting unrelated configuration.
 
 Acceptance criteria:
 - Settings persist across a page reload and Jellyfin restart.
@@ -189,6 +190,9 @@ Acceptance criteria:
     logos are removed while all media tags remain unchanged.
 [ ] After a selected-library scan, confirm newly discovered provider and
     network values remain listed even if a selection sync removes their tags.
+[ ] In Unknown Providers and Networks, use **See Items** for a result and
+    confirm its dialog lists only the selected-library Movies or Series with
+    that exact unknown Provider or Network tag.
 [ ] Confirm Select All and Select None affect every provider checkbox without
     changing network checkboxes, and the equivalent network controls affect
     only networks.
@@ -218,6 +222,40 @@ Acceptance criteria:
 - Tags are clear, overlap-friendly, and safe to filter in Jellyfin.
 - The plugin never treats a missing or failed lookup as a reason to guess or
   remove unrelated metadata.
+
+4a. Genre, keyword, and collection tag behavior
+------------------------------------------------
+
+[ ] With a valid TMDb API Read Access Token, confirm the Genre picker loads
+    TMDb genres before any media scan.
+[ ] Confirm Genre search filters only the Genre list and retains checkbox
+    selections.
+[ ] Confirm Genre Select All and Select None affect only Genre checkboxes.
+[ ] Save a subset of genres, reload the page, and confirm the future-scan
+    allow-list persists.
+[ ] Scan a known title and confirm only selected source-returned genres are
+    added as `Genre: <name>` tags.
+[ ] Use Sync with Only Selected Genres and confirm it creates a backup, removes
+    only unselected plugin `Genre:` tags, makes no source request, and leaves
+    Provider, Network, Keyword, Collection, and unrelated tags untouched.
+[ ] Enable Add keywords during scans before scanning a title with known TMDb
+    keywords; confirm `Keyword: <name>` tags are added.
+[ ] Disable Add keywords during scans before a scan and confirm no new Keyword
+    tags are added.
+[ ] Use Remove Keywords Added by This Plugin and confirm it creates a backup,
+    makes no API request, removes only plugin `Keyword:` tags, and preserves
+    every other tag.
+[ ] Scan selected libraries for collections with valid TMDb credentials and
+    confirm results are grouped by library and limited to direct TMDb movie
+    collection matches.
+[ ] Confirm Collection Select All, Select None, and individual checkboxes
+    control only the selected collection matches.
+[ ] Add selected Collection tags and confirm a backup is created and only
+    `Collection: <TMDb collection name>` tags are added.
+[ ] Confirm the collection action does not change Provider, Network, Genre,
+    Keyword, or unrelated tags.
+[ ] In View and Edit Tags, confirm Providers, Networks, Genres, Keywords, and
+    Collections appear in separate columns and each can be manually edited.
 
 5. Manual scans, scan status, and performance
 ---------------------------------------------

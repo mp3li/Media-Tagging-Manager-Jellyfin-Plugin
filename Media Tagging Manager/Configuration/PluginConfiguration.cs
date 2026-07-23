@@ -20,6 +20,12 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets whether broadcaster/studio-network tags are written.</summary>
     public bool TagNetworks { get; set; } = true;
 
+    /// <summary>Gets or sets whether selected TMDb genres are written during normal scans.</summary>
+    public bool TagGenres { get; set; }
+
+    /// <summary>Gets or sets whether TMDb keywords are written during normal scans.</summary>
+    public bool TagKeywords { get; set; }
+
     /// <summary>Gets or sets a value indicating whether automatic refresh is enabled.</summary>
     public bool EnableAutomaticRefresh { get; set; }
 
@@ -52,6 +58,9 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets network names selected for an optional future-scan allow-list.</summary>
     public string[] SelectedNetworkNames { get; set; } = [];
+
+    /// <summary>Gets or sets the genres selected for future scans.</summary>
+    public string[] SelectedGenreNames { get; set; } = [];
 
     /// <summary>Gets or sets whether provider tags are restricted to <see cref="SelectedProviderNames"/>.</summary>
     public bool RestrictProvidersToSelected { get; set; }

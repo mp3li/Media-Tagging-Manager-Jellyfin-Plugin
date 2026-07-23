@@ -6,6 +6,31 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+### Added
+
+- Added **Genres and Keywords Settings** with a searchable, scrollable TMDb
+  genre picker, independent Select All/Select None controls, a saved genre
+  allow-list, and **Sync with Only Selected Genres**.
+- Added opt-in TMDb keyword tagging. Keywords are written as `Keyword:` tags
+  only when enabled before a scan, and can be removed with the backup-protected
+  **Remove Keywords Added by This Plugin** action without an API request.
+- Added **Collections Tags Settings**. It scans selected libraries for direct
+  TMDb movie collection matches, groups reviewable results by library, and adds
+  only administrator-selected `Collection:` tags after a backup.
+- Expanded **View and Edit Tags** so Provider, Network, Genre, Keyword, and
+  Collection tags are separate columns and separately editable.
+- Added **See Items** for Unknown Providers and Networks, opening the exact
+  selected-library items that carry the chosen unknown tag.
+
+### Changed
+
+- Scheduled outdated-availability replacement remains limited to Provider and
+  Network tags. Genre, Keyword, and Collection tags use their dedicated
+  controls and are not removed by that availability setting.
+- Logo preferences now save with **Save Main Settings**; disabling logo use
+  also stops dashboard logo requests. The redundant standalone save button was
+  removed.
+
 ## [0.1.0.27-test] - 2026-07-23
 
 ### Added

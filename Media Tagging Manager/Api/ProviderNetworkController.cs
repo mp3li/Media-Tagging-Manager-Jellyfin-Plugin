@@ -116,6 +116,11 @@ public sealed class ProviderNetworkController : ControllerBase
         return Ok(new AvailabilityRegionsResponse(regions, message));
     }
 
+    /// <summary>Gets TMDb's official combined movie and TV genre list.</summary>
+    [HttpGet("genres")]
+    public async Task<ActionResult<IReadOnlyCollection<GenreDto>>> GetGenres(CancellationToken cancellationToken) =>
+        Ok(await _tmdb.GetGenresAsync(cancellationToken).ConfigureAwait(false));
+
     /// <summary>Gets the current locally tracked Watchmode 30-day-cycle usage.</summary>
     [HttpGet("watchmode-usage")]
     public ActionResult<WatchmodeUsageDto> GetWatchmodeUsage() => Ok(_watchmodeQuota.GetUsage());
@@ -215,6 +220,18 @@ public sealed class ProviderNetworkController : ControllerBase
             tmdb.Networks.Concat(watchmode.Networks)));
     }
 
+    /// <summary>Lists selected-library media carrying one unknown Provider or Network tag.</summary>
+    [HttpGet("unknown-tags/{kind}/{name}/items")]
+    public ActionResult<IReadOnlyCollection<TaggedItemDto>> GetUnknownTagItems(string kind, string name)
+    {
+        if (!TryParseKind(kind, out var tagKind) || string.IsNullOrWhiteSpace(name))
+        {
+            return BadRequest("Choose a Provider or Network tag.");
+        }
+
+        return Ok(_scanner.GetItemsWithTag(tagKind, name));
+    }
+
     /// <summary>Saves a canonical name for one otherwise unknown Provider or Network tag without modifying media tags.</summary>
     [HttpPut("unknown-tags/{kind}/{name}")]
     public IActionResult SaveUnknownTagMapping(string kind, string name, [FromBody] UnknownTagMappingRequest request)
@@ -274,6 +291,26 @@ public sealed class ProviderNetworkController : ControllerBase
     public Task<ActionResult<TagSyncResult>> SyncNetworks([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
         SyncAsync(TagKind.Network, request.Names ?? [], cancellationToken);
 
+    /// <summary>Removes unselected genre tags without looking up or changing any source data.</summary>
+    [HttpPost("sync/genres")]
+    public Task<ActionResult<TagSyncResult>> SyncGenres([FromBody] TagSelectionRequest request, CancellationToken cancellationToken) =>
+        SyncAsync(TagKind.Genre, request.Names ?? [], cancellationToken);
+
+    /// <summary>Removes every plugin-created keyword tag without contacting a source.</summary>
+    [HttpPost("remove/keywords")]
+    public Task<ActionResult<TagSyncResult>> RemoveKeywords(CancellationToken cancellationToken) =>
+        SyncAsync(TagKind.Keyword, [], cancellationToken);
+
+    /// <summary>Scans selected libraries for direct TMDb movie-collection matches without changing tags.</summary>
+    [HttpPost("collections/scan")]
+    public async Task<ActionResult<IReadOnlyCollection<CollectionMatchDto>>> ScanCollections(CancellationToken cancellationToken) =>
+        Ok(await _scanner.ScanCollectionMatchesAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Adds only the collection matches selected in the dashboard.</summary>
+    [HttpPost("collections/apply")]
+    public async Task<ActionResult<TagApplyResult>> ApplyCollections([FromBody] CollectionMatchRequest request, CancellationToken cancellationToken) =>
+        Ok(await _scanner.ApplyCollectionMatchesAsync(request.Matches ?? [], cancellationToken).ConfigureAwait(false));
+
     private async Task<ActionResult<TagSyncResult>> SyncAsync(TagKind kind, IEnumerable<string> names, CancellationToken cancellationToken)
     {
         try
@@ -304,7 +341,7 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpPut("items/{itemId:guid}")]
     public async Task<IActionResult> UpdateItem(Guid itemId, [FromBody] ManualTagsRequest request, CancellationToken cancellationToken)
     {
-        await _scanner.ApplyManualTagsAsync(itemId, request.Providers ?? [], request.Networks ?? [], cancellationToken).ConfigureAwait(false);
+        await _scanner.ApplyManualTagsAsync(itemId, request.Providers ?? [], request.Networks ?? [], request.Genres ?? [], request.Keywords ?? [], request.Collections ?? [], cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -371,6 +408,15 @@ public sealed class ManualTagsRequest
 
     /// <summary>Gets or sets network names.</summary>
     public string[]? Networks { get; set; }
+
+    /// <summary>Gets or sets genre names.</summary>
+    public string[]? Genres { get; set; }
+
+    /// <summary>Gets or sets keyword names.</summary>
+    public string[]? Keywords { get; set; }
+
+    /// <summary>Gets or sets collection names.</summary>
+    public string[]? Collections { get; set; }
 }
 
 /// <summary>Provider or network names selected for a no-lookup synchronization action.</summary>
@@ -385,6 +431,13 @@ public sealed class UnknownTagMappingRequest
 {
     /// <summary>Gets or sets the official/canonical provider or network name.</summary>
     public string OfficialName { get; set; } = string.Empty;
+}
+
+/// <summary>Collection matches selected for one additive collection-tag operation.</summary>
+public sealed class CollectionMatchRequest
+{
+    /// <summary>Gets or sets the direct TMDb movie collection matches to apply.</summary>
+    public CollectionMatchDto[]? Matches { get; set; }
 }
 
 /// <summary>Optional administrator label for a manually created complete tag backup.</summary>

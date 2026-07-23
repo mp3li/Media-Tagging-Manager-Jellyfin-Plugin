@@ -54,8 +54,9 @@ Acceptance criteria:
 [x] Explain settings, source behavior, refresh behavior, incoming-media checks,
     and restore risk in the dashboard rather than requiring a config-file or
     terminal workflow.
-[x] Separate Main Settings from Network and Provider Settings, reserve a Genre
-    Settings tab, and give each settings tab its own save action.
+[x] Separate Main Settings, Network and Provider Settings, Genres and Keywords
+    Settings, Collections Tags Settings, View and Edit Tags, and Scan into
+    distinct dashboard tabs with their appropriate save or action controls.
 [x] Provide logo settings that can stop logo saving/display and explicitly
     delete the complete local logo cache without changing media tags.
 
@@ -93,6 +94,9 @@ Acceptance criteria:
 [x] Allow a server administrator to assign an official name and one uploaded
     logo to an unknown prefixed Provider or Network tag without rewriting its
     existing media tags.
+[x] Provide a **See Items** action beside each unknown Provider or Network
+    result so an administrator can inspect the exact selected-library media
+    carrying that tag before deciding whether to map it.
 [x] Keep TMDb requests below its published anti-bulk guidance with a shared
     35-requests-per-second gate, and temporarily back off on HTTP 429.
 [ ] Add more first-class source adapters after appropriate review of their
@@ -155,7 +159,8 @@ Acceptance criteria:
 
 [x] Provide a dedicated Jellyfin dashboard tab for reviewing supported items in
     selected libraries.
-[x] Show whether each supported item has provider and/or network tags.
+[x] Show each supported item's Provider, Network, Genre, Keyword, and
+    Collection tags as separate editable columns.
 [x] Filter by provider, network, tagged state, or a provider-plus-network
     combination.
 [x] Support partial-text provider and network filtering.
@@ -163,8 +168,9 @@ Acceptance criteria:
     Overview for large selected libraries.
 [x] List only unrecognized `Provider:` and `Network:` tags in the Unknown
     Providers and Networks section; ordinary Jellyfin tags are excluded.
-[x] Allow an administrator to replace a title's plugin-owned provider and
-    network tags manually with comma-separated values.
+[x] Allow an administrator to replace a title's plugin-owned Provider,
+    Network, Genre, Keyword, and Collection tags manually with
+    comma-separated values.
 [x] Preserve unrelated Jellyfin tags during manual corrections.
 [ ] Expand the overview and source adapters beyond movies and TV series to
     additional Jellyfin media types where a reliable availability/network model
@@ -177,6 +183,35 @@ Acceptance criteria:
   provider-and-network combination.
 - A manual correction changes only the intended plugin-owned tags.
 - Existing unrelated tags remain after a manual correction or a re-check.
+
+6a. Genre, keyword, and collection tags
+--------------------------------------
+
+[x] Provide a searchable, scrollable TMDb Genre picker before a media scan.
+[x] Allow Select All, Select None, saving a genre allow-list for future scans,
+    and syncing selected-library Genre tags to only that allow-list.
+[x] Add selected TMDb genres as separate `Genre: <name>` tags during scans.
+[x] Provide an opt-in Keywords setting that adds TMDb title keywords as
+    separate `Keyword: <name>` tags only when enabled before a scan.
+[x] Provide a backup-protected action that removes only plugin-created Keyword
+    tags without API requests.
+[x] Provide a separate Collections Tags Settings tab that scans selected
+    libraries for direct TMDb movie collection membership, groups matches by
+    library, supports individual/select-all/select-none choices, and adds only
+    selected `Collection: <TMDb collection name>` tags.
+[x] Do not infer collection membership from titles, and do not create another
+    classification in place of TMDb's direct collection result.
+[x] Keep Genre, Keyword, and Collection tag maintenance separate from the
+    scheduled Provider/Network outdated-availability replacement setting.
+
+Acceptance criteria:
+- Genres, keywords, and collections remain visibly distinct from Provider and
+  Network tags in the dashboard and in Jellyfin.
+- A Genre allow-list is respected by future scans; its sync action removes only
+  unselected plugin `Genre:` tags after creating a backup.
+- Keyword removal and Collection-tag application create a backup and preserve
+  all unrelated Jellyfin tags.
+- Collection tags are added only from a direct TMDb movie collection result.
 
 7. Safety backups and undo
 --------------------------
@@ -231,6 +266,32 @@ Acceptance criteria:
   the Jellyfin dashboard.
 - The public release contains no local Jellyfin configuration, backups, or
   credentials.
+
+9. Post-first-release iteration: people metadata
+-------------------------------------------------
+
+[ ] Add a **People Settings** dashboard tab in a later iteration, after the
+    first official release and its core testing cycle.
+[ ] Let an administrator opt into completing and refreshing people metadata
+    for supported selected-library items, including cast and crew names,
+    credited roles, and available person photos.
+[ ] Use a documented metadata source and Jellyfin-supported metadata APIs to
+    address cases where Jellyfin does not obtain a cast or crew image on its
+    own.
+[ ] Keep person enrichment separate from the current provider, network, genre,
+    keyword, and collection tag workflow; it must not overwrite unrelated
+    locally edited person metadata without an explicit administrator choice.
+[ ] Provide clear source attribution, scope controls, progress feedback, and
+    the same careful backup/undo considerations appropriate for any operation
+    that changes library metadata.
+
+Acceptance criteria:
+- An administrator can clearly choose whether people metadata is refreshed and
+  which selected libraries are in scope.
+- Supported items can receive missing source-provided cast and crew details and
+  available person images without changing media files or unrelated tags.
+- The feature reports incomplete or unavailable source data honestly rather
+  than inventing people, roles, or images.
 
 Primary files
 -------------

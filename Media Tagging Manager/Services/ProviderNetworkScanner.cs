@@ -169,8 +169,8 @@ public sealed class ProviderNetworkScanner
         }
     }
 
-    /// <summary>Applies administrator-entered provider and network values without contacting external services.</summary>
-    public async Task ApplyManualTagsAsync(Guid itemId, IEnumerable<string> providers, IEnumerable<string> networks, CancellationToken cancellationToken)
+    /// <summary>Applies administrator-entered plugin-owned values without contacting external services.</summary>
+    public async Task ApplyManualTagsAsync(Guid itemId, IEnumerable<string> providers, IEnumerable<string> networks, IEnumerable<string> genres, IEnumerable<string> keywords, IEnumerable<string> collections, CancellationToken cancellationToken)
     {
         await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -188,8 +188,11 @@ public sealed class ProviderNetworkScanner
 
             await _backups.CreateAsync("Before manual tag edit", [libraryId], cancellationToken).ConfigureAwait(false);
             var tags = providers.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Provider, value, "Manual"))
-                .Concat(networks.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Network, value, "Manual")));
-            await ApplyTagsAsync(item, libraryId, tags, ["Manual"], true, cancellationToken, forceManagedReplacement: true).ConfigureAwait(false);
+                .Concat(networks.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Network, value, "Manual")))
+                .Concat(genres.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Genre, value, "Manual")))
+                .Concat(keywords.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Keyword, value, "Manual")))
+                .Concat(collections.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Collection, value, "Manual")));
+            await ApplyTagsAsync(item, libraryId, tags, ["Manual"], true, cancellationToken, forceManagedReplacement: true, replaceKinds: Enum.GetValues<TagKind>()).ConfigureAwait(false);
             RememberKnownTags(providers, networks);
         }
         finally
@@ -257,7 +260,7 @@ public sealed class ProviderNetworkScanner
             .Where(item => libraryId is null || item.LibraryId == libraryId)
             .Where(item => string.IsNullOrWhiteSpace(provider) || item.Providers.Any(value => value.Contains(provider, StringComparison.OrdinalIgnoreCase)))
             .Where(item => string.IsNullOrWhiteSpace(network) || item.Networks.Any(value => value.Contains(network, StringComparison.OrdinalIgnoreCase)))
-            .Where(item => isTagged is null || (item.Providers.Count > 0 || item.Networks.Count > 0) == isTagged)
+            .Where(item => isTagged is null || (item.Providers.Count > 0 || item.Networks.Count > 0 || item.Genres.Count > 0 || item.Keywords.Count > 0 || item.Collections.Count > 0) == isTagged)
             .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -310,6 +313,22 @@ public sealed class ProviderNetworkScanner
             .ToArray();
     }
 
+    /// <summary>Returns selected-library items carrying one exact prefixed Provider or Network tag.</summary>
+    public IReadOnlyCollection<TaggedItemDto> GetItemsWithTag(TagKind kind, string name)
+    {
+        if (kind is not TagKind.Provider and not TagKind.Network)
+        {
+            throw new ArgumentOutOfRangeException(nameof(kind), "Only Provider and Network tags can be inspected here.");
+        }
+
+        var normalized = TagNameNormalizer.Normalize(kind, name);
+        return GetDashboardItems(null, null, null, null)
+            .Where(item => (kind == TagKind.Provider ? item.Providers : item.Networks)
+                .Any(value => string.Equals(TagNameNormalizer.Normalize(kind, value), normalized, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
     /// <summary>Removes unselected tags of one kind from selected libraries without contacting any source.</summary>
     public async Task<TagSyncResult> SyncWithOnlySelectedAsync(TagKind kind, IEnumerable<string> selectedNames, CancellationToken cancellationToken)
     {
@@ -330,10 +349,19 @@ public sealed class ProviderNetworkScanner
                 configuration.SelectedProviderNames = selected;
                 configuration.RestrictProvidersToSelected = true;
             }
-            else
+            else if (kind == TagKind.Network)
             {
                 configuration.SelectedNetworkNames = selected;
                 configuration.RestrictNetworksToSelected = true;
+            }
+            else if (kind == TagKind.Genre)
+            {
+                configuration.SelectedGenreNames = selected;
+                configuration.TagGenres = true;
+            }
+            else if (kind != TagKind.Keyword)
+            {
+                throw new InvalidOperationException("Only Provider, Network, and Genre tags have selectable sync lists.");
             }
 
             await _backups.CreateAsync($"Before {kind.ToString().ToLowerInvariant()} selection sync", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
@@ -381,6 +409,105 @@ public sealed class ProviderNetworkScanner
         }
     }
 
+    /// <summary>Finds direct TMDb movie-collection memberships for movies in selected libraries without changing tags.</summary>
+    public async Task<IReadOnlyCollection<CollectionMatchDto>> ScanCollectionMatchesAsync(CancellationToken cancellationToken)
+    {
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+        if (configuration.LibraryIds.Length == 0)
+        {
+            throw new InvalidOperationException("Select and save at least one library before scanning collections.");
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration.TmdbApiKey))
+        {
+            throw new InvalidOperationException("Save a TMDb API Read Access Token before scanning collections.");
+        }
+
+        var tmdb = _sources.OfType<TmdbAvailabilitySource>().FirstOrDefault()
+            ?? throw new InvalidOperationException("TMDb is unavailable.");
+        await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var entries = configuration.LibraryIds.SelectMany(libraryId => _libraryManager.GetItemList(new InternalItemsQuery
+            {
+                ParentId = libraryId,
+                Recursive = true,
+                IncludeItemTypes = [BaseItemKind.Movie]
+            }).Select(item => (Item: item, LibraryId: libraryId))).ToArray();
+            var matches = new ConcurrentBag<CollectionMatchDto>();
+            await Parallel.ForEachAsync(entries, new ParallelOptions { CancellationToken = cancellationToken, MaxDegreeOfParallelism = 3 }, async (entry, token) =>
+            {
+                var collection = await tmdb.GetCollectionAsync(new ExternalIds(GetProviderId(entry.Item, "Tmdb"), GetProviderId(entry.Item, "Imdb"), entry.Item.GetType().Name), token).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(collection))
+                {
+                    matches.Add(new CollectionMatchDto(entry.Item.Id, entry.LibraryId, entry.Item.Name, collection, "TMDb"));
+                }
+            }).ConfigureAwait(false);
+            return matches.OrderBy(match => match.LibraryId).ThenBy(match => match.Title, StringComparer.OrdinalIgnoreCase).ToArray();
+        }
+        finally
+        {
+            _scanLock.Release();
+        }
+    }
+
+    /// <summary>Verifies and adds administrator-selected direct collection matches after making one complete backup.</summary>
+    public async Task<TagApplyResult> ApplyCollectionMatchesAsync(IEnumerable<CollectionMatchDto> matches, CancellationToken cancellationToken)
+    {
+        var selected = matches.GroupBy(match => match.ItemId).Select(group => group.First()).ToArray();
+        if (selected.Length == 0)
+        {
+            return new TagApplyResult(0, 0);
+        }
+
+        await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            _destinations.Validate(configuration, configuration.LibraryIds);
+            var tmdb = _sources.OfType<TmdbAvailabilitySource>().FirstOrDefault()
+                ?? throw new InvalidOperationException("TMDb is unavailable.");
+            await _backups.CreateAsync("Before selected collection tags", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
+            var changed = 0;
+            var added = 0;
+            foreach (var match in selected)
+            {
+                var item = _libraryManager.GetItemById(match.ItemId);
+                if (item is not Movie || !configuration.LibraryIds.Contains(item.GetTopParent().Id))
+                {
+                    continue;
+                }
+
+                // Do not trust a browser-submitted collection label. Confirm the
+                // current direct TMDb membership before writing any Collection tag.
+                var collectionName = await tmdb.GetCollectionAsync(
+                    new ExternalIds(GetProviderId(item, "Tmdb"), GetProviderId(item, "Imdb"), item.GetType().Name),
+                    cancellationToken).ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(collectionName))
+                {
+                    continue;
+                }
+
+                var tag = TagNaming.Format(TagKind.Collection, collectionName);
+                if ((item.Tags ?? []).Contains(tag, StringComparer.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                item.Tags = (item.Tags ?? []).Append(tag).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
+                changed++;
+                added++;
+            }
+
+            return new TagApplyResult(added, changed);
+        }
+        finally
+        {
+            _scanLock.Release();
+        }
+    }
+
     private async Task<IReadOnlyCollection<SourceTag>> ScanItemAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
@@ -394,6 +521,10 @@ public sealed class ProviderNetworkScanner
         if (tmdb is not null)
         {
             results.Add(await LookupSafelyAsync(tmdb, ids, cancellationToken).ConfigureAwait(false));
+            if (tmdb is TmdbAvailabilitySource tmdbMetadata)
+            {
+                results.Add(await tmdbMetadata.LookupClassificationsAsync(ids, configuration.TagGenres, configuration.TagKeywords, cancellationToken).ConfigureAwait(false));
+            }
         }
 
         // Watchmode is the quota-limited fallback. It is queried only for a
@@ -473,7 +604,7 @@ public sealed class ProviderNetworkScanner
                 {
                     discoveredProviders.TryAdd(tag.Name, 0);
                 }
-                else
+                else if (tag.Kind == TagKind.Network)
                 {
                     discoveredNetworks.TryAdd(tag.Name, 0);
                 }
@@ -522,17 +653,23 @@ public sealed class ProviderNetworkScanner
         IEnumerable<string> sources,
         bool replaceManagedTags,
         CancellationToken cancellationToken,
-        bool forceManagedReplacement = false)
+        bool forceManagedReplacement = false,
+        IReadOnlyCollection<TagKind>? replaceKinds = null)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
         var selectedProviderNames = new HashSet<string>((configuration.SelectedProviderNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)), StringComparer.OrdinalIgnoreCase);
         var selectedNetworkNames = new HashSet<string>((configuration.SelectedNetworkNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)), StringComparer.OrdinalIgnoreCase);
+        var selectedGenreNames = new HashSet<string>((configuration.SelectedGenreNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Genre, name)), StringComparer.OrdinalIgnoreCase);
         var normalized = values
             .Select(value => value with { Name = TagNameNormalizer.Normalize(value.Kind, value.Name) })
             .ToArray();
         var hasTvNetworkApp = normalized.Any(static value => value.Kind == TagKind.Provider && value.IsTvNetworkApp);
         var selectedValues = normalized
-            .Where(value => (value.Kind == TagKind.Provider && configuration.TagProviders) || (value.Kind == TagKind.Network && configuration.TagNetworks))
+            .Where(value => (value.Kind == TagKind.Provider && configuration.TagProviders)
+                || (value.Kind == TagKind.Network && configuration.TagNetworks)
+                || (value.Kind == TagKind.Genre && configuration.TagGenres && selectedGenreNames.Contains(value.Name))
+                || (value.Kind == TagKind.Keyword && configuration.TagKeywords)
+                || value.Kind == TagKind.Collection)
             .Where(value => !value.IsTvNetworkApp || !string.Equals(configuration.TvNetworkAppTaggingMode, "NetworkOnly", StringComparison.Ordinal))
             .Where(value => !hasTvNetworkApp || !string.Equals(configuration.TvNetworkAppTaggingMode, "StreamingAppOnly", StringComparison.Ordinal) || value.Kind != TagKind.Network)
             .Where(value => value.Kind != TagKind.Provider || !configuration.RestrictProvidersToSelected || selectedProviderNames.Contains(value.Name))
@@ -548,7 +685,17 @@ public sealed class ProviderNetworkScanner
         var existing = item.Tags ?? [];
         var tagsAdded = selected.Count(tag => !existing.Contains(tag, StringComparer.OrdinalIgnoreCase));
         // A failed source must never erase previously known availability. A later healthy scan reconciles it.
-        var retained = (configuration.ReplaceManagedTags || forceManagedReplacement) && replaceManagedTags ? existing.Where(tag => !TagNaming.IsManaged(tag)) : existing;
+        // Scheduled replacement reconciles current availability only. Genre and
+        // keyword tags are explicitly controlled through their own settings,
+        // sync, and removal actions; collection tags are additive by design.
+        var replacementKinds = (replaceKinds ?? normalized
+            .Where(value => value.Kind is TagKind.Provider or TagKind.Network)
+            .Select(value => value.Kind)
+            .Distinct())
+            .ToHashSet();
+        var retained = (configuration.ReplaceManagedTags || forceManagedReplacement) && replaceManagedTags
+            ? existing.Where(tag => !TagNaming.TryGetKind(tag, out var kind) || !replacementKinds.Contains(kind))
+            : existing;
         item.Tags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
         _state.RecordTagAdditions(tagsAdded);
@@ -567,6 +714,9 @@ public sealed class ProviderNetworkScanner
             libraryId,
             tags.Where(tag => tag.StartsWith(TagNaming.ProviderPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.ProviderPrefix.Length..]).ToArray(),
             tags.Where(tag => tag.StartsWith(TagNaming.NetworkPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.NetworkPrefix.Length..]).ToArray(),
+            tags.Where(tag => tag.StartsWith(TagNaming.GenrePrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.GenrePrefix.Length..]).ToArray(),
+            tags.Where(tag => tag.StartsWith(TagNaming.KeywordPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.KeywordPrefix.Length..]).ToArray(),
+            tags.Where(tag => tag.StartsWith(TagNaming.CollectionPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.CollectionPrefix.Length..]).ToArray(),
             checkedUtc,
             sources.Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
     }
@@ -607,9 +757,7 @@ public sealed class ProviderNetworkScanner
         .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
         .ToArray();
 
-    private static bool IsTagKind(string tag, TagKind kind) => kind == TagKind.Provider
-        ? tag.StartsWith(TagNaming.ProviderPrefix, StringComparison.OrdinalIgnoreCase)
-        : tag.StartsWith(TagNaming.NetworkPrefix, StringComparison.OrdinalIgnoreCase);
+    private static bool IsTagKind(string tag, TagKind kind) => tag.StartsWith(TagNaming.Prefix(kind), StringComparison.OrdinalIgnoreCase);
 
-    private static string RemoveTagPrefix(string tag, TagKind kind) => tag[(kind == TagKind.Provider ? TagNaming.ProviderPrefix : TagNaming.NetworkPrefix).Length..];
+    private static string RemoveTagPrefix(string tag, TagKind kind) => tag[TagNaming.Prefix(kind).Length..];
 }
