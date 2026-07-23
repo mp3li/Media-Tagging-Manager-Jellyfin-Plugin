@@ -203,9 +203,15 @@ Acceptance criteria:
 [ ] Select a Provider subset and use Save Provider Selections; confirm it saves
     the future-scan allow-list without scanning media, creating a backup, or
     changing any current tags.
+[ ] Select None for Providers, save, and run a scan; confirm no new Provider
+    tags are added and existing Provider tags remain unchanged unless the
+    explicit Sync with Only Selected Providers action is used.
 [ ] Select a Network subset and use Save Network Selections; confirm it saves
     the future-scan allow-list without scanning media, creating a backup, or
     changing any current tags.
+[ ] Select None for Networks, save, and run a scan; confirm no new Network
+    tags are added and existing Network tags remain unchanged unless the
+    explicit Sync with Only Selected Networks action is used.
 [ ] Select a subset of providers, run Sync with Only Selected Providers, and
     confirm a backup is created, only unselected `Provider:` tags are removed,
     no source request is made, and `Network:`/unrelated tags remain unchanged.

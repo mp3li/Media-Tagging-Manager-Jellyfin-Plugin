@@ -694,7 +694,18 @@ public sealed class ProviderNetworkScanner
             .Distinct())
             .ToHashSet();
         var retained = (configuration.ReplaceManagedTags || forceManagedReplacement) && replaceManagedTags
-            ? existing.Where(tag => !TagNaming.TryGetKind(tag, out var kind) || !replacementKinds.Contains(kind))
+            ? existing.Where(tag =>
+                !TagNaming.TryGetKind(tag, out var kind)
+                || !replacementKinds.Contains(kind)
+                // A saved allow-list controls future additions. It must not
+                // silently remove values outside that list; explicit Sync is
+                // the only operation that removes unselected tags.
+                || (kind == TagKind.Provider
+                    && configuration.RestrictProvidersToSelected
+                    && !selectedProviderNames.Contains(TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind))))
+                || (kind == TagKind.Network
+                    && configuration.RestrictNetworksToSelected
+                    && !selectedNetworkNames.Contains(TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind)))))
             : existing;
         item.Tags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);

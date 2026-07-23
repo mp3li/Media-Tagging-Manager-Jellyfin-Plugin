@@ -6,6 +6,21 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.30-test] - 2026-07-23
+
+### Fixed
+
+- Saving an empty Provider or Network selection now prevents future additions
+  without allowing a later scan to remove existing tags. Only the explicit
+  corresponding Sync action can remove unselected Provider or Network tags.
+- Library Overview now reads the saved selected-library configuration directly,
+  so it remains populated when its Main Settings checkbox controls are hidden.
+
+### Test-release notes
+
+- This supersedes `0.1.0.29-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.29-test] - 2026-07-23
 
 ### Fixed

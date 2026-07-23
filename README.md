@@ -229,7 +229,10 @@ and saves the choice for future scans. It does not contact any source and never
 changes network or unrelated Jellyfin tags.
 
 Use **Save Provider Selections** to save the Provider allow-list for future
-scans without scanning media or changing any existing tags.
+scans without scanning media or changing any existing tags. **Select None**
+means no new Provider tags will be added by later scans; it does not remove
+existing Provider tags. Use the clearly labeled Sync action if removal is
+actually wanted.
 
 #### Select Networks
 
@@ -246,7 +249,9 @@ saves the choice for future scans. It does not contact any source and never
 changes provider or unrelated Jellyfin tags.
 
 Use **Save Network Selections** to save the Network allow-list for future scans
-without scanning media or changing any existing tags.
+without scanning media or changing any existing tags. **Select None** means no
+new Network tags will be added by later scans; it does not remove existing
+Network tags. Use the clearly labeled Sync action if removal is actually wanted.
 
 Use **Save Network and Provider Settings** to save the regions, tag behavior,
 TV-network streaming-app preference, and both current selection lists together.
