@@ -16,6 +16,7 @@ public sealed class ProviderNetworkScanner
     private readonly IReadOnlyCollection<IAvailabilitySource> _sources;
     private readonly ScanStateStore _state;
     private readonly TagBackupManager _backups;
+    private readonly TagDestinationWriter _destinations;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly object _knownTagLock = new();
 
@@ -24,12 +25,14 @@ public sealed class ProviderNetworkScanner
         ILibraryManager libraryManager,
         IEnumerable<IAvailabilitySource> sources,
         ScanStateStore state,
-        TagBackupManager backups)
+        TagBackupManager backups,
+        TagDestinationWriter destinations)
     {
         _libraryManager = libraryManager;
         _sources = sources.ToArray();
         _state = state;
         _backups = backups;
+        _destinations = destinations;
     }
 
     /// <summary>Scans a configured library. Only movies and series receive tags; episodes inherit their series context.</summary>
@@ -42,6 +45,7 @@ public sealed class ProviderNetworkScanner
         }
 
         EnsureSourceConfigured(configuration);
+        _destinations.Validate(configuration, [libraryId]);
 
         await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -70,6 +74,7 @@ public sealed class ProviderNetworkScanner
         }
 
         EnsureSourceConfigured(configuration);
+        _destinations.Validate(configuration, libraries);
         await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -110,6 +115,7 @@ public sealed class ProviderNetworkScanner
         try
         {
             EnsureSourceConfigured(configuration);
+            _destinations.Validate(configuration, configuration.LibraryIds);
         }
         catch (InvalidOperationException)
         {
@@ -173,6 +179,9 @@ public sealed class ProviderNetworkScanner
             {
                 throw new InvalidOperationException("Only movies and series in selected libraries may be edited by Media Tagging Manager.");
             }
+
+            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            _destinations.Validate(configuration, [libraryId]);
 
             await _backups.CreateAsync("Before manual tag edit", [libraryId], cancellationToken).ConfigureAwait(false);
             var tags = providers.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Provider, value, "Manual"))
@@ -271,6 +280,8 @@ public sealed class ProviderNetworkScanner
                 throw new InvalidOperationException("Select and save at least one library before synchronizing tags.");
             }
 
+            _destinations.Validate(configuration, configuration.LibraryIds);
+
             var selected = NormalizeNames(selectedNames);
             if (kind == TagKind.Provider)
             {
@@ -308,7 +319,7 @@ public sealed class ProviderNetworkScanner
                     }
 
                     item.Tags = retained;
-                    await _libraryManager.UpdateItemAsync(item, item, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
+                    await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
                     tagsRemoved += removed;
                     mediaItemsChanged++;
                 }
@@ -473,7 +484,7 @@ public sealed class ProviderNetworkScanner
         // A failed source must never erase previously known availability. A later healthy scan reconciles it.
         var retained = (configuration.ReplaceManagedTags || forceManagedReplacement) && replaceManagedTags ? existing.Where(tag => !TagNaming.IsManaged(tag)) : existing;
         item.Tags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-        await _libraryManager.UpdateItemAsync(item, item, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
+        await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
         _state.RecordTagAdditions(tagsAdded);
         _state.Save(ToDto(item, libraryId, DateTimeOffset.UtcNow, sources));
     }

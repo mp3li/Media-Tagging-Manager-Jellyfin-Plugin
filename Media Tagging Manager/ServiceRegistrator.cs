@@ -13,6 +13,7 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
         serviceCollection.AddSingleton<ScanStateStore>();
+        serviceCollection.AddSingleton<TagDestinationWriter>();
         serviceCollection.AddSingleton<TagBackupManager>();
         serviceCollection.AddSingleton<WatchmodeQuotaTracker>();
         serviceCollection.AddSingleton<ProviderNetworkScanner>();

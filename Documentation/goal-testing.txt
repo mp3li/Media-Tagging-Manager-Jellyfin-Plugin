@@ -72,6 +72,16 @@ Acceptance criteria:
 [ ] Confirm network-only mode saves and reloads.
 [ ] Confirm combined provider-and-network mode saves and reloads.
 [ ] Confirm replacement of plugin-managed tags can be switched on and off.
+[ ] Confirm **Here in Jellyfin** is selected by default in Tag Destination(s)
+    and that at least one tag destination is required before saving.
+[ ] With a selected library configured to save local NFO metadata, select
+    **In my NFO files**, scan a known title, and confirm its NFO contains the
+    resulting Provider:/Network: tags.
+[ ] With NFO selected, confirm a scan is blocked with a clear message when any
+    selected library is not configured to save local NFO metadata.
+[ ] Confirm choosing both destinations writes matching tags to Jellyfin and to
+    the configured NFO files, and that a backup restore returns the selected
+    destination(s) to the saved tag list.
 
 Acceptance criteria:
 - Settings persist across a page reload and Jellyfin restart.

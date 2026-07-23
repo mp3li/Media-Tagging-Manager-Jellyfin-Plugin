@@ -66,6 +66,11 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpPost("settings")]
     public IActionResult UpdateSettings([FromBody] PluginConfiguration configuration)
     {
+        if (!configuration.SaveTagsToJellyfin && !configuration.SaveTagsToNfoFiles)
+        {
+            return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");
+        }
+
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
         plugin.UpdateConfiguration(configuration);
         return NoContent();

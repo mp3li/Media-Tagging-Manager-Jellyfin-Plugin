@@ -2,7 +2,7 @@
   <img src="Assets/Branding/media-tagging-manager-icon.png" alt="Media Tagging Manager icon: retro television with a question mark" width="180" />
 </p>
 
-<h1 align="center">Media Tagging Manager Jellyfin Plugin by mp3li</h1>
+<h1 align="center">Media Tagging Manager Jellyfin Plugin</h1>
 
 <p align="center">
   <strong>⚠️ Testing build:</strong> This plugin is still under active testing and is not yet a stable release.
@@ -110,6 +110,15 @@ Create a complete tag backup for every item in the selected libraries before mak
 - **Delete Backup** permanently removes the selected backup without changing current Jellyfin tags.
 
 Backups remain in Jellyfin’s plugin data directory through normal server restarts. Restore is intentionally powerful: it also restores unrelated custom tags to their state at the time of the backup.
+
+#### Tag Destination(s)
+
+Choose either or both destinations for new provider and network tags.
+
+- **Here in Jellyfin** saves tags to Jellyfin’s media metadata database. This is the default.
+- **In my NFO files** uses Jellyfin’s configured NFO metadata saver for every selected library. Each selected library must be configured in Jellyfin to save local NFO metadata; the plugin stops before making changes if one is not.
+
+The plugin never embeds metadata in the media files themselves.
 
 #### Select Libraries
 

@@ -8,6 +8,12 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets the libraries the scanner may update. Empty means none, never all.</summary>
     public Guid[] LibraryIds { get; set; } = [];
 
+    /// <summary>Gets or sets whether tags are saved to Jellyfin's metadata database.</summary>
+    public bool SaveTagsToJellyfin { get; set; } = true;
+
+    /// <summary>Gets or sets whether tags are also saved through each library's configured NFO metadata saver.</summary>
+    public bool SaveTagsToNfoFiles { get; set; }
+
     /// <summary>Gets or sets whether streaming-provider tags are written.</summary>
     public bool TagProviders { get; set; } = true;
 

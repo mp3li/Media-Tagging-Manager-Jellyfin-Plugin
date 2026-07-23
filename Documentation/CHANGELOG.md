@@ -6,6 +6,24 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.20-test] - 2026-07-22
+
+### Added
+
+- Added **Tag Destination(s)** directly below Backup Settings. New tags can
+  now be saved to Jellyfin metadata, NFO files configured by Jellyfin, or both.
+- NFO writes use Jellyfin's configured metadata-saver API and stop before a
+  scan if any selected library is not configured to save local NFO metadata.
+
+### Changed
+
+- Removed “by mp3li” from the README’s main title.
+
+### Test-release notes
+
+- This supersedes `0.1.0.19-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.19-test] - 2026-07-22
 
 ### Fixed

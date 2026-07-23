@@ -10,10 +10,15 @@ public sealed class TagBackupManager
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly ILibraryManager _libraryManager;
+    private readonly TagDestinationWriter _destinations;
     private readonly SemaphoreSlim _fileLock = new(1, 1);
 
     /// <summary>Initializes a new instance of the <see cref="TagBackupManager"/> class.</summary>
-    public TagBackupManager(ILibraryManager libraryManager) => _libraryManager = libraryManager;
+    public TagBackupManager(ILibraryManager libraryManager, TagDestinationWriter destinations)
+    {
+        _libraryManager = libraryManager;
+        _destinations = destinations;
+    }
 
     /// <summary>Creates a complete tag snapshot for every item in the supplied libraries.</summary>
     public async Task<TagBackupSummary> CreateAsync(string label, IEnumerable<Guid> libraryIds, CancellationToken cancellationToken)
@@ -100,7 +105,9 @@ public sealed class TagBackupManager
             if (item is not null)
             {
                 item.Tags = savedItem.Tags;
-                await _libraryManager.UpdateItemAsync(item, item, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
+                var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+                _destinations.Validate(configuration, [item.GetTopParent().Id]);
+                await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
             }
 
             completed++;
