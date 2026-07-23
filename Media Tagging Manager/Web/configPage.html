@@ -1,4 +1,4 @@
-<div id="mediaTaggingManagerPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox,emby-select">
+<div id="mediaTaggingManagerPage" data-role="page" class="page type-interior" data-require="emby-input,emby-button,emby-checkbox,emby-select">
     <style>
         #mediaTaggingManagerPage .mtm-tabs { display:flex; gap:.5em; border-bottom:1px solid rgba(255,255,255,.16); margin:1.5em 0; }
         #mediaTaggingManagerPage .mtm-tab { border:0; border-radius:.45em .45em 0 0; padding:.85em 1.25em; background:rgba(255,255,255,.08); color:inherit; cursor:pointer; font-size:1em; }
@@ -35,7 +35,7 @@
         </div>
 
         <div class="mtm-panel active" data-panel="main">
-            <form id="mediaTaggingManagerForm">
+            <div id="mediaTaggingManagerSettings">
                 <section class="mtm-section">
                     <h2>Backup Settings</h2>
                     <p class="fieldDescription">A backup saves the complete current tag list for every item in the selected libraries. Restoring a backup overwrites current tags for those saved items, including tags not created by this plugin.</p>
@@ -92,8 +92,8 @@
                     <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="replaceManagedTags" /> <span>Remove tags assigned by this plugin when a provider or network no longer hosts the media</span></label>
                     <p class="fieldDescription">Example: if <em>The Hunger Games</em> was tagged <code>Provider: Netflix</code> and later moves to Amazon Prime—or is no longer hosted anywhere—turning this on removes the old plugin-created Netflix tag during the next scan. Leaving it off preserves the old plugin-created tag. Your other Jellyfin tags are never removed.</p>
                 </section>
-                <button is="emby-button" type="submit" class="raised button-submit block">Save Main Settings</button>
-            </form>
+                <button is="emby-button" type="button" class="raised button-submit block" id="saveMainSettingsButton">Save Main Settings</button>
+            </div>
         </div>
 
         <div class="mtm-panel" data-panel="tags">
@@ -160,7 +160,7 @@
         $('#stopScanButton').addEventListener('click', function () { api('POST', 'scan/cancel').then(function () { Dashboard.alert('Scan cancellation requested.'); updateStatus(); }); });
         $('#applyFilters').addEventListener('click', loadItems);
         $('#saveTagEditsButton').addEventListener('click', function () { var edits = Object.keys(pendingTagEdits); Promise.all(edits.map(function (id) { return api('PUT', 'items/' + id, pendingTagEdits[id]); })).then(function () { pendingTagEdits = {}; Dashboard.alert('Tag changes saved.'); loadItems(); }); });
-        $('#mediaTaggingManagerForm').addEventListener('submit', function (e) { e.preventDefault(); e.stopImmediatePropagation(); config.LibraryIds = selectedLibraries(); config.TagProviders = $('#tagProviders').checked; config.TagNetworks = $('#tagNetworks').checked; config.ReplaceManagedTags = $('#replaceManagedTags').checked; config.EnableAutomaticRefresh = $('#automaticRefresh').checked; config.EnableNewMediaChecks = $('#newMediaChecks').checked; if (!config.EnableNewMediaChecks) config.LastIncomingMediaCheckUtc = null; config.Regions = selectedRegions(); config.Region = config.Regions[0] || 'US'; config.RefreshIntervalHours = Number($('#refreshHours').value || 168); config.TmdbApiKey = $('#tmdbKey').value.trim(); config.WatchmodeApiKey = $('#watchmodeKey').value.trim(); config.WatchmodeMonthlyLimit = Number($('#watchmodeLimit').value || 0); api('POST', 'settings', config).then(function () { Dashboard.alert('Main settings saved.'); renderScanLibraries(); loadRegions(); loadUsage(); }, function (x) { Dashboard.alert('Could not save settings: ' + err(x)); }); }, true);
+        $('#saveMainSettingsButton').addEventListener('click', function () { config.LibraryIds = selectedLibraries(); config.TagProviders = $('#tagProviders').checked; config.TagNetworks = $('#tagNetworks').checked; config.ReplaceManagedTags = $('#replaceManagedTags').checked; config.EnableAutomaticRefresh = $('#automaticRefresh').checked; config.EnableNewMediaChecks = $('#newMediaChecks').checked; if (!config.EnableNewMediaChecks) config.LastIncomingMediaCheckUtc = null; config.Regions = selectedRegions(); config.Region = config.Regions[0] || 'US'; config.RefreshIntervalHours = Number($('#refreshHours').value || 168); config.TmdbApiKey = $('#tmdbKey').value.trim(); config.WatchmodeApiKey = $('#watchmodeKey').value.trim(); config.WatchmodeMonthlyLimit = Number($('#watchmodeLimit').value || 0); api('POST', 'settings', config).then(function () { Dashboard.alert('Main settings saved.'); renderScanLibraries(); loadRegions(); loadUsage(); }, function (x) { Dashboard.alert('Could not save settings: ' + err(x)); }); });
         loadPage(); page.addEventListener('pageshow', loadPage); setInterval(updateStatus, 3000);
     }());
     </script>

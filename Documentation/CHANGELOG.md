@@ -6,6 +6,19 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.17-test] - 2026-07-22
+
+### Fixed
+
+- Removed Jellyfin's generic plugin-configuration form identity from the custom
+  dashboard page. Saving is now an explicit server-wide button action, so
+  navigating away cannot invoke a per-user configuration prompt.
+
+### Test-release notes
+
+- This supersedes `0.1.0.16-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.16-test] - 2026-07-22
 
 ### Added
