@@ -181,6 +181,12 @@ Acceptance criteria:
     only its own list and does not clear existing checkbox selections.
 [ ] Confirm selections remain available in those lists after a selection sync
     removes their current tags.
+[ ] Select a Provider subset and use Save Provider Selections; confirm it saves
+    the future-scan allow-list without scanning media, creating a backup, or
+    changing any current tags.
+[ ] Select a Network subset and use Save Network Selections; confirm it saves
+    the future-scan allow-list without scanning media, creating a backup, or
+    changing any current tags.
 [ ] Select a subset of providers, run Sync with Only Selected Providers, and
     confirm a backup is created, only unselected `Provider:` tags are removed,
     no source request is made, and `Network:`/unrelated tags remain unchanged.

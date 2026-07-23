@@ -78,6 +78,8 @@ Acceptance criteria:
     Provider tags and actual title-level network names as Network tags.
 [x] Load complete Provider and Network selection lists before a scan, while
     keeping their returned title tags as separate classifications.
+[x] Let an administrator save Provider and Network allow-lists independently
+    for future scans without scanning media or changing current tags.
 [x] Let an administrator choose whether a television network's own streaming
     app is tagged as the Network, the streaming app Provider, or both; never
     infer a Network tag from an app name.

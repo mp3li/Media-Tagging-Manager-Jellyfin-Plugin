@@ -204,6 +204,9 @@ tags for unselected providers, does not remove tags for your chosen providers,
 and saves the choice for future scans. It does not contact any source and never
 changes network or unrelated Jellyfin tags.
 
+Use **Save Provider Selections** to save the Provider allow-list for future
+scans without scanning media or changing any existing tags.
+
 #### Select Networks
 
 This separate settings section loads Watchmode's complete TV-network catalog
@@ -217,6 +220,9 @@ have more network tags than you want. It creates a backup, deletes network tags
 for unselected networks, does not remove tags for your chosen networks, and
 saves the choice for future scans. It does not contact any source and never
 changes provider or unrelated Jellyfin tags.
+
+Use **Save Network Selections** to save the Network allow-list for future scans
+without scanning media or changing any existing tags.
 
 #### Newly Added Media Settings
 

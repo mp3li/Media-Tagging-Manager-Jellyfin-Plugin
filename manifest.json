@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.25",
-        "changelog": "0.1.0.25-test removes automatic provider grouping, adds TV Network Streaming Apps choices, and requires a backup before dashboard scans. Test only; not a stable release.",
+        "version": "0.1.0.26",
+        "changelog": "0.1.0.26-test adds independent save buttons for Provider and Network future-scan selections. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.25-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.25-test.zip",
-        "checksum": "296fce4b69774fb7f88c0d54801d5d06",
-        "timestamp": "2026-07-23T06:06:00Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.26-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.26-test.zip",
+        "checksum": "6a8f0333def6099d27d7e00c9be31121",
+        "timestamp": "2026-07-23T06:20:00Z"
       }
     ]
   }
