@@ -6,6 +6,21 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.29-test] - 2026-07-23
+
+### Fixed
+
+- Corrected the Unknown Providers and Networks **See Items** dialog's hidden
+  state so it does not block the View and Edit Tags tab on page load and its
+  Close button works normally.
+
+### Test-release notes
+
+- This supersedes `0.1.0.28-test` and remains a public test build, not a
+  stable release.
+
+## [0.1.0.28-test] - 2026-07-23
+
 ### Added
 
 - Added **Genres and Keywords Settings** with a searchable, scrollable TMDb
