@@ -6,6 +6,18 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.16-test] - 2026-07-22
+
+### Added
+
+- The requested empty-state guidance in both selection lists when the required
+  API credentials have not been saved.
+
+### Test-release notes
+
+- This supersedes `0.1.0.15-test` and remains a public test build, not a stable
+  release.
+
 ## [0.1.0.15-test] - 2026-07-22
 
 ### Changed
