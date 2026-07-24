@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.47",
-        "changelog": "0.1.0.47-test saves the live Provider, Network, Genre, and region controls without draft-state or post-save redraw races. Test only; not a stable release.",
+        "version": "0.1.0.48",
+        "changelog": "0.1.0.48-test fixes parsed JSON responses for dashboard saves and result actions. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.47-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.47-test.zip",
-        "checksum": "dea25fdc95975ed812592f0b815d3ce6",
-        "timestamp": "2026-07-24T21:32:28Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.48-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.48-test.zip",
+        "checksum": "f087b5132831d3c6109459daebc7daf6",
+        "timestamp": "2026-07-24T21:47:45Z"
       }
     ]
   }

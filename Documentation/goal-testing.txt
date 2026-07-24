@@ -113,6 +113,10 @@ Acceptance criteria:
     immediately reopen the tab and hard-refresh the dashboard. Confirm the
     exact live checkbox/dropdown values—not a default or Select All state—were
     persisted.
+[ ] Confirm each settings save displays the same selections after its immediate
+    redraw, after reopening its tab, and after a dashboard hard refresh. Confirm
+    scan, backup, manual tag edit, logo deletion, and queued scan controls still
+    complete without a JSON-response parsing error.
 [ ] Enter the Watchmode account's current usage, then save only API Settings.
     Confirm the saved count persists and that the Watchmode account count does
     not increase because source catalogs were not reloaded.

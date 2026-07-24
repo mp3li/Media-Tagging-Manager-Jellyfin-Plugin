@@ -4,6 +4,17 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.48-test] - 2026-07-24
+
+### Fixed
+
+- Corrected dashboard POST/PUT response handling for Jellyfin Web 10.11.11.
+  The browser now explicitly parses JSON returned by settings and result
+  endpoints instead of treating a raw `Response` object as an empty plugin
+  configuration.
+- Kept raw responses only for endpoints that intentionally return `202` or
+  `204`, including scan requests, manual tag edits, and delete actions.
+
 ## [0.1.0.47-test] - 2026-07-24
 
 ### Fixed
