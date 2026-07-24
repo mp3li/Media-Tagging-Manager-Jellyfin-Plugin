@@ -4,6 +4,18 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.47-test] - 2026-07-24
+
+### Fixed
+
+- Replaced the event-derived Provider, Network, Genre, and availability-region
+  draft state with Jellyfin's native control-read pattern: each save reads the
+  visible checkbox and dropdown values at the moment the administrator presses
+  Save.
+- Stopped the Network and Provider tab from reloading source catalogs after its
+  own save, eliminating an immediate post-save redraw that could disagree with
+  the saved configuration.
+
 ## [0.1.0.46-test] - 2026-07-24
 
 ### Fixed

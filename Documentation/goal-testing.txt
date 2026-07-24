@@ -108,6 +108,11 @@ Acceptance criteria:
     Save button without changing that picker. Confirm every saved selection is
     preserved. Then use Select None and save, confirming an intentionally empty
     list is preserved instead of being interpreted as Select All.
+[ ] Choose two or three availability countries and a small, distinctive set of
+    Provider, Network, and Genre selections. Save each applicable tab, then
+    immediately reopen the tab and hard-refresh the dashboard. Confirm the
+    exact live checkbox/dropdown values—not a default or Select All state—were
+    persisted.
 [ ] Enter the Watchmode account's current usage, then save only API Settings.
     Confirm the saved count persists and that the Watchmode account count does
     not increase because source catalogs were not reloaded.
