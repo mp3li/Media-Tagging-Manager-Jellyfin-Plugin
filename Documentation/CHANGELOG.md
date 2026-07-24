@@ -6,6 +6,27 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.39-test] - 2026-07-23
+
+### Fixed
+
+- Added **Save API Settings** directly below the credentials. It and **Save
+  Main Settings** use the same save path.
+- Prevented Main Settings saves from reading or changing Provider/Network
+  selection controls. Those controls are now changed only by their own settings
+  tab and its save controls.
+- Protected already-saved API credentials from blank values posted by a
+  settings section that does not edit credentials.
+- Reset the logo progress bar to its empty dark state when loading finishes,
+  refreshed cached logo URLs after completion, and preserved Jellyfin's
+  authenticated image URL parameters while doing so.
+- Displayed picker logos after the Provider or Network name in a smaller size.
+
+### Test-release notes
+
+- This supersedes `0.1.0.38-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.38-test] - 2026-07-23
 
 ### Fixed

@@ -543,3 +543,12 @@ it could restore stale settings rather than the current configuration. The
 recovery layer has been removed from the next unissued build. Retest standard
 Jellyfin configuration persistence across an update before any further
 release.
+2026-07-23 | Provider/Network selection, credentials, and logo display |
+Fail; fix pending retest | Jellyfin 10.11.11, plugin 0.1.0.38-test | Saving
+Main Settings after saving selected Provider/Network choices selected every
+picker option. A later refresh also showed blank API credentials. Loading
+source logos completed but did not visibly refresh the picker images, and the
+completed progress bar remained blue. Version 0.1.0.39-test separates Main
+Settings from Provider/Network selections, preserves saved credentials when a
+non-credential save posts empty values, adds Save API Settings, and refreshes
+logo URLs after a completed load. Retest required.

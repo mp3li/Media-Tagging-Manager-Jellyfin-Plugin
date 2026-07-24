@@ -73,6 +73,18 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpPost("settings")]
     public IActionResult UpdateSettings([FromBody] PluginConfiguration configuration)
     {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+
+        // Every dashboard section posts the full configuration object. Do not
+        // let a section that does not edit credentials replace already-saved
+        // API keys with empty input values.
+        configuration.TmdbApiKey = string.IsNullOrWhiteSpace(configuration.TmdbApiKey)
+            ? plugin.Configuration.TmdbApiKey
+            : configuration.TmdbApiKey.Trim();
+        configuration.WatchmodeApiKey = string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey)
+            ? plugin.Configuration.WatchmodeApiKey
+            : configuration.WatchmodeApiKey.Trim();
+
         if (!configuration.SaveTagsToJellyfin && !configuration.SaveTagsToNfoFiles)
         {
             return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");
@@ -89,7 +101,6 @@ public sealed class ProviderNetworkController : ControllerBase
             return BadRequest("Enter Watchmode's Quota Resets On date in YYYY-MM-DD format before saving a Watchmode API key.");
         }
 
-        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
         configuration.TvNetworkAppTaggingMode = configuration.TvNetworkAppTaggingMode switch
         {
             "NetworkOnly" or "StreamingAppOnly" or "Both" => configuration.TvNetworkAppTaggingMode,
