@@ -95,3 +95,48 @@ public sealed class ScheduledTasksSettingsRequest
     /// <summary>Gets or sets the scheduled-refresh interval in hours.</summary>
     public int RefreshIntervalHours { get; set; }
 }
+
+/// <summary>Colors used to distinguish additions and removals in the latest scan view.</summary>
+public sealed class LastScanColorSettingsRequest
+{
+    /// <summary>Gets or sets the addition color.</summary>
+    public string? AddedColor { get; set; }
+
+    /// <summary>Gets or sets the removal color.</summary>
+    public string? RemovedColor { get; set; }
+}
+
+/// <summary>One edited last-scan row, including its preserved change classifications.</summary>
+public sealed class LastScanDeltaUpdateRequest
+{
+    /// <summary>Gets or sets current provider names.</summary>
+    public string[]? Providers { get; set; }
+    /// <summary>Gets or sets current network names.</summary>
+    public string[]? Networks { get; set; }
+    /// <summary>Gets or sets current genre names.</summary>
+    public string[]? Genres { get; set; }
+    /// <summary>Gets or sets current keyword names.</summary>
+    public string[]? Keywords { get; set; }
+    /// <summary>Gets or sets current collection names.</summary>
+    public string[]? Collections { get; set; }
+    /// <summary>Gets or sets provider names added in the last scan.</summary>
+    public string[]? AddedProviders { get; set; }
+    /// <summary>Gets or sets provider names removed in the last scan.</summary>
+    public string[]? RemovedProviders { get; set; }
+    /// <summary>Gets or sets network names added in the last scan.</summary>
+    public string[]? AddedNetworks { get; set; }
+    /// <summary>Gets or sets network names removed in the last scan.</summary>
+    public string[]? RemovedNetworks { get; set; }
+    /// <summary>Gets or sets genre names added in the last scan.</summary>
+    public string[]? AddedGenres { get; set; }
+    /// <summary>Gets or sets genre names removed in the last scan.</summary>
+    public string[]? RemovedGenres { get; set; }
+    /// <summary>Gets or sets keyword names added in the last scan.</summary>
+    public string[]? AddedKeywords { get; set; }
+    /// <summary>Gets or sets keyword names removed in the last scan.</summary>
+    public string[]? RemovedKeywords { get; set; }
+    /// <summary>Gets or sets collection names added in the last scan.</summary>
+    public string[]? AddedCollections { get; set; }
+    /// <summary>Gets or sets collection names removed in the last scan.</summary>
+    public string[]? RemovedCollections { get; set; }
+}

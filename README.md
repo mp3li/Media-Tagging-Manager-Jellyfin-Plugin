@@ -365,6 +365,12 @@ scheduled-task controls there.
   a backup and does not start the scan.
 - **Stop Scan** requests cancellation of the current dashboard-initiated scan.
 - The status area shows the active title, completed and total counts, progress percentage, and an estimated remaining time. When it finishes, it retains a summary of checked items, new tags, and tagged media items.
+- **Additions and Removals in the Last Scan** is collapsed by default. It shows
+  only the selected-library media changed by the newest full scan, grouped by
+  library with the same filters and manual tag editor as Library Overview.
+  Newly added tags use green and newly removed tags use red by default; both
+  colors can be changed for accessibility. Editing a row preserves that row’s
+  existing added/removed visual classification without changing any other row.
 - The Backup Settings section provides the same create, undo, restore, and delete controls as Main Settings, so you can create a safety backup immediately before scanning.
 
 Only Movies and Series are automatically queried. Episodes inherit their series-level availability context rather than triggering a duplicate scan for every episode.

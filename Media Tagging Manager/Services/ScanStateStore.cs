@@ -7,6 +7,7 @@ namespace Jellyfin.Plugin.MediaTaggingManager.Services;
 public sealed class ScanStateStore
 {
     private readonly ConcurrentDictionary<Guid, TaggedItemDto> _items = new();
+    private readonly ConcurrentDictionary<Guid, LastScanItemDeltaDto> _lastScanItems = new();
     private readonly object _progressLock = new();
     private ScanProgress _progress = new();
 
@@ -36,6 +37,7 @@ public sealed class ScanStateStore
         lock (_progressLock)
         {
             _progress = new ScanProgress { IsRunning = true, Total = total, StartedUtc = DateTimeOffset.UtcNow };
+            _lastScanItems.Clear();
         }
     }
 
@@ -89,8 +91,84 @@ public sealed class ScanStateStore
     /// <summary>Upserts a dashboard item.</summary>
     public void Save(TaggedItemDto item) => _items[item.ItemId] = item;
 
+    /// <summary>Records actual plugin-owned additions and removals for the active scan only.</summary>
+    public void RecordLastScanChange(TaggedItemDto item, IEnumerable<string> addedTags, IEnumerable<string> removedTags)
+    {
+        lock (_progressLock)
+        {
+            if (!_progress.IsRunning)
+            {
+                return;
+            }
+        }
+
+        var added = GroupTagNames(addedTags);
+        var removed = GroupTagNames(removedTags);
+        if (added.Values.All(static names => names.Length == 0) && removed.Values.All(static names => names.Length == 0))
+        {
+            return;
+        }
+
+        _lastScanItems[item.ItemId] = new LastScanItemDeltaDto(
+            item.ItemId,
+            item.Name,
+            item.ItemType,
+            item.LibraryId,
+            item.Providers,
+            item.Networks,
+            item.Genres,
+            item.Keywords,
+            item.Collections,
+            added[TagKind.Provider],
+            removed[TagKind.Provider],
+            added[TagKind.Network],
+            removed[TagKind.Network],
+            added[TagKind.Genre],
+            removed[TagKind.Genre],
+            added[TagKind.Keyword],
+            removed[TagKind.Keyword],
+            added[TagKind.Collection],
+            removed[TagKind.Collection]);
+    }
+
+    /// <summary>Gets changed items from the most recently started scan.</summary>
+    public IEnumerable<LastScanItemDeltaDto> GetLastScanItems(Guid? libraryId) => _lastScanItems.Values
+        .Where(item => libraryId is null || item.LibraryId == libraryId)
+        .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Gets one changed item from the most recent scan.</summary>
+    public LastScanItemDeltaDto? GetLastScanItem(Guid itemId) => _lastScanItems.GetValueOrDefault(itemId);
+
+    /// <summary>Updates an in-memory last-scan row after an administrator edits that row.</summary>
+    public bool UpdateLastScanItem(LastScanItemDeltaDto item)
+    {
+        if (!_lastScanItems.ContainsKey(item.ItemId))
+        {
+            return false;
+        }
+
+        _lastScanItems[item.ItemId] = item;
+        return true;
+    }
+
     /// <summary>Gets dashboard items, optionally restricted to a library.</summary>
     public IEnumerable<TaggedItemDto> GetItems(Guid? libraryId) => _items.Values
         .Where(item => libraryId is null || item.LibraryId == libraryId)
         .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase);
+
+    private static IReadOnlyDictionary<TagKind, string[]> GroupTagNames(IEnumerable<string> tags)
+    {
+        var grouped = Enum.GetValues<TagKind>().ToDictionary(kind => kind, _ => new List<string>());
+        foreach (var tag in tags)
+        {
+            if (TagNaming.TryGetKind(tag, out var kind))
+            {
+                grouped[kind].Add(tag[TagNaming.Prefix(kind).Length..]);
+            }
+        }
+
+        return grouped.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray());
+    }
 }

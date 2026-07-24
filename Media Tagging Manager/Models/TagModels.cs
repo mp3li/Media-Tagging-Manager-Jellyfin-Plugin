@@ -134,6 +134,28 @@ public sealed record TaggedItemDto(
     DateTimeOffset? LastCheckedUtc,
     IReadOnlyCollection<string> Sources);
 
+/// <summary>Current item tags plus the plugin-owned tags added or removed by the most recent scan.</summary>
+public sealed record LastScanItemDeltaDto(
+    Guid ItemId,
+    string Name,
+    string ItemType,
+    Guid? LibraryId,
+    IReadOnlyCollection<string> Providers,
+    IReadOnlyCollection<string> Networks,
+    IReadOnlyCollection<string> Genres,
+    IReadOnlyCollection<string> Keywords,
+    IReadOnlyCollection<string> Collections,
+    IReadOnlyCollection<string> AddedProviders,
+    IReadOnlyCollection<string> RemovedProviders,
+    IReadOnlyCollection<string> AddedNetworks,
+    IReadOnlyCollection<string> RemovedNetworks,
+    IReadOnlyCollection<string> AddedGenres,
+    IReadOnlyCollection<string> RemovedGenres,
+    IReadOnlyCollection<string> AddedKeywords,
+    IReadOnlyCollection<string> RemovedKeywords,
+    IReadOnlyCollection<string> AddedCollections,
+    IReadOnlyCollection<string> RemovedCollections);
+
 /// <summary>A direct TMDb collection match for one movie in a selected library.</summary>
 public sealed record CollectionMatchDto(Guid ItemId, Guid LibraryId, string Title, string CollectionName, string Source);
 

@@ -71,6 +71,8 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         TvNetworkAppTaggingMode = source.TvNetworkAppTaggingMode,
         EnableLogoCaching = source.EnableLogoCaching,
         LogoCacheLimitMegabytes = source.LogoCacheLimitMegabytes,
+        LastScanAddedTagColor = source.LastScanAddedTagColor,
+        LastScanRemovedTagColor = source.LastScanRemovedTagColor,
         UnknownTagMappings = (source.UnknownTagMappings ?? []).Select(mapping => new Configuration.UnknownTagMapping
         {
             Kind = mapping.Kind,

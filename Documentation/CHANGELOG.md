@@ -4,6 +4,20 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.49-test] - 2026-07-24
+
+### Added
+
+- Added the collapsed-by-default **Additions and Removals in the Last Scan**
+  section to Scan. It groups only the media changed by the newest scan using
+  the same Provider, Network, Genre, Keyword, and Collection layout and
+  editing controls as Library Overview.
+- Added administrator-configurable added-tag and removed-tag colors, defaulting
+  to green and red respectively, for accessibility.
+- Kept last-scan change classifications separate from the normal overview.
+  Editing a last-scan row carries its own green/red classifications forward and
+  cannot recolor unrelated tags or items.
+
 ## [0.1.0.48-test] - 2026-07-24
 
 ### Fixed

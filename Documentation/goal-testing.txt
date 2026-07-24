@@ -123,6 +123,16 @@ Acceptance criteria:
 [ ] Change only the TMDb token or Watchmode API key, save API Settings, and
     confirm the relevant source catalogs refresh. Confirm a Main Settings save
     that does not edit API controls preserves the current quota count.
+
+[ ] After a full scan that adds or removes plugin-managed tags, expand
+    Additions and Removals in the Last Scan and confirm only changed selected-
+    library media appears, grouped by library. Confirm additions use the saved
+    added-tag color and removals use the saved removed-tag color.
+[ ] Change both last-scan colors, save, leave and reopen the Scan tab, and
+    confirm the saved colors persist and are used by the last-scan view.
+[ ] Edit a green or red tag in the last-scan view, save it, and confirm the
+    edited tag keeps its original green or red classification. Remove a green
+    or red tag and confirm no unrelated tag gains a color or causes an error.
 [ ] Confirm the Genres and Keywords Settings tab opens without an error and
     saves its settings without overwriting unrelated configuration.
 
@@ -604,3 +614,11 @@ nothing. Full-configuration saves allowed one settings tab to overwrite other
 tab state, including saved library selection. Version 0.1.0.42-test uses
 server-side per-tab settings updates and shows an immediate queued-scan status.
 Retest required.
+2026-07-24 | Settings persistence, Library Overview, and full tag scan | Pass |
+Jellyfin 10.11.11, plugin 0.1.0.48-test | Main Settings, availability regions,
+Provider/Network selections, Genre selections, credentials, and picker logos
+persisted through dashboard navigation. Library Overview displayed the selected
+library before a new scan. A 221-item full scan completed and added 1,945 tags
+across 194 changed media items; the larger count was expected because Genre and
+Keyword tagging were enabled in addition to one selected Provider and one
+selected Network.

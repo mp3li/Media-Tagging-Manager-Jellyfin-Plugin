@@ -243,6 +243,11 @@ public sealed class ProviderNetworkController : ControllerBase
         .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
         .ToArray();
 
+    private static string NormalizeCssColor(string? value, string fallback) =>
+        value is { Length: 7 } && value[0] == '#' && value[1..].All(Uri.IsHexDigit)
+            ? value.ToUpperInvariant()
+            : fallback;
+
     /// <summary>Gets TMDb's official watch-provider regions for the settings dropdowns.</summary>
     [HttpGet("regions")]
     public async Task<ActionResult<AvailabilityRegionsResponse>> GetRegions(CancellationToken cancellationToken)
@@ -269,6 +274,23 @@ public sealed class ProviderNetworkController : ControllerBase
     /// <summary>Returns active scan status, including an estimated remaining duration.</summary>
     [HttpGet("status")]
     public ActionResult<ScanProgress> GetStatus() => Ok(_state.GetProgress());
+
+    /// <summary>Returns exact plugin-owned additions and removals from the most recently started scan.</summary>
+    [HttpGet("last-scan-changes")]
+    public ActionResult<IEnumerable<LastScanItemDeltaDto>> GetLastScanChanges([FromQuery] Guid? libraryId) =>
+        Ok(_state.GetLastScanItems(libraryId));
+
+    /// <summary>Saves administrator-selected colors for the latest-scan change view.</summary>
+    [HttpPost("settings/last-scan-colors")]
+    public IActionResult SaveLastScanColors([FromBody] LastScanColorSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.LastScanAddedTagColor = NormalizeCssColor(submitted.AddedColor, "#4CAF50");
+            configuration.LastScanRemovedTagColor = NormalizeCssColor(submitted.RemovedColor, "#F44336");
+        }));
+    }
 
     /// <summary>Queues a Jellyfin-managed scan of one enabled library.</summary>
     [HttpPost("scan/{libraryId:guid}")]
@@ -548,6 +570,38 @@ public sealed class ProviderNetworkController : ControllerBase
     {
         await _scanner.ApplyManualTagsAsync(itemId, request.Providers ?? [], request.Networks ?? [], request.Genres ?? [], request.Keywords ?? [], request.Collections ?? [], cancellationToken).ConfigureAwait(false);
         return NoContent();
+    }
+
+    /// <summary>Preserves the visible addition/removal colors after an administrator edits a latest-scan row.</summary>
+    [HttpPut("last-scan-changes/{itemId:guid}")]
+    public ActionResult<LastScanItemDeltaDto> UpdateLastScanChange(Guid itemId, [FromBody] LastScanDeltaUpdateRequest submitted)
+    {
+        var existing = _state.GetLastScanItem(itemId);
+        if (existing is null)
+        {
+            return NotFound("This item is not part of the most recent scan changes.");
+        }
+
+        var updated = existing with
+        {
+            Providers = NormalizeNames(TagKind.Provider, submitted.Providers ?? []),
+            Networks = NormalizeNames(TagKind.Network, submitted.Networks ?? []),
+            Genres = NormalizeNames(TagKind.Genre, submitted.Genres ?? []),
+            Keywords = NormalizeNames(TagKind.Keyword, submitted.Keywords ?? []),
+            Collections = NormalizeNames(TagKind.Collection, submitted.Collections ?? []),
+            AddedProviders = NormalizeNames(TagKind.Provider, submitted.AddedProviders ?? []),
+            RemovedProviders = NormalizeNames(TagKind.Provider, submitted.RemovedProviders ?? []),
+            AddedNetworks = NormalizeNames(TagKind.Network, submitted.AddedNetworks ?? []),
+            RemovedNetworks = NormalizeNames(TagKind.Network, submitted.RemovedNetworks ?? []),
+            AddedGenres = NormalizeNames(TagKind.Genre, submitted.AddedGenres ?? []),
+            RemovedGenres = NormalizeNames(TagKind.Genre, submitted.RemovedGenres ?? []),
+            AddedKeywords = NormalizeNames(TagKind.Keyword, submitted.AddedKeywords ?? []),
+            RemovedKeywords = NormalizeNames(TagKind.Keyword, submitted.RemovedKeywords ?? []),
+            AddedCollections = NormalizeNames(TagKind.Collection, submitted.AddedCollections ?? []),
+            RemovedCollections = NormalizeNames(TagKind.Collection, submitted.RemovedCollections ?? [])
+        };
+        _state.UpdateLastScanItem(updated);
+        return Ok(updated);
     }
 
     /// <summary>Creates a complete tag backup for all currently selected libraries.</summary>

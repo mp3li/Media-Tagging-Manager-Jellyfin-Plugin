@@ -49,7 +49,7 @@ Primary references:
 | View and Edit Tags: overview, filters, expand/collapse, manual edits, save changes | Selected-library `GetItemList` queries and native writes; editing is limited to supported selected items. | Supported; rendering and edit behavior require live checks. |
 | Unknown Providers and Networks: list, See Items, official name, logo upload | Selected-library queries, plugin configuration mappings, and plugin-data logo cache. | Supported; upload/content-type and display checks remain live tests. |
 | Logo Settings: load all, load selected providers, status/progress, delete all, delete selected | Plugin-owned cache and source downloads; cached images use authenticated custom routes. | Supported Jellyfin integration; source availability and browser rendering require live checks. |
-| Scan: selected-library summary, scan all, stop, progress/ETA, scan undo, duplicate backup/scheduled controls | `ITaskManager` queues/cancels a registered `IScheduledTask`; state is plugin-owned and does not replace Jellyfin task progress. | Supported; task startup, cancellation, and ETA accuracy require live checks. |
+| Scan: selected-library summary, scan all, stop, progress/ETA, last-scan additions/removals, scan undo, duplicate backup/scheduled controls | `ITaskManager` queues/cancels a registered `IScheduledTask`; the latest-scan delta and colors are plugin-owned presentation state and do not replace Jellyfin task progress or metadata. | Supported; task startup, cancellation, ETA accuracy, and last-scan display/edit behavior require live checks. |
 
 ## Metadata, NFO, and background operations
 

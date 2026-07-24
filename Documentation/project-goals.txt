@@ -150,6 +150,10 @@ Acceptance criteria:
 [x] Provide a configurable refresh interval in hours.
 [x] Show scan state, active title, completed count, total count, percentage,
     and estimated remaining time in the dashboard.
+[x] Provide a collapsed-by-default last-scan review that shows only selected-
+    library media with plugin-owned tag additions or removals from the newest
+    scan, uses independently configurable accessible colors, and preserves a
+    changed row's visual classification through its manual tag edit.
 [x] Use a conservative internal title-check concurrency while preserving the
     configured Watchmode 30-day quota ceiling.
 [x] Document that Jellyfin must be restarted after changing the default

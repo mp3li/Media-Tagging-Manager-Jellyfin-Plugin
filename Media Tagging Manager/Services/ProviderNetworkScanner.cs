@@ -746,6 +746,12 @@ public sealed class ProviderNetworkScanner
                     && !selectedNetworkNames.Contains(TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind)))))
             : existing;
         var updatedTags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var addedTags = updatedTags.Except(existing, StringComparer.OrdinalIgnoreCase)
+            .Where(TagNaming.IsManaged)
+            .ToArray();
+        var removedTags = existing.Except(updatedTags, StringComparer.OrdinalIgnoreCase)
+            .Where(TagNaming.IsManaged)
+            .ToArray();
         // Do not ask Jellyfin to write the database or local metadata for titles
         // whose tags did not actually change. Besides avoiding needless work on
         // a full scan, this prevents an unchanged title from touching its NFO.
@@ -755,7 +761,9 @@ public sealed class ProviderNetworkScanner
             await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
         }
         _state.RecordTagAdditions(tagsAdded);
-        _state.Save(ToDto(item, libraryId, DateTimeOffset.UtcNow, sources));
+        var dashboardItem = ToDto(item, libraryId, DateTimeOffset.UtcNow, sources);
+        _state.Save(dashboardItem);
+        _state.RecordLastScanChange(dashboardItem, addedTags, removedTags);
     }
 
     private TaggedItemDto ToDto(BaseItem item) => ToDto(item, item.GetTopParent().Id, null, []);

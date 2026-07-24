@@ -71,6 +71,12 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets the maximum on-disk size of the provider and network logo cache in megabytes.</summary>
     public int LogoCacheLimitMegabytes { get; set; } = 100;
 
+    /// <summary>Gets or sets the dashboard color used for tags added in the most recent scan.</summary>
+    public string LastScanAddedTagColor { get; set; } = "#4CAF50";
+
+    /// <summary>Gets or sets the dashboard color used for tags removed in the most recent scan.</summary>
+    public string LastScanRemovedTagColor { get; set; } = "#F44336";
+
     /// <summary>Gets or sets administrator-defined canonical names for otherwise unknown Provider or Network tags.</summary>
     public List<UnknownTagMapping> UnknownTagMappings { get; set; } = [];
 
