@@ -134,11 +134,7 @@ Choose the Jellyfin libraries the plugin may access. Only selected libraries are
 
 #### API Settings
 
-Enter API credentials for the sources you want to use. Credentials are stored in that Jellyfin server’s plugin configuration; never share them or include them in GitHub, screenshots, releases, or backups. The plugin also maintains current and previous server-local recovery copies so a missing or unreadable configuration XML cannot silently reset saved settings during a future update. Those recovery copies remain sensitive server data and are never included in packages or the repository.
-
-API Settings also displays a non-sensitive **Settings recovery status** line
-after startup. It confirms whether the normal configuration loaded or whether
-the plugin restored the current or previous server-local recovery copy.
+Enter API credentials for the sources you want to use. Credentials are stored in that Jellyfin server’s plugin configuration; never share them or include them in GitHub, screenshots, releases, or backups.
 
 - **TMDb API Read Access Token** is the primary source for regional streaming providers and television networks.
 - **Watchmode API Key** is an optional fallback for a requested Provider or series Network result TMDb does not return. It requires an IMDb ID.

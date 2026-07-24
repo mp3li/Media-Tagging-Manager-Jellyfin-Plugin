@@ -28,7 +28,7 @@ public sealed class WatchmodeQuotaTracker
             }
 
             configuration.WatchmodeRequestsUsed += credits;
-            Plugin.Instance?.SaveConfigurationWithRecovery();
+            Plugin.Instance?.SaveCurrentConfiguration();
             reason = null;
             return true;
         }
@@ -51,7 +51,7 @@ public sealed class WatchmodeQuotaTracker
                 configuration.WatchmodeRequestsUsed = Math.Max(0, serverUsed);
             }
 
-            Plugin.Instance?.SaveConfigurationWithRecovery();
+            Plugin.Instance?.SaveCurrentConfiguration();
         }
     }
 
@@ -68,7 +68,7 @@ public sealed class WatchmodeQuotaTracker
 
             if (ResetCycleIfNeeded(configuration, cycleStart))
             {
-                Plugin.Instance?.SaveConfigurationWithRecovery();
+                Plugin.Instance?.SaveCurrentConfiguration();
             }
 
             var limit = Math.Max(0, configuration.WatchmodeMonthlyLimit);
@@ -88,7 +88,7 @@ public sealed class WatchmodeQuotaTracker
             }
 
             configuration.WatchmodeRequestsUsed = Math.Max(0, usage);
-            Plugin.Instance?.SaveConfigurationWithRecovery();
+            Plugin.Instance?.SaveCurrentConfiguration();
         }
     }
 

@@ -5,9 +5,6 @@ namespace Jellyfin.Plugin.MediaTaggingManager.Configuration;
 /// <summary>Persisted administrator settings for the plugin.</summary>
 public sealed class PluginConfiguration : BasePluginConfiguration
 {
-    /// <summary>Gets or sets when an administrator last explicitly saved dashboard settings.</summary>
-    public DateTime LastSettingsSavedUtc { get; set; }
-
     /// <summary>Gets or sets the libraries the scanner may update. Empty means none, never all.</summary>
     public Guid[] LibraryIds { get; set; } = [];
 

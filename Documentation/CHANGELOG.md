@@ -6,6 +6,21 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.38-test] - 2026-07-23
+
+### Fixed
+
+- Removed the settings-recovery layer introduced in the recent test releases.
+  It could choose an older server-local copy during startup, which is not an
+  acceptable substitute for preserving the current Jellyfin plugin
+  configuration. Configuration now uses Jellyfin's standard `BasePlugin`
+  persistence path only.
+
+### Test-release notes
+
+- This supersedes `0.1.0.37-test`. It intentionally does not attempt to
+  restore, score, merge, or select a prior settings copy.
+
 ## [0.1.0.37-test] - 2026-07-23
 
 ### Fixed

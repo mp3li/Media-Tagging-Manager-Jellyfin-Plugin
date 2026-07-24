@@ -132,7 +132,7 @@ public sealed class ProviderNetworkScanner
             if (configuration.LastIncomingMediaCheckUtc is null)
             {
                 configuration.LastIncomingMediaCheckUtc = startedUtc;
-                Plugin.Instance?.SaveConfigurationWithRecovery();
+                Plugin.Instance?.SaveCurrentConfiguration();
                 return;
             }
 
@@ -156,7 +156,7 @@ public sealed class ProviderNetworkScanner
                 await ScanItemsAsync(candidates, configuration, progress, cancellationToken).ConfigureAwait(false);
             }
             configuration.LastIncomingMediaCheckUtc = startedUtc;
-            Plugin.Instance?.SaveConfigurationWithRecovery();
+            Plugin.Instance?.SaveCurrentConfiguration();
         }
         catch (Exception exception)
         {
@@ -365,7 +365,7 @@ public sealed class ProviderNetworkScanner
             }
 
             await _backups.CreateAsync($"Before {kind.ToString().ToLowerInvariant()} selection sync", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
-            Plugin.Instance?.SaveConfigurationWithRecovery();
+            Plugin.Instance?.SaveCurrentConfiguration();
 
             var tagsRemoved = 0;
             var mediaItemsChanged = 0;
@@ -757,7 +757,7 @@ public sealed class ProviderNetworkScanner
 
             configuration.KnownProviderNames = updatedProviders;
             configuration.KnownNetworkNames = updatedNetworks;
-            Plugin.Instance?.SaveConfigurationWithRecovery();
+            Plugin.Instance?.SaveCurrentConfiguration();
         }
     }
 
