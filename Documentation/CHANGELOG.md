@@ -4,14 +4,19 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
-## [Unreleased]
+## [0.1.0.43-test] - 2026-07-24
 
-### Changed
+### Fixed
 
 - Removed **Tag Destination(s)**. Every tag update now uses Jellyfin's one
   native metadata-update workflow. If a library is configured in Jellyfin to
   save NFO metadata, Jellyfin controls that output itself; the plugin no longer
   makes a second direct NFO-save call that could write the same NFO twice.
+- Corrected cached-logo image URLs to include Jellyfin's administrator access
+  token. The logo endpoint was already protected, so the prior unauthenticated
+  browser image requests failed and their broken-image handler removed them.
+- Added scoped configuration updates so a save from one dashboard tab does not
+  replace unrelated saved settings with stale values.
 
 ## [0.1.0.42-test] - 2026-07-23
 
