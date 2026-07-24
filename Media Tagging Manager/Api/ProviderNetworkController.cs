@@ -70,49 +70,89 @@ public sealed class ProviderNetworkController : ControllerBase
     }
 
     /// <summary>Saves administrator settings without relying on the dashboard plugin-configuration endpoint.</summary>
-    [HttpPost("settings")]
-    public IActionResult UpdateSettings([FromBody] PluginConfiguration configuration)
+    [HttpPost("settings/{scope}")]
+    public IActionResult UpdateSettings(string scope, [FromBody] PluginConfiguration submitted)
     {
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        var configuration = plugin.Configuration;
 
-        // Every dashboard section posts the full configuration object. Do not
-        // let a section that does not edit credentials replace already-saved
-        // API keys with empty input values.
-        configuration.TmdbApiKey = string.IsNullOrWhiteSpace(configuration.TmdbApiKey)
-            ? plugin.Configuration.TmdbApiKey
-            : configuration.TmdbApiKey.Trim();
-        configuration.WatchmodeApiKey = string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey)
-            ? plugin.Configuration.WatchmodeApiKey
-            : configuration.WatchmodeApiKey.Trim();
-
-        // Picker catalogs are transient source data, not administrator
-        // settings. Never accept their large/untrusted name arrays from a
-        // dashboard POST; retain only names discovered from actual scans.
-        configuration.KnownProviderNames = plugin.Configuration.KnownProviderNames ?? [];
-        configuration.KnownNetworkNames = plugin.Configuration.KnownNetworkNames ?? [];
-
-        if (!configuration.SaveTagsToJellyfin && !configuration.SaveTagsToNfoFiles)
+        switch (scope)
         {
-            return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");
+            case "main":
+                if (!submitted.SaveTagsToJellyfin && !submitted.SaveTagsToNfoFiles)
+                {
+                    return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");
+                }
+
+                configuration.LibraryIds = submitted.LibraryIds ?? [];
+                configuration.SaveTagsToJellyfin = submitted.SaveTagsToJellyfin;
+                configuration.SaveTagsToNfoFiles = submitted.SaveTagsToNfoFiles;
+                configuration.EnableLogoCaching = submitted.EnableLogoCaching;
+                configuration.LogoCacheLimitMegabytes = Math.Clamp(submitted.LogoCacheLimitMegabytes, 10, 1024);
+                configuration.EnableNewMediaChecks = submitted.EnableNewMediaChecks;
+                configuration.LastIncomingMediaCheckUtc = submitted.EnableNewMediaChecks ? configuration.LastIncomingMediaCheckUtc : null;
+                ApplyScheduledSettings(configuration, submitted);
+                configuration.TmdbApiKey = string.IsNullOrWhiteSpace(submitted.TmdbApiKey) ? configuration.TmdbApiKey : submitted.TmdbApiKey.Trim();
+                configuration.WatchmodeApiKey = string.IsNullOrWhiteSpace(submitted.WatchmodeApiKey) ? configuration.WatchmodeApiKey : submitted.WatchmodeApiKey.Trim();
+                configuration.WatchmodeMonthlyLimit = Math.Max(0, submitted.WatchmodeMonthlyLimit);
+                configuration.WatchmodeQuotaResetsOn = submitted.WatchmodeQuotaResetsOn?.Trim() ?? string.Empty;
+                configuration.WatchmodeRequestsUsed = Math.Max(0, submitted.WatchmodeRequestsUsed);
+                plugin.SaveCurrentConfiguration();
+                _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
+                return Ok(configuration);
+
+            case "providers-networks":
+                configuration.TagProviders = submitted.TagProviders;
+                configuration.TagNetworks = submitted.TagNetworks;
+                configuration.TvNetworkAppTaggingMode = submitted.TvNetworkAppTaggingMode switch
+                {
+                    "NetworkOnly" or "StreamingAppOnly" or "Both" => submitted.TvNetworkAppTaggingMode,
+                    _ => "NetworkOnly"
+                };
+                configuration.Regions = (submitted.Regions ?? [])
+                    .Where(static region => !string.IsNullOrWhiteSpace(region))
+                    .Select(region => region.Trim().ToUpperInvariant())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(3)
+                    .ToArray();
+                configuration.Region = configuration.Regions.FirstOrDefault() ?? "US";
+                configuration.SelectedProviderNames = NormalizeNames(TagKind.Provider, submitted.SelectedProviderNames ?? []);
+                configuration.SelectedNetworkNames = NormalizeNames(TagKind.Network, submitted.SelectedNetworkNames ?? []);
+                configuration.RestrictProvidersToSelected = submitted.RestrictProvidersToSelected;
+                configuration.RestrictNetworksToSelected = submitted.RestrictNetworksToSelected;
+                plugin.SaveCurrentConfiguration();
+                return Ok(configuration);
+
+            case "genres-keywords":
+                configuration.TagGenres = submitted.TagGenres;
+                configuration.TagKeywords = submitted.TagKeywords;
+                configuration.SelectedGenreNames = NormalizeNames(TagKind.Genre, submitted.SelectedGenreNames ?? []);
+                plugin.SaveCurrentConfiguration();
+                return Ok(configuration);
+
+            case "scheduled-tasks":
+                ApplyScheduledSettings(configuration, submitted);
+                plugin.SaveCurrentConfiguration();
+                return Ok(configuration);
+
+            default:
+                return BadRequest("Unknown settings section.");
         }
-
-        configuration.TvNetworkAppTaggingMode = configuration.TvNetworkAppTaggingMode switch
-        {
-            "NetworkOnly" or "StreamingAppOnly" or "Both" => configuration.TvNetworkAppTaggingMode,
-            _ => "NetworkOnly"
-        };
-        configuration.LogoCacheLimitMegabytes = Math.Clamp(configuration.LogoCacheLimitMegabytes, 10, 1024);
-        configuration.WatchmodeRequestsUsed = Math.Max(0, configuration.WatchmodeRequestsUsed);
-        configuration.SelectedProviderNames = (configuration.SelectedProviderNames ?? [])
-            .Where(static name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        plugin.UpdateConfiguration(configuration);
-        _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
-        return Ok(plugin.Configuration);
     }
+
+    private static void ApplyScheduledSettings(PluginConfiguration configuration, PluginConfiguration submitted)
+    {
+        configuration.ReplaceManagedTags = submitted.ReplaceManagedTags;
+        configuration.EnableAutomaticRefresh = submitted.EnableAutomaticRefresh;
+        configuration.RefreshIntervalHours = Math.Clamp(submitted.RefreshIntervalHours, 6, 8760);
+    }
+
+    private static string[] NormalizeNames(TagKind kind, IEnumerable<string> names) => names
+        .Where(static name => !string.IsNullOrWhiteSpace(name))
+        .Select(name => TagNameNormalizer.Normalize(kind, name))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(static name => name, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
 
     /// <summary>Gets TMDb's official watch-provider regions for the settings dropdowns.</summary>
     [HttpGet("regions")]

@@ -6,6 +6,23 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.42-test] - 2026-07-23
+
+### Fixed
+
+- Replaced the shared full-configuration save with separate server-side save
+  paths for Main Settings, Network and Provider Settings, Genres and Keywords,
+  and Scheduled Tasks. Each path updates only its own settings.
+- Made Scan, backups, collection matching, and the Scan-tab library summary use
+  the saved library selection rather than hidden dashboard checkbox state.
+- Added immediate queued-scan feedback so a dashboard scan request cannot look
+  like a no-op while Jellyfin's task manager starts it.
+
+### Test-release notes
+
+- This supersedes `0.1.0.41-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.41-test] - 2026-07-23
 
 ### Fixed
