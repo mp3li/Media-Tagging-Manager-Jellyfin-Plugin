@@ -4,6 +4,18 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.46-test] - 2026-07-24
+
+### Fixed
+
+- Made Provider, Network, and Genre selections explicit, independently saved
+  settings. A tab-level save now preserves each saved list unless that exact
+  picker was changed, while **Select None** remains an intentional saved empty
+  selection.
+- Captured checkbox interactions at each picker container so Jellyfin's custom
+  dashboard controls cannot lose an in-progress selection before its dedicated
+  or tab-level save completes.
+
 ## [0.1.0.45-test] - 2026-07-24
 
 ### Fixed

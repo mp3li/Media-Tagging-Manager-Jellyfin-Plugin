@@ -60,8 +60,15 @@ public sealed class ProviderNetworkSettingsRequest
     public string[]? Regions { get; set; }
     /// <summary>Gets or sets the selected Providers.</summary>
     public string[]? SelectedProviderNames { get; set; }
+
+    /// <summary>Gets or sets whether the Provider picker was intentionally edited before this tab save.</summary>
+    public bool UpdateProviderSelection { get; set; }
+
     /// <summary>Gets or sets the selected Networks.</summary>
     public string[]? SelectedNetworkNames { get; set; }
+
+    /// <summary>Gets or sets whether the Network picker was intentionally edited before this tab save.</summary>
+    public bool UpdateNetworkSelection { get; set; }
 }
 
 /// <summary>Only the controls on the Genres and Keywords Settings tab.</summary>
@@ -73,6 +80,9 @@ public sealed class GenreKeywordSettingsRequest
     public bool TagKeywords { get; set; }
     /// <summary>Gets or sets the selected Genres.</summary>
     public string[]? SelectedGenreNames { get; set; }
+
+    /// <summary>Gets or sets whether the Genre picker was intentionally edited before this tab save.</summary>
+    public bool UpdateGenreSelection { get; set; }
 }
 
 /// <summary>Only the controls shared by the two Scheduled Tasks sections.</summary>

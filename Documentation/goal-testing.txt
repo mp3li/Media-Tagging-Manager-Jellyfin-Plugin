@@ -104,6 +104,10 @@ Acceptance criteria:
     and Provider Settings. Confirm the saved Provider selections remain checked
     after source catalogs redraw and after a hard refresh.
 [ ] Repeat the preceding test for Network selections and for Genre selections.
+[ ] With saved Provider, Network, and Genre selections, use each tab-level
+    Save button without changing that picker. Confirm every saved selection is
+    preserved. Then use Select None and save, confirming an intentionally empty
+    list is preserved instead of being interpreted as Select All.
 [ ] Enter the Watchmode account's current usage, then save only API Settings.
     Confirm the saved count persists and that the Watchmode account count does
     not increase because source catalogs were not reloaded.

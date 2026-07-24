@@ -126,13 +126,19 @@ public sealed class ProviderNetworkController : ControllerBase
                 .Take(3)
                 .ToArray();
             configuration.Region = configuration.Regions.FirstOrDefault() ?? "US";
-            configuration.SelectedProviderNames = NormalizeNames(TagKind.Provider, submitted.SelectedProviderNames ?? []);
-            configuration.SelectedNetworkNames = NormalizeNames(TagKind.Network, submitted.SelectedNetworkNames ?? []);
-            // The dashboard always stores an explicit selection. An empty selection
-            // means none, never "everything", which prevents a later save from
-            // silently turning the picker into Select All.
-            configuration.RestrictProvidersToSelected = true;
-            configuration.RestrictNetworksToSelected = true;
+            if (submitted.UpdateProviderSelection)
+            {
+                configuration.SelectedProviderNames = NormalizeNames(TagKind.Provider, submitted.SelectedProviderNames ?? []);
+                // An intentionally empty picker means none, never everything.
+                configuration.RestrictProvidersToSelected = true;
+            }
+
+            if (submitted.UpdateNetworkSelection)
+            {
+                configuration.SelectedNetworkNames = NormalizeNames(TagKind.Network, submitted.SelectedNetworkNames ?? []);
+                // An intentionally empty picker means none, never everything.
+                configuration.RestrictNetworksToSelected = true;
+            }
         });
         return Ok(configuration);
     }
@@ -170,7 +176,10 @@ public sealed class ProviderNetworkController : ControllerBase
         {
             configuration.TagGenres = submitted.TagGenres;
             configuration.TagKeywords = submitted.TagKeywords;
-            configuration.SelectedGenreNames = NormalizeNames(TagKind.Genre, submitted.SelectedGenreNames ?? []);
+            if (submitted.UpdateGenreSelection)
+            {
+                configuration.SelectedGenreNames = NormalizeNames(TagKind.Genre, submitted.SelectedGenreNames ?? []);
+            }
         });
         return Ok(configuration);
     }
