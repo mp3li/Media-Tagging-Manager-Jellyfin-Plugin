@@ -3,7 +3,7 @@ using Jellyfin.Plugin.MediaTaggingManager.Models;
 
 namespace Jellyfin.Plugin.MediaTaggingManager.Services;
 
-/// <summary>Keeps scan status and item classifications in the plugin data directory.</summary>
+/// <summary>Keeps the current in-memory scan status and item classifications for the dashboard.</summary>
 public sealed class ScanStateStore
 {
     private readonly ConcurrentDictionary<Guid, TaggedItemDto> _items = new();

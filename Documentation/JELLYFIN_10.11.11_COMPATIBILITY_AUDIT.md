@@ -2,83 +2,91 @@
 
 ## Scope and method
 
-This is a source-level audit of the complete plugin as built against Jellyfin
-`10.11.11`. It compares the implementation with Jellyfin's official plugin
-template, the `10.11.11` server source, and the `10.11.11` `Jellyfin.Controller`
-and `Jellyfin.Model` API packages installed by the project build. It does not
-claim that a compiled plugin has already succeeded on a particular server; the
-live-server checks remain recorded in [goal-testing.txt](goal-testing.txt).
+This audit covers the complete current plugin: every dashboard control and its
+custom endpoint, every Jellyfin extension point, every metadata write, and
+every background operation. It uses the official Jellyfin `v10.11.11` source
+as the version-specific authority, alongside the exact `Jellyfin.Controller`
+and `Jellyfin.Model` `10.11.11` packages used by the project.
 
-Primary Jellyfin references:
+`Supported` means the implementation uses a public 10.11.11 extension point or
+API with matching semantics. `Live check required` means the code path is
+supported but must still be exercised on a real server. This document never
+turns a source-level finding into a claim that a live test has passed.
 
-- [Official plugin template](https://github.com/jellyfin/jellyfin-plugin-template)
-- [10.11.11 LibraryStructureController](https://github.com/jellyfin/jellyfin/blob/v10.11.11/Jellyfin.Api/Controllers/LibraryStructureController.cs)
-- [10.11.11 LibraryController](https://github.com/jellyfin/jellyfin/blob/v10.11.11/Jellyfin.Api/Controllers/LibraryController.cs)
-- [10.11.11 task manager implementation](https://github.com/jellyfin/jellyfin/blob/v10.11.11/Emby.Server.Implementations/ScheduledTasks/TaskManager.cs)
+Primary references:
 
-## Compatibility result
+- [BasePlugin<TConfiguration>](https://github.com/jellyfin/jellyfin/blob/v10.11.11/MediaBrowser.Common/Plugins/BasePluginOfT.cs)
+- [Plugin web pages](https://github.com/jellyfin/jellyfin/blob/v10.11.11/MediaBrowser.Model/Plugins/PluginPageInfo.cs)
+- [Plugin service registration](https://github.com/jellyfin/jellyfin/blob/v10.11.11/MediaBrowser.Controller/Plugins/IPluginServiceRegistrator.cs)
+- [Library manager](https://github.com/jellyfin/jellyfin/blob/v10.11.11/MediaBrowser.Controller/Library/ILibraryManager.cs)
+- [Library metadata-update implementation](https://github.com/jellyfin/jellyfin/blob/v10.11.11/Emby.Server.Implementations/Library/LibraryManager.cs)
+- [Scheduled tasks](https://github.com/jellyfin/jellyfin/blob/v10.11.11/MediaBrowser.Model/Tasks/IScheduledTask.cs)
+- [Scheduled-task trigger updates](https://github.com/jellyfin/jellyfin/blob/v10.11.11/Jellyfin.Api/Controllers/ScheduledTasksController.cs)
+- [Post-library-scan tasks](https://github.com/jellyfin/jellyfin/blob/v10.11.11/MediaBrowser.Controller/Library/ILibraryPostScanTask.cs)
 
-| Area | Implementation | 10.11.11 basis | Result |
-| --- | --- | --- | --- |
-| Runtime target and package ABI | `net9.0`; `Jellyfin.Controller` and `Jellyfin.Model` are both `10.11.11`, with runtime assets excluded. | The official template requires the package version to match the installed server to avoid `NotSupported`. | Supported |
-| Plugin identity and persisted configuration | `Plugin` derives from `BasePlugin<PluginConfiguration>` and the configuration derives from `BasePluginConfiguration`. | The official template documents these as the supported plugin/configuration bases. | Supported |
-| Dashboard page | `Plugin` implements `IHasWebPages`; `configPage.html` is embedded and exposed as `PluginPageInfo`. | `IHasWebPages` and `PluginPageInfo.EmbeddedResourcePath` are part of `Jellyfin.Model` 10.11.11. | Supported |
-| Dashboard-only sidebar entry | `EnableInMainMenu = true` is set on the same `PluginPageInfo`. | `PluginPageInfo.EnableInMainMenu` is the 10.11.11 menu property. File Transformation uses this exact property for its Dashboard plugin entry. No invented `MenuSection` value is used. | Supported; needs one live visual check |
-| Administrator access | Every custom controller endpoint uses Jellyfin's `RequiresElevation` policy. | Jellyfin's own 10.11.11 `PluginsController` uses that policy for administrator plugin operations. | Supported |
-| Settings endpoint | The page reads and writes the plugin's `PluginConfiguration` through its administrator-only controller. | Jellyfin supports custom `ControllerBase` REST endpoints and `BasePlugin.UpdateConfiguration`. | Supported |
-| Library picker | The settings endpoint gets libraries with `ILibraryManager.GetVirtualFolders(true)`. | That is the exact call in Jellyfin 10.11.11's `LibraryStructureController`. | Supported; needs live response check |
-| Selected-library scans | The scanner uses `ILibraryManager.GetItemList` with a parent ID, recursive search, and Movie/Series item kinds. | `ILibraryManager` is the official plugin interface for direct library access. | Supported |
-| Tag writes | The scanner and backup restore use `ILibraryManager.UpdateItemAsync(..., ItemUpdateType.MetadataEdit, ...)`. | `UpdateItemAsync` and metadata-edit update reason are exposed by the 10.11.11 controller API. | Supported |
-| Manual tag editing | The scanner now rejects items outside selected libraries and items other than Movies or Series before backing up or writing. | This enforces the plugin's selected-library boundary on top of the supported item APIs. | Supported |
-| Full automatic refresh | `RefreshAvailabilityTask` implements `IScheduledTask`; interval triggers are returned only when enabled. | The official template identifies `IScheduledTask` as the supported scheduled-work extension point. | Supported |
-| Scan buttons | Dashboard requests are placed in `ManualScanRequestQueue` and started through `ITaskManager.QueueScheduledTask<ManualScanTask>()`; no `Task.Run` remains. | `ITaskManager.QueueScheduledTask<T>` is present in 10.11.11 and its source locates a registered `IScheduledTask` by concrete type before queueing it. | Supported |
-| New incoming media | `NewMediaPostScanTask` implements `ILibraryPostScanTask`, registers through the plugin service registrator, and only scans after the setting is enabled. | The official template identifies `ILibraryPostScanTask` as the supported post-library-scan extension point. | Supported; needs live hook check |
-| Service registration | `ServiceRegistrator` implements `IPluginServiceRegistrator` with a parameterless constructor and registers plugin services via `IServiceCollection`. | The 10.11.11 API documents that interface specifically for plugin DI registration. | Supported |
-| Scan status and remaining estimate | An in-memory singleton state store reports current item, completion, and elapsed-rate estimate to the page. | This is ordinary plugin service logic; Jellyfin supplies the task `IProgress<double>` channel, while the richer estimate is plugin-owned. | Supported design; estimate needs live accuracy check |
-| Backups and undo | Complete tag snapshots are JSON files under the plugin `DataFolderPath`; restore uses the supported library update API. | `BasePlugin.DataFolderPath` and `UpdateItemAsync` are supported APIs. | Supported; restore is intentionally destructive and requires confirmation |
-| Library overview and filters | Overview re-reads the selected libraries through `ILibraryManager.GetItemList`; filters are server-side. | Same supported library query API as scanning. | Supported |
-| Browser page behavior | The embedded page calls only this plugin's custom authorized endpoints. JSON reads use `ApiClient.getJSON`, the exact Jellyfin Web 10.11.11 helper that parses JSON GET responses; writes use `ApiClient.ajax`. It no longer depends on the dashboard's internal `Library/VirtualFolders` or plugin-configuration endpoint. | The custom-controller approach is documented by the official plugin template, and `jellyfin-web` 10.11.11's `src/utils/fetch.js` defines the `getJSON`/JSON parsing behavior. | Supported; needs live check |
+## Plugin and persistence contract
 
-## External data-source audit
+| Surface | Checked implementation | Result |
+| --- | --- | --- |
+| Runtime ABI | The project targets `net9.0` and references `Jellyfin.Controller` and `Jellyfin.Model` `10.11.11`. | Supported; build check required for every release. |
+| Identity and configuration | `Plugin` derives from `BasePlugin<PluginConfiguration>` and uses its stable plugin ID. Every update creates a private configuration copy, calls Jellyfin's `UpdateConfiguration`, and therefore saves through the native configuration path. | Supported. The clone prevents a stale dashboard tab or quota update from replacing unrelated settings. |
+| Dashboard/sidebar page | `IHasWebPages`, embedded `configPage.html`, and `PluginPageInfo.EnableInMainMenu` provide the Dashboard-only entry. | Supported; live visual check required. |
+| Administrator boundary | Every custom controller route uses Jellyfin's `RequiresElevation` policy. | Supported; live authorization check required. |
+| Dashboard HTTP calls | The page uses Jellyfin Web's `ApiClient.getJSON`, `ApiClient.ajax`, and authenticated `getUrl` pattern for logo images. It does not rely on private Dashboard configuration endpoints. | Supported; live browser check required. |
+| Settings saves | Main, API, Provider/Network, individual Provider, individual Network, Genres/Keywords, and Scheduled Tasks have scoped request models and only mutate their own configuration fields. | Supported; live persistence/reload check required. |
+| Credential removal | A blank saved TMDb or Watchmode field now disables that source, matching the dashboard copy and the documented source behavior. | Supported; live check required. |
+| Retired Tag Destination(s) fields | The settings page, request models, and persisted configuration no longer use the two destination fields. A pre-change configuration must still be opened on a real server to confirm Jellyfin ignores those retired XML elements while retaining every remaining setting. | Live check required. |
 
-These are not Jellyfin APIs, so Jellyfin documentation cannot certify them. They
-were checked against the providers' own public documentation instead.
+## Dashboard controls and custom endpoints
 
-| Source | Current implementation | Source rule applied | Result |
-| --- | --- | --- | --- |
-| TMDb | Uses a Bearer API Read Access Token, movie/TV watch-provider endpoints, TV details for `networks`, and the official available-regions endpoint for up to three country choices. | TMDb documents watch-provider availability as country-specific and requires JustWatch attribution. The dashboard includes that attribution. | Supported, subject to each user's TMDb API Read Access Token and data coverage |
-| Watchmode | Uses the documented `X-API-Key` header, IMDb ID accepted by its title-sources endpoint, selected regions, and account-quota usage header. It is queried only when TMDb has no provider result. | Watchmode documents the header as preferred, its title-sources endpoint as accepting IMDb IDs, `regions` as the regional filter, and the quota headers. | Supported, subject to the user's plan/quota |
+| Dashboard area and controls | Jellyfin/API path checked | Result |
+| --- | --- | --- |
+| Main Settings: selected libraries, API settings, logo settings, new-media toggle, scheduled settings, main save | `GetVirtualFolders(true)`, custom authorized settings routes, native configuration update. | Supported; all save/reload combinations require live checks. |
+| Backup Settings: create, list, restore, delete, undo | Plugin data folder for JSON snapshots; restored tags use the same native metadata update as scans. | Supported; restore/undo require live safety checks. |
+| Network and Provider Settings: regions, tag-kind toggles, TV-network app mode, picker search, Select All/None, independent saves, sync actions | Custom routes normalize explicit selections; source catalogs remain transient; tag sync uses the native item update. | Supported; catalog coverage and large-list behavior require live checks. |
+| Genres and Keywords: picker search, Select All/None, save, sync genres, remove plugin keywords | Custom routes plus the same selected-library metadata writer. | Supported; source results and tag effects require live checks. |
+| Collections: scan matches, Select All/None, add collection tags | Selected-library Movie query plus a revalidated direct TMDb collection lookup before each write. | Supported Jellyfin integration; TMDb coverage requires live checks. |
+| View and Edit Tags: overview, filters, expand/collapse, manual edits, save changes | Selected-library `GetItemList` queries and native writes; editing is limited to supported selected items. | Supported; rendering and edit behavior require live checks. |
+| Unknown Providers and Networks: list, See Items, official name, logo upload | Selected-library queries, plugin configuration mappings, and plugin-data logo cache. | Supported; upload/content-type and display checks remain live tests. |
+| Logo Settings: load all, load selected providers, status/progress, delete all, delete selected | Plugin-owned cache and source downloads; cached images use authenticated custom routes. | Supported Jellyfin integration; source availability and browser rendering require live checks. |
+| Scan: selected-library summary, scan all, stop, progress/ETA, scan undo, duplicate backup/scheduled controls | `ITaskManager` queues/cancels a registered `IScheduledTask`; state is plugin-owned and does not replace Jellyfin task progress. | Supported; task startup, cancellation, and ETA accuracy require live checks. |
 
-External references:
+## Metadata, NFO, and background operations
 
-- [TMDb Watch Providers](https://developer.themoviedb.org/reference/movie-watch-providers)
-- [TMDb TV Series Details](https://developer.themoviedb.org/reference/tv-series-details)
-- [Watchmode API documentation](https://api.watchmode.com/docs)
+| Operation | Checked implementation | Result |
+| --- | --- | --- |
+| Every tag write | Scans, selection sync, collection apply, manual edits, backup restore, and undo call `ILibraryManager.UpdateItemAsync(..., MetadataEdit, ...)` once. | Supported. |
+| NFO behavior | The plugin no longer exposes Tag Destination(s) or calls `IProviderManager.SaveMetadataAsync` itself. Jellyfin's normal metadata-update path invokes configured metadata savers, so each library's own metadata settings govern NFO output. | Corrected to supported native behavior; live NFO-on/off checks required. |
+| Selected-library scope | Queries use selected virtual-folder IDs, recursive `InternalItemsQuery`, and only Movie/Series kinds. Empty selection is never treated as all libraries. | Supported; live multi-library checks required. |
+| Backup files | Snapshots live below the plugin `DataFolderPath`, are serialized under a file lock, and do not alter media until an explicit restore/undo. | Supported; disk-permission and restore checks required. |
+| Manual scan task | `ManualScanTask` is a registered `IScheduledTask`; dashboard requests are queued through `ITaskManager`, not detached work. | Supported. |
+| Scheduled refresh | `RefreshAvailabilityTask` implements `IScheduledTask`. Saving scheduled settings explicitly replaces the registered worker's triggers, because Jellyfin otherwise reuses persisted trigger settings rather than re-reading defaults. | Corrected to supported live-task behavior; live schedule check required. |
+| New incoming media | Registered `ILibraryPostScanTask` runs only when enabled and does not break a normal Jellyfin library scan when setup is incomplete. | Supported; live hook check required. |
+| Scan status | A singleton state store reports active title, completed count, totals, tag additions, and safe numeric ETA to the dashboard. | Supported plugin behavior; live accuracy check required. |
+| Logo-download background work | The administrator-started, plugin-owned logo cache loader runs separately from scans and exposes only plugin cache/progress state. It does not alter Jellyfin media metadata or task state. | Live lifecycle check required; Jellyfin has no separate public logo-cache extension point to substitute here. |
 
-## Safety boundaries verified in code
+## External-source boundary
 
-- No API key, server address, backup, build output, or `.DS_Store` file is
-  committed by the repository's ignore rules.
-- API keys are supplied by the administrator in Jellyfin settings, never from a
-  repository file or release manifest. Jellyfin plugin configuration is not an
-  encrypted secret vault; a server administrator who can read plugin settings
-  can read those keys.
-- Source failures, missing TMDb/IMDb IDs, and non-success custom-source
-  responses preserve previously managed tags rather than clearing them.
-- Only `Provider: ` and `Network: ` tags are owned and replaced by this plugin.
-  Other Jellyfin tags remain untouched during normal scans.
-- Every automatic or manual write creates a complete selected-library backup
-  first. A restore replaces every tag list captured by that backup, including
-  tags the plugin did not create; the page warns before restoration.
-- Manual edits are restricted to selected libraries and Movie/Series items.
+TMDb and Watchmode are not Jellyfin APIs. Their title matching, catalog coverage,
+quota limits, and logos are reviewed against their own documentation and remain
+separate from this Jellyfin compatibility result.
 
-## What an audit cannot prove without the test server
+The Jellyfin-facing safeguards are:
 
-The audit establishes that the extension points and APIs used are present and
-matched to 10.11.11. It cannot prove network reachability, the server's actual
-library response, permissions, source credentials, or dashboard rendering from
-this computer. The next live build must specifically verify the library list,
-the new Dashboard sidebar entry, task execution/progress, an incoming-media
-hook, provider queries, manual edits, backup/restore, and failure preservation.
-Those results belong only in [goal-testing.txt](goal-testing.txt), not in the
-project goals.
+- failed source calls and missing external IDs preserve existing managed tags;
+- Watchmode remains the quota-tracked fallback where TMDb does not provide the
+  requested availability result;
+- TMDb calls use the shared request gate and back off on HTTP 429;
+- external logos are optional and cannot prevent media-tag writes.
+
+## Findings that require a live server
+
+The remaining live tests are deliberately tracked in
+[goal-testing.txt](goal-testing.txt). They include installation/update
+persistence, every scoped save control, sidebar placement, source credentials,
+library enumeration, NFO behavior under two library configurations, all scan
+paths, scheduled execution, post-scan incoming-media behavior, logo rendering,
+backup restore, and manual editing.
+
+No item is marked live-passed here until it has been tested on a Jellyfin
+10.11.11 server.

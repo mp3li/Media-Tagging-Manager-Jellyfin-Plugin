@@ -6,6 +6,13 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+### Changed
+
+- Removed **Tag Destination(s)**. Every tag update now uses Jellyfin's one
+  native metadata-update workflow. If a library is configured in Jellyfin to
+  save NFO metadata, Jellyfin controls that output itself; the plugin no longer
+  makes a second direct NFO-save call that could write the same NFO twice.
+
 ## [0.1.0.42-test] - 2026-07-23
 
 ### Fixed

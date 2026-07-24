@@ -12,25 +12,30 @@ public sealed class WatchmodeQuotaTracker
     {
         lock (_lock)
         {
-            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-            if (!TryGetCurrentCycle(configuration, out var cycleStart, out _))
+            var plugin = Plugin.Instance ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            var reserved = false;
+            string? localReason = null;
+            plugin.UpdateConfiguration(configuration =>
             {
-                reason = "Set Watchmode's Quota Resets On date in API Settings before using Watchmode.";
-                return false;
-            }
+                if (!TryGetCurrentCycle(configuration, out var cycleStart, out _))
+                {
+                    localReason = "Set Watchmode's Quota Resets On date in API Settings before using Watchmode.";
+                    return;
+                }
 
-            ResetCycleIfNeeded(configuration, cycleStart);
-            var limit = Math.Max(0, configuration.WatchmodeMonthlyLimit);
-            if (configuration.WatchmodeRequestsUsed + credits > limit)
-            {
-                reason = "The configured Watchmode request limit has been reached for the current 30-day cycle.";
-                return false;
-            }
+                ResetCycleIfNeeded(configuration, cycleStart);
+                var limit = Math.Max(0, configuration.WatchmodeMonthlyLimit);
+                if (configuration.WatchmodeRequestsUsed + credits > limit)
+                {
+                    localReason = "The configured Watchmode request limit has been reached for the current 30-day cycle.";
+                    return;
+                }
 
-            configuration.WatchmodeRequestsUsed += credits;
-            Plugin.Instance?.SaveCurrentConfiguration();
-            reason = null;
-            return true;
+                configuration.WatchmodeRequestsUsed += credits;
+                reserved = true;
+            });
+            reason = localReason;
+            return reserved;
         }
     }
 
@@ -39,19 +44,20 @@ public sealed class WatchmodeQuotaTracker
     {
         lock (_lock)
         {
-            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-            if (!TryGetCurrentCycle(configuration, out var cycleStart, out _))
+            var plugin = Plugin.Instance ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            plugin.UpdateConfiguration(configuration =>
             {
-                return;
-            }
+                if (!TryGetCurrentCycle(configuration, out var cycleStart, out _))
+                {
+                    return;
+                }
 
-            ResetCycleIfNeeded(configuration, cycleStart);
-            if (used is { } serverUsed)
-            {
-                configuration.WatchmodeRequestsUsed = Math.Max(0, serverUsed);
-            }
-
-            Plugin.Instance?.SaveCurrentConfiguration();
+                ResetCycleIfNeeded(configuration, cycleStart);
+                if (used is { } serverUsed)
+                {
+                    configuration.WatchmodeRequestsUsed = Math.Max(0, serverUsed);
+                }
+            });
         }
     }
 
@@ -60,15 +66,16 @@ public sealed class WatchmodeQuotaTracker
     {
         lock (_lock)
         {
-            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            var plugin = Plugin.Instance ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            var configuration = plugin.Configuration;
             if (!TryGetCurrentCycle(configuration, out var cycleStart, out var resetsOn))
             {
                 return new WatchmodeUsageDto(0, Math.Max(0, configuration.WatchmodeMonthlyLimit), string.Empty, string.Empty, false, false);
             }
 
-            if (ResetCycleIfNeeded(configuration, cycleStart))
+            if (!string.Equals(configuration.WatchmodeUsageCycleStart, cycleStart, StringComparison.Ordinal))
             {
-                Plugin.Instance?.SaveCurrentConfiguration();
+                configuration = plugin.UpdateConfiguration(updated => ResetCycleIfNeeded(updated, cycleStart));
             }
 
             var limit = Math.Max(0, configuration.WatchmodeMonthlyLimit);
@@ -81,14 +88,16 @@ public sealed class WatchmodeQuotaTracker
     {
         lock (_lock)
         {
-            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-            if (TryGetCurrentCycle(configuration, out var cycleStart, out _))
+            var plugin = Plugin.Instance ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            plugin.UpdateConfiguration(configuration =>
             {
-                configuration.WatchmodeUsageCycleStart = cycleStart;
-            }
+                if (TryGetCurrentCycle(configuration, out var cycleStart, out _))
+                {
+                    configuration.WatchmodeUsageCycleStart = cycleStart;
+                }
 
-            configuration.WatchmodeRequestsUsed = Math.Max(0, usage);
-            Plugin.Instance?.SaveCurrentConfiguration();
+                configuration.WatchmodeRequestsUsed = Math.Max(0, usage);
+            });
         }
     }
 

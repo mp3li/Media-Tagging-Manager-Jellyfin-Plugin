@@ -119,14 +119,16 @@ Create a complete tag backup for every item in the selected libraries before mak
 
 Backups remain in Jellyfin’s plugin data directory through normal server restarts. Restore is intentionally powerful: it also restores unrelated custom tags to their state at the time of the backup.
 
-#### Tag Destination(s)
+#### Native Jellyfin Metadata Saving
 
-Choose either or both destinations for new plugin-managed tags.
+Every tag change uses Jellyfin's normal metadata-update workflow. The plugin
+does not write metadata directly into media files and does not separately write
+NFO files.
 
-- **Here in Jellyfin** saves tags to Jellyfin’s media metadata database. This is the default.
-- **In my NFO files** uses Jellyfin’s configured NFO metadata saver for every selected library. Each selected library must be configured in Jellyfin to save local NFO metadata; the plugin stops before making changes if one is not.
-
-The plugin never embeds metadata in the media files themselves.
+If a selected library is configured in Jellyfin to save local NFO metadata,
+Jellyfin itself decides whether that normal metadata update is also written to
+the NFO. Configure that behavior in the library's own Jellyfin metadata
+settings; Media Tagging Manager does not override or duplicate it.
 
 #### Select Libraries
 

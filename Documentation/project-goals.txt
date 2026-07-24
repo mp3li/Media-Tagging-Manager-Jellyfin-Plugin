@@ -51,6 +51,9 @@ Acceptance criteria:
 [x] Let an administrator configure TMDb and Watchmode credentials in the
     dashboard, including a Watchmode 30-day quota limit, reset-date input, and
     usage counter.
+[x] Save all tag changes through Jellyfin's native metadata-update workflow;
+    each library's own Jellyfin metadata settings remain the authority for NFO
+    output.
 [x] Explain settings, source behavior, refresh behavior, incoming-media checks,
     and restore risk in the dashboard rather than requiring a config-file or
     terminal workflow.

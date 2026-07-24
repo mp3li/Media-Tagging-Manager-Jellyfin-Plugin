@@ -105,9 +105,7 @@ public sealed class TagBackupManager
             if (item is not null)
             {
                 item.Tags = savedItem.Tags;
-                var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-                _destinations.Validate(configuration, [item.GetTopParent().Id]);
-                await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
+                await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
             }
 
             completed++;

@@ -69,82 +69,156 @@ public sealed class ProviderNetworkController : ControllerBase
         });
     }
 
-    /// <summary>Saves administrator settings without relying on the dashboard plugin-configuration endpoint.</summary>
-    [HttpPost("settings/{scope}")]
-    public IActionResult UpdateSettings(string scope, [FromBody] PluginConfiguration submitted)
+    /// <summary>Saves only Main Settings controls, without accepting stale values from another tab.</summary>
+    [HttpPost("settings/main")]
+    public IActionResult SaveMainSettings([FromBody] MainSettingsRequest submitted)
     {
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
-        var configuration = plugin.Configuration;
-
-        switch (scope)
+        var configuration = plugin.UpdateConfiguration(configuration =>
         {
-            case "main":
-                if (!submitted.SaveTagsToJellyfin && !submitted.SaveTagsToNfoFiles)
-                {
-                    return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");
-                }
-
-                configuration.LibraryIds = submitted.LibraryIds ?? [];
-                configuration.SaveTagsToJellyfin = submitted.SaveTagsToJellyfin;
-                configuration.SaveTagsToNfoFiles = submitted.SaveTagsToNfoFiles;
-                configuration.EnableLogoCaching = submitted.EnableLogoCaching;
-                configuration.LogoCacheLimitMegabytes = Math.Clamp(submitted.LogoCacheLimitMegabytes, 10, 1024);
-                configuration.EnableNewMediaChecks = submitted.EnableNewMediaChecks;
-                configuration.LastIncomingMediaCheckUtc = submitted.EnableNewMediaChecks ? configuration.LastIncomingMediaCheckUtc : null;
-                ApplyScheduledSettings(configuration, submitted);
-                configuration.TmdbApiKey = string.IsNullOrWhiteSpace(submitted.TmdbApiKey) ? configuration.TmdbApiKey : submitted.TmdbApiKey.Trim();
-                configuration.WatchmodeApiKey = string.IsNullOrWhiteSpace(submitted.WatchmodeApiKey) ? configuration.WatchmodeApiKey : submitted.WatchmodeApiKey.Trim();
-                configuration.WatchmodeMonthlyLimit = Math.Max(0, submitted.WatchmodeMonthlyLimit);
-                configuration.WatchmodeQuotaResetsOn = submitted.WatchmodeQuotaResetsOn?.Trim() ?? string.Empty;
-                configuration.WatchmodeRequestsUsed = Math.Max(0, submitted.WatchmodeRequestsUsed);
-                plugin.SaveCurrentConfiguration();
-                _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
-                return Ok(configuration);
-
-            case "providers-networks":
-                configuration.TagProviders = submitted.TagProviders;
-                configuration.TagNetworks = submitted.TagNetworks;
-                configuration.TvNetworkAppTaggingMode = submitted.TvNetworkAppTaggingMode switch
-                {
-                    "NetworkOnly" or "StreamingAppOnly" or "Both" => submitted.TvNetworkAppTaggingMode,
-                    _ => "NetworkOnly"
-                };
-                configuration.Regions = (submitted.Regions ?? [])
-                    .Where(static region => !string.IsNullOrWhiteSpace(region))
-                    .Select(region => region.Trim().ToUpperInvariant())
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .Take(3)
-                    .ToArray();
-                configuration.Region = configuration.Regions.FirstOrDefault() ?? "US";
-                configuration.SelectedProviderNames = NormalizeNames(TagKind.Provider, submitted.SelectedProviderNames ?? []);
-                configuration.SelectedNetworkNames = NormalizeNames(TagKind.Network, submitted.SelectedNetworkNames ?? []);
-                configuration.RestrictProvidersToSelected = submitted.RestrictProvidersToSelected;
-                configuration.RestrictNetworksToSelected = submitted.RestrictNetworksToSelected;
-                plugin.SaveCurrentConfiguration();
-                return Ok(configuration);
-
-            case "genres-keywords":
-                configuration.TagGenres = submitted.TagGenres;
-                configuration.TagKeywords = submitted.TagKeywords;
-                configuration.SelectedGenreNames = NormalizeNames(TagKind.Genre, submitted.SelectedGenreNames ?? []);
-                plugin.SaveCurrentConfiguration();
-                return Ok(configuration);
-
-            case "scheduled-tasks":
-                ApplyScheduledSettings(configuration, submitted);
-                plugin.SaveCurrentConfiguration();
-                return Ok(configuration);
-
-            default:
-                return BadRequest("Unknown settings section.");
-        }
+            configuration.LibraryIds = submitted.LibraryIds ?? [];
+            configuration.EnableLogoCaching = submitted.EnableLogoCaching;
+            configuration.LogoCacheLimitMegabytes = Math.Clamp(submitted.LogoCacheLimitMegabytes, 10, 1024);
+            configuration.EnableNewMediaChecks = submitted.EnableNewMediaChecks;
+            configuration.LastIncomingMediaCheckUtc = submitted.EnableNewMediaChecks ? configuration.LastIncomingMediaCheckUtc : null;
+            ApplyScheduledSettings(configuration, submitted.ReplaceManagedTags, submitted.EnableAutomaticRefresh, submitted.RefreshIntervalHours);
+            ApplyApiSettings(configuration, submitted.TmdbApiKey, submitted.WatchmodeApiKey, submitted.WatchmodeMonthlyLimit, submitted.WatchmodeQuotaResetsOn, submitted.WatchmodeRequestsUsed);
+        });
+        _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
+        SyncScheduledRefreshTrigger(configuration);
+        return Ok(Plugin.Instance!.Configuration);
     }
 
-    private static void ApplyScheduledSettings(PluginConfiguration configuration, PluginConfiguration submitted)
+    /// <summary>Saves only API Settings controls immediately.</summary>
+    [HttpPost("settings/api")]
+    public IActionResult SaveApiSettings([FromBody] ApiSettingsRequest submitted)
     {
-        configuration.ReplaceManagedTags = submitted.ReplaceManagedTags;
-        configuration.EnableAutomaticRefresh = submitted.EnableAutomaticRefresh;
-        configuration.RefreshIntervalHours = Math.Clamp(submitted.RefreshIntervalHours, 6, 8760);
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        var configuration = plugin.UpdateConfiguration(configuration => ApplyApiSettings(configuration, submitted.TmdbApiKey, submitted.WatchmodeApiKey, submitted.WatchmodeMonthlyLimit, submitted.WatchmodeQuotaResetsOn, submitted.WatchmodeRequestsUsed));
+        _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
+        return Ok(Plugin.Instance!.Configuration);
+    }
+
+    /// <summary>Saves only Network and Provider Settings controls.</summary>
+    [HttpPost("settings/providers-networks")]
+    public IActionResult SaveProviderNetworkSettings([FromBody] ProviderNetworkSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        var configuration = plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.TagProviders = submitted.TagProviders;
+            configuration.TagNetworks = submitted.TagNetworks;
+            configuration.TvNetworkAppTaggingMode = submitted.TvNetworkAppTaggingMode switch
+            {
+                "NetworkOnly" or "StreamingAppOnly" or "Both" => submitted.TvNetworkAppTaggingMode,
+                _ => "NetworkOnly"
+            };
+            configuration.Regions = (submitted.Regions ?? [])
+                .Where(static region => !string.IsNullOrWhiteSpace(region))
+                .Select(region => region.Trim().ToUpperInvariant())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(3)
+                .ToArray();
+            configuration.Region = configuration.Regions.FirstOrDefault() ?? "US";
+            configuration.SelectedProviderNames = NormalizeNames(TagKind.Provider, submitted.SelectedProviderNames ?? []);
+            configuration.SelectedNetworkNames = NormalizeNames(TagKind.Network, submitted.SelectedNetworkNames ?? []);
+            // The dashboard always stores an explicit selection. An empty selection
+            // means none, never "everything", which prevents a later save from
+            // silently turning the picker into Select All.
+            configuration.RestrictProvidersToSelected = true;
+            configuration.RestrictNetworksToSelected = true;
+        });
+        return Ok(configuration);
+    }
+
+    /// <summary>Saves only the explicit Provider checklist selection.</summary>
+    [HttpPost("settings/providers")]
+    public IActionResult SaveProviderSelection([FromBody] TagSelectionRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.SelectedProviderNames = NormalizeNames(TagKind.Provider, submitted.Names ?? []);
+            configuration.RestrictProvidersToSelected = true;
+        }));
+    }
+
+    /// <summary>Saves only the explicit Network checklist selection.</summary>
+    [HttpPost("settings/networks")]
+    public IActionResult SaveNetworkSelection([FromBody] TagSelectionRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.SelectedNetworkNames = NormalizeNames(TagKind.Network, submitted.Names ?? []);
+            configuration.RestrictNetworksToSelected = true;
+        }));
+    }
+
+    /// <summary>Saves only Genres and Keywords Settings controls.</summary>
+    [HttpPost("settings/genres-keywords")]
+    public IActionResult SaveGenreKeywordSettings([FromBody] GenreKeywordSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        var configuration = plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.TagGenres = submitted.TagGenres;
+            configuration.TagKeywords = submitted.TagKeywords;
+            configuration.SelectedGenreNames = NormalizeNames(TagKind.Genre, submitted.SelectedGenreNames ?? []);
+        });
+        return Ok(configuration);
+    }
+
+    /// <summary>Saves only Scheduled Tasks controls shared between the two tabs.</summary>
+    [HttpPost("settings/scheduled-tasks")]
+    public IActionResult SaveScheduledTasks([FromBody] ScheduledTasksSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        var configuration = plugin.UpdateConfiguration(configuration => ApplyScheduledSettings(configuration, submitted.ReplaceManagedTags, submitted.EnableAutomaticRefresh, submitted.RefreshIntervalHours));
+        SyncScheduledRefreshTrigger(configuration);
+        return Ok(configuration);
+    }
+
+    /// <summary>
+    /// Applies the plugin's scheduled-refresh controls to Jellyfin's live task worker.
+    /// Jellyfin reads a task's default triggers only when it has no persisted trigger
+    /// configuration, so saving the plugin setting must explicitly replace that
+    /// worker's triggers for a change to take effect immediately.
+    /// </summary>
+    private void SyncScheduledRefreshTrigger(PluginConfiguration configuration)
+    {
+        var worker = _taskManager.ScheduledTasks.FirstOrDefault(task => task.ScheduledTask is RefreshAvailabilityTask);
+        if (worker is null)
+        {
+            return;
+        }
+
+        worker.Triggers = configuration.EnableAutomaticRefresh
+            ? [new TaskTriggerInfo
+            {
+                Type = TaskTriggerInfoType.IntervalTrigger,
+                IntervalTicks = TimeSpan.FromHours(Math.Clamp(configuration.RefreshIntervalHours, 6, 8760)).Ticks
+            }]
+            : [];
+    }
+
+    private static void ApplyScheduledSettings(PluginConfiguration configuration, bool replaceManagedTags, bool enableAutomaticRefresh, int refreshIntervalHours)
+    {
+        configuration.ReplaceManagedTags = replaceManagedTags;
+        configuration.EnableAutomaticRefresh = enableAutomaticRefresh;
+        configuration.RefreshIntervalHours = Math.Clamp(refreshIntervalHours, 6, 8760);
+    }
+
+    private static void ApplyApiSettings(PluginConfiguration configuration, string? tmdbApiKey, string? watchmodeApiKey, int watchmodeMonthlyLimit, string? watchmodeQuotaResetsOn, int watchmodeRequestsUsed)
+    {
+        // The dashboard displays the saved values in its credential fields, so
+        // a submitted blank value is an intentional request to disable that
+        // source rather than a stale tab value that should be retained.
+        configuration.TmdbApiKey = tmdbApiKey?.Trim() ?? string.Empty;
+        configuration.WatchmodeApiKey = watchmodeApiKey?.Trim() ?? string.Empty;
+        configuration.WatchmodeMonthlyLimit = Math.Max(0, watchmodeMonthlyLimit);
+        configuration.WatchmodeQuotaResetsOn = watchmodeQuotaResetsOn?.Trim() ?? string.Empty;
+        configuration.WatchmodeRequestsUsed = Math.Max(0, watchmodeRequestsUsed);
     }
 
     private static string[] NormalizeNames(TagKind kind, IEnumerable<string> names) => names
@@ -293,16 +367,18 @@ public sealed class ProviderNetworkController : ControllerBase
         }
 
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
-        plugin.Configuration.UnknownTagMappings ??= [];
-        plugin.Configuration.UnknownTagMappings.RemoveAll(mapping => string.Equals(mapping.Kind, tagKind.ToString(), StringComparison.OrdinalIgnoreCase)
-            && string.Equals(mapping.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
-        plugin.Configuration.UnknownTagMappings.Add(new Configuration.UnknownTagMapping
+        plugin.UpdateConfiguration(configuration =>
         {
-            Kind = tagKind.ToString(),
-            Name = name.Trim(),
-            OfficialName = request.OfficialName.Trim()
+            configuration.UnknownTagMappings ??= [];
+            configuration.UnknownTagMappings.RemoveAll(mapping => string.Equals(mapping.Kind, tagKind.ToString(), StringComparison.OrdinalIgnoreCase)
+                && string.Equals(mapping.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+            configuration.UnknownTagMappings.Add(new Configuration.UnknownTagMapping
+            {
+                Kind = tagKind.ToString(),
+                Name = name.Trim(),
+                OfficialName = request.OfficialName.Trim()
+            });
         });
-        plugin.SaveCurrentConfiguration();
         return NoContent();
     }
 

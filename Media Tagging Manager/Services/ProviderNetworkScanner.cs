@@ -48,8 +48,6 @@ public sealed class ProviderNetworkScanner
         }
 
         EnsureSourceConfigured(configuration);
-        _destinations.Validate(configuration, [libraryId]);
-
         await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -77,7 +75,6 @@ public sealed class ProviderNetworkScanner
         }
 
         EnsureSourceConfigured(configuration);
-        _destinations.Validate(configuration, libraries);
         await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -118,7 +115,6 @@ public sealed class ProviderNetworkScanner
         try
         {
             EnsureSourceConfigured(configuration);
-            _destinations.Validate(configuration, configuration.LibraryIds);
         }
         catch (InvalidOperationException)
         {
@@ -131,8 +127,8 @@ public sealed class ProviderNetworkScanner
             var startedUtc = DateTime.UtcNow;
             if (configuration.LastIncomingMediaCheckUtc is null)
             {
-                configuration.LastIncomingMediaCheckUtc = startedUtc;
-                Plugin.Instance?.SaveCurrentConfiguration();
+                (Plugin.Instance ?? throw new InvalidOperationException("Plugin configuration is unavailable."))
+                    .UpdateConfiguration(updated => updated.LastIncomingMediaCheckUtc = startedUtc);
                 return;
             }
 
@@ -155,8 +151,8 @@ public sealed class ProviderNetworkScanner
                 await _backups.CreateAsync("Before incoming-media update", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
                 await ScanItemsAsync(candidates, configuration, progress, cancellationToken).ConfigureAwait(false);
             }
-            configuration.LastIncomingMediaCheckUtc = startedUtc;
-            Plugin.Instance?.SaveCurrentConfiguration();
+            (Plugin.Instance ?? throw new InvalidOperationException("Plugin configuration is unavailable."))
+                .UpdateConfiguration(updated => updated.LastIncomingMediaCheckUtc = startedUtc);
         }
         catch (Exception exception)
         {
@@ -184,7 +180,6 @@ public sealed class ProviderNetworkScanner
             }
 
             var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-            _destinations.Validate(configuration, [libraryId]);
 
             await _backups.CreateAsync("Before manual tag edit", [libraryId], cancellationToken).ConfigureAwait(false);
             var tags = providers.Where(static value => !string.IsNullOrWhiteSpace(value)).Select(value => new SourceTag(TagKind.Provider, value, "Manual"))
@@ -341,31 +336,33 @@ public sealed class ProviderNetworkScanner
                 throw new InvalidOperationException("Select and save at least one library before synchronizing tags.");
             }
 
-            _destinations.Validate(configuration, configuration.LibraryIds);
-
             var selected = NormalizeNames(kind, selectedNames);
-            if (kind == TagKind.Provider)
-            {
-                configuration.SelectedProviderNames = selected;
-                configuration.RestrictProvidersToSelected = true;
-            }
-            else if (kind == TagKind.Network)
-            {
-                configuration.SelectedNetworkNames = selected;
-                configuration.RestrictNetworksToSelected = true;
-            }
-            else if (kind == TagKind.Genre)
-            {
-                configuration.SelectedGenreNames = selected;
-                configuration.TagGenres = true;
-            }
-            else if (kind != TagKind.Keyword)
+            if (kind != TagKind.Provider && kind != TagKind.Network && kind != TagKind.Genre && kind != TagKind.Keyword)
             {
                 throw new InvalidOperationException("Only Provider, Network, and Genre tags have selectable sync lists.");
             }
 
+            configuration = (Plugin.Instance ?? throw new InvalidOperationException("Plugin configuration is unavailable."))
+                .UpdateConfiguration(updated =>
+                {
+                    if (kind == TagKind.Provider)
+                    {
+                        updated.SelectedProviderNames = selected;
+                        updated.RestrictProvidersToSelected = true;
+                    }
+                    else if (kind == TagKind.Network)
+                    {
+                        updated.SelectedNetworkNames = selected;
+                        updated.RestrictNetworksToSelected = true;
+                    }
+                    else if (kind == TagKind.Genre)
+                    {
+                        updated.SelectedGenreNames = selected;
+                        updated.TagGenres = true;
+                    }
+                });
+
             await _backups.CreateAsync($"Before {kind.ToString().ToLowerInvariant()} selection sync", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
-            Plugin.Instance?.SaveCurrentConfiguration();
 
             var tagsRemoved = 0;
             var mediaItemsChanged = 0;
@@ -395,7 +392,7 @@ public sealed class ProviderNetworkScanner
                     }
 
                     item.Tags = retained;
-                    await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
+                    await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
                     tagsRemoved += removed;
                     mediaItemsChanged++;
                 }
@@ -464,7 +461,6 @@ public sealed class ProviderNetworkScanner
         try
         {
             var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
-            _destinations.Validate(configuration, configuration.LibraryIds);
             var tmdb = _sources.OfType<TmdbAvailabilitySource>().FirstOrDefault()
                 ?? throw new InvalidOperationException("TMDb is unavailable.");
             await _backups.CreateAsync("Before selected collection tags", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
@@ -495,7 +491,7 @@ public sealed class ProviderNetworkScanner
                 }
 
                 item.Tags = (item.Tags ?? []).Append(tag).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-                await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
+                await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
                 changed++;
                 added++;
             }
@@ -517,13 +513,31 @@ public sealed class ProviderNetworkScanner
             item.GetType().Name);
 
         var results = new List<SourceLookupResult>();
+        SourceLookupResult? tmdbAvailability = null;
+        SourceLookupResult? watchmodeAvailability = null;
         var tmdb = _sources.FirstOrDefault(source => string.Equals(source.Name, "TMDb", StringComparison.Ordinal));
         if (tmdb is not null)
         {
-            results.Add(await LookupSafelyAsync(tmdb, ids, cancellationToken).ConfigureAwait(false));
+            tmdbAvailability = await LookupSafelyAsync(tmdb, ids, cancellationToken).ConfigureAwait(false);
+            results.Add(tmdbAvailability);
             if (tmdb is TmdbAvailabilitySource tmdbMetadata)
             {
-                results.Add(await tmdbMetadata.LookupClassificationsAsync(ids, configuration.TagGenres, configuration.TagKeywords, cancellationToken).ConfigureAwait(false));
+                try
+                {
+                    results.Add(await tmdbMetadata.LookupClassificationsAsync(ids, configuration.TagGenres, configuration.TagKeywords, cancellationToken).ConfigureAwait(false));
+                }
+                catch (HttpRequestException exception)
+                {
+                    results.Add(new SourceLookupResult(tmdb.Name, [], exception.Message));
+                }
+                catch (JsonException exception)
+                {
+                    results.Add(new SourceLookupResult(tmdb.Name, [], exception.Message));
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    results.Add(new SourceLookupResult(tmdb.Name, [], exception.Message));
+                }
             }
         }
 
@@ -537,7 +551,8 @@ public sealed class ProviderNetworkScanner
         var needsNetworkFallback = configuration.TagNetworks && item is Series && !primaryNetworksFound;
         if ((needsProviderFallback || needsNetworkFallback) && watchmode is not null)
         {
-            results.Add(await LookupSafelyAsync(watchmode, ids, cancellationToken).ConfigureAwait(false));
+            watchmodeAvailability = await LookupSafelyAsync(watchmode, ids, cancellationToken).ConfigureAwait(false);
+            results.Add(watchmodeAvailability);
         }
 
         var tags = results
@@ -546,13 +561,36 @@ public sealed class ProviderNetworkScanner
                 || (tag.Kind == TagKind.Provider && !primaryProvidersFound)
                 || (tag.Kind == TagKind.Network && !primaryNetworksFound))
             .ToArray();
+        // An empty successful availability result is meaningful: the title is
+        // not currently available in the configured regions. Only remove stale
+        // Provider/Network tags for kinds backed by a successful title lookup;
+        // an unavailable source, missing external ID, or failed request must
+        // leave earlier tags alone.
+        var successfulTmdbAvailability = tmdbAvailability is { Note: null }
+            && !string.IsNullOrWhiteSpace(configuration.TmdbApiKey)
+            && !string.IsNullOrWhiteSpace(ids.Tmdb);
+        var successfulWatchmodeAvailability = watchmodeAvailability is { Note: null }
+            && !string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey)
+            && !string.IsNullOrWhiteSpace(ids.Imdb);
+        var replacementKinds = new List<TagKind>();
+        if (configuration.TagProviders && (successfulTmdbAvailability || (needsProviderFallback && successfulWatchmodeAvailability)))
+        {
+            replacementKinds.Add(TagKind.Provider);
+        }
+
+        if (configuration.TagNetworks && item is Series && (successfulTmdbAvailability || (needsNetworkFallback && successfulWatchmodeAvailability)))
+        {
+            replacementKinds.Add(TagKind.Network);
+        }
+
         await ApplyTagsAsync(
             item,
             libraryId,
             tags,
             results.Select(result => result.Source),
-            results.All(result => string.IsNullOrWhiteSpace(result.Note)),
-            cancellationToken).ConfigureAwait(false);
+            replacementKinds.Count > 0,
+            cancellationToken,
+            replaceKinds: replacementKinds).ConfigureAwait(false);
         return tags;
     }
 
@@ -707,8 +745,15 @@ public sealed class ProviderNetworkScanner
                     && configuration.RestrictNetworksToSelected
                     && !selectedNetworkNames.Contains(TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind)))))
             : existing;
-        item.Tags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-        await _destinations.SaveAsync(item, configuration, cancellationToken).ConfigureAwait(false);
+        var updatedTags = retained.Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        // Do not ask Jellyfin to write the database or local metadata for titles
+        // whose tags did not actually change. Besides avoiding needless work on
+        // a full scan, this prevents an unchanged title from touching its NFO.
+        if (!existing.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(updatedTags))
+        {
+            item.Tags = updatedTags;
+            await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
+        }
         _state.RecordTagAdditions(tagsAdded);
         _state.Save(ToDto(item, libraryId, DateTimeOffset.UtcNow, sources));
     }
@@ -739,25 +784,19 @@ public sealed class ProviderNetworkScanner
     {
         lock (_knownTagLock)
         {
-            var configuration = Plugin.Instance?.Configuration;
-            if (configuration is null)
+            var plugin = Plugin.Instance;
+            if (plugin is null)
             {
                 return;
             }
 
-            var knownProviders = configuration.KnownProviderNames ?? [];
-            var knownNetworks = configuration.KnownNetworkNames ?? [];
-            var updatedProviders = knownProviders.Concat(providers).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
-            var updatedNetworks = knownNetworks.Concat(networks).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
-            if (updatedProviders.SequenceEqual(knownProviders, StringComparer.OrdinalIgnoreCase)
-                && updatedNetworks.SequenceEqual(knownNetworks, StringComparer.OrdinalIgnoreCase))
+            plugin.UpdateConfiguration(configuration =>
             {
-                return;
-            }
-
-            configuration.KnownProviderNames = updatedProviders;
-            configuration.KnownNetworkNames = updatedNetworks;
-            Plugin.Instance?.SaveCurrentConfiguration();
+                var knownProviders = configuration.KnownProviderNames ?? [];
+                var knownNetworks = configuration.KnownNetworkNames ?? [];
+                configuration.KnownProviderNames = knownProviders.Concat(providers).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+                configuration.KnownNetworkNames = knownNetworks.Concat(networks).Where(static name => !string.IsNullOrWhiteSpace(name)).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+            });
         }
     }
 
