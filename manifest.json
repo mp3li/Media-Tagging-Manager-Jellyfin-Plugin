@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.39",
-        "changelog": "0.1.0.39-test adds a direct API Settings save, keeps Main Settings from changing Provider/Network selections, preserves saved credentials against blank non-credential saves, and refreshes cached logos in the dashboard. Test only; not a stable release.",
+        "version": "0.1.0.40",
+        "changelog": "0.1.0.40-test stops the Watchmode quota-reset date from blocking unrelated settings saves, improves save errors, clarifies scan totals, and fixes authenticated picker-logo refresh URLs. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.39-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.39-test.zip",
-        "checksum": "0dbf3d9c37803bbcf3236723476f037a",
-        "timestamp": "2026-07-24T03:57:46Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.40-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.40-test.zip",
+        "checksum": "b420304b9c7a543f6905c1b6733ce479",
+        "timestamp": "2026-07-24T04:32:46Z"
       }
     ]
   }

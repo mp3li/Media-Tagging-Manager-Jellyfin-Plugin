@@ -90,17 +90,6 @@ public sealed class ProviderNetworkController : ControllerBase
             return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");
         }
 
-        if (!string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey)
-            && !DateOnly.TryParseExact(
-                configuration.WatchmodeQuotaResetsOn,
-                "yyyy-MM-dd",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None,
-                out _))
-        {
-            return BadRequest("Enter Watchmode's Quota Resets On date in YYYY-MM-DD format before saving a Watchmode API key.");
-        }
-
         configuration.TvNetworkAppTaggingMode = configuration.TvNetworkAppTaggingMode switch
         {
             "NetworkOnly" or "StreamingAppOnly" or "Both" => configuration.TvNetworkAppTaggingMode,

@@ -552,3 +552,10 @@ completed progress bar remained blue. Version 0.1.0.39-test separates Main
 Settings from Provider/Network selections, preserves saved credentials when a
 non-credential save posts empty values, adds Save API Settings, and refreshes
 logo URLs after a completed load. Retest required.
+2026-07-23 | Settings saves and picker-logo display | Fail; fix pending
+retest | Jellyfin 10.11.11, plugin 0.1.0.39-test | Provider/Network and
+Genres/Keywords saves failed with a generic error because an unset Watchmode
+quota-reset date blocked every settings POST. The logo loader completed, but
+logos remained absent from pickers. Version 0.1.0.40-test makes the quota date
+non-blocking for unrelated settings and preserves Jellyfin's authenticated logo
+URL while refreshing cached images. Retest required.

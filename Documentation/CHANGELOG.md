@@ -6,6 +6,24 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.40-test] - 2026-07-23
+
+### Fixed
+
+- Stopped the Watchmode quota-reset date from blocking unrelated settings saves.
+  Watchmode remains safely unavailable until that date is set, but API,
+  Provider/Network, Genre, and other settings can now save independently.
+- Improved dashboard error text when a settings request fails.
+- Clarified scan completion totals: all selected-library items are checked,
+  while only items receiving new tags are counted as changed.
+- Corrected picker-logo refresh URLs so Jellyfin authentication parameters are
+  retained when a cached logo is refreshed after loading.
+
+### Test-release notes
+
+- This supersedes `0.1.0.39-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.39-test] - 2026-07-23
 
 ### Fixed
