@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.43",
-        "changelog": "0.1.0.43-test fixes native Jellyfin metadata saving so NFO output follows each library's Jellyfin settings without a duplicate plugin write. It also includes scoped settings-persistence reliability fixes. Test only; not a stable release.",
+        "version": "0.1.0.44",
+        "changelog": "0.1.0.44-test fixes Watchmode usage saving: correcting quota information no longer reloads source catalogs or spends API requests. Catalogs refresh only when a credential changes. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.43-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.43-test.zip",
-        "checksum": "4a8d40d416600c2f256e5a48f1c8b5fb",
-        "timestamp": "2026-07-24T20:23:51Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.44-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.44-test.zip",
+        "checksum": "54491de94dd4709322dd1f7ed03f98f4",
+        "timestamp": "2026-07-24T20:37:31Z"
       }
     ]
   }

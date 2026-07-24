@@ -82,9 +82,15 @@ public sealed class ProviderNetworkController : ControllerBase
             configuration.EnableNewMediaChecks = submitted.EnableNewMediaChecks;
             configuration.LastIncomingMediaCheckUtc = submitted.EnableNewMediaChecks ? configuration.LastIncomingMediaCheckUtc : null;
             ApplyScheduledSettings(configuration, submitted.ReplaceManagedTags, submitted.EnableAutomaticRefresh, submitted.RefreshIntervalHours);
-            ApplyApiSettings(configuration, submitted.TmdbApiKey, submitted.WatchmodeApiKey, submitted.WatchmodeMonthlyLimit, submitted.WatchmodeQuotaResetsOn, submitted.WatchmodeRequestsUsed);
+            if (submitted.UpdateApiSettings)
+            {
+                ApplyApiSettings(configuration, submitted.TmdbApiKey, submitted.WatchmodeApiKey, submitted.WatchmodeMonthlyLimit, submitted.WatchmodeQuotaResetsOn, submitted.WatchmodeRequestsUsed);
+            }
         });
-        _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
+        if (submitted.UpdateApiSettings)
+        {
+            _watchmodeQuota.SetManualUsage(configuration.WatchmodeRequestsUsed);
+        }
         SyncScheduledRefreshTrigger(configuration);
         return Ok(Plugin.Instance!.Configuration);
     }

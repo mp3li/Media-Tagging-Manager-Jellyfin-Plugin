@@ -4,6 +4,15 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.44-test] - 2026-07-24
+
+### Fixed
+
+- Correcting Watchmode quota details or **Current API Usage** no longer reloads
+  source catalogs or makes Watchmode requests. Catalogs refresh only after a
+  changed TMDb token or Watchmode API key. An unrelated Main Settings save also
+  preserves API and quota values unless those controls were edited.
+
 ## [0.1.0.43-test] - 2026-07-24
 
 ### Fixed

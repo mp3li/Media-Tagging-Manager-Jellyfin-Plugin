@@ -97,6 +97,12 @@ Acceptance criteria:
 [ ] Confirm Main Settings, Network and Provider Settings, Logo Settings, and
     Scan Scheduled Tasks Settings each save their intended configuration without
     overwriting unrelated saved settings.
+[ ] Enter the Watchmode account's current usage, then save only API Settings.
+    Confirm the saved count persists and that the Watchmode account count does
+    not increase because source catalogs were not reloaded.
+[ ] Change only the TMDb token or Watchmode API key, save API Settings, and
+    confirm the relevant source catalogs refresh. Confirm a Main Settings save
+    that does not edit API controls preserves the current quota count.
 [ ] Confirm the Genres and Keywords Settings tab opens without an error and
     saves its settings without overwriting unrelated configuration.
 

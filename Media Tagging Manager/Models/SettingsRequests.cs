@@ -27,6 +27,9 @@ public sealed class MainSettingsRequest
     public string? WatchmodeQuotaResetsOn { get; set; }
     /// <summary>Gets or sets the current Watchmode request usage.</summary>
     public int WatchmodeRequestsUsed { get; set; }
+
+    /// <summary>Gets or sets whether the Main Settings save should also apply edited API controls.</summary>
+    public bool UpdateApiSettings { get; set; }
 }
 
 /// <summary>Only the API-credential controls saved by the immediate API Settings button.</summary>
