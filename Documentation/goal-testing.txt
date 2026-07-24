@@ -84,6 +84,9 @@ Acceptance criteria:
 [ ] Confirm an unselected library is absent from Scan controls and is never
     changed by Scan all selected libraries.
 [ ] Confirm up to three TMDb availability-country selections save and reload.
+[ ] Select three availability countries, save Network and Provider Settings,
+    wait for the country list to finish loading, then hard-refresh the dashboard.
+    Confirm all three selections remain selected.
 [ ] Confirm provider-only mode saves and reloads.
 [ ] Confirm network-only mode saves and reloads.
 [ ] Confirm combined provider-and-network mode saves and reloads.
@@ -97,6 +100,10 @@ Acceptance criteria:
 [ ] Confirm Main Settings, Network and Provider Settings, Logo Settings, and
     Scan Scheduled Tasks Settings each save their intended configuration without
     overwriting unrelated saved settings.
+[ ] Save Provider selections with the dedicated button, then use Save Network
+    and Provider Settings. Confirm the saved Provider selections remain checked
+    after source catalogs redraw and after a hard refresh.
+[ ] Repeat the preceding test for Network selections and for Genre selections.
 [ ] Enter the Watchmode account's current usage, then save only API Settings.
     Confirm the saved count persists and that the Watchmode account count does
     not increase because source catalogs were not reloaded.

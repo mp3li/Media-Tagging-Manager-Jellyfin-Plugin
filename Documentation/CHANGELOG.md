@@ -4,6 +4,15 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.45-test] - 2026-07-24
+
+### Fixed
+
+- Preserved in-progress and saved Provider, Network, Genre, and three-country
+  availability selections when a source catalog or country list redraws.
+  Bottom-of-tab saves now use stable selection state rather than a transient
+  picker DOM snapshot.
+
 ## [0.1.0.44-test] - 2026-07-24
 
 ### Fixed
