@@ -85,6 +85,12 @@ public sealed class ProviderNetworkController : ControllerBase
             ? plugin.Configuration.WatchmodeApiKey
             : configuration.WatchmodeApiKey.Trim();
 
+        // Picker catalogs are transient source data, not administrator
+        // settings. Never accept their large/untrusted name arrays from a
+        // dashboard POST; retain only names discovered from actual scans.
+        configuration.KnownProviderNames = plugin.Configuration.KnownProviderNames ?? [];
+        configuration.KnownNetworkNames = plugin.Configuration.KnownNetworkNames ?? [];
+
         if (!configuration.SaveTagsToJellyfin && !configuration.SaveTagsToNfoFiles)
         {
             return BadRequest("Select at least one tag destination: Here in Jellyfin or In my NFO files.");

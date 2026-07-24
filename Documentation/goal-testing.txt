@@ -559,3 +559,9 @@ quota-reset date blocked every settings POST. The logo loader completed, but
 logos remained absent from pickers. Version 0.1.0.40-test makes the quota date
 non-blocking for unrelated settings and preserves Jellyfin's authenticated logo
 URL while refreshing cached images. Retest required.
+2026-07-23 | Provider/Network and Genre settings persistence | Fail; fix
+pending retest | Jellyfin 10.11.11, plugin 0.1.0.40-test | Saving Provider,
+Network, or Genre choices still failed after opening the large picker catalogs.
+The picker code was adding complete source catalogs to the dashboard
+configuration payload. Version 0.1.0.41-test saves only administrator-selected
+names and rejects dashboard-supplied catalog arrays. Retest required.

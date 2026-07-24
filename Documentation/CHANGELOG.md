@@ -6,6 +6,21 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+## [0.1.0.41-test] - 2026-07-23
+
+### Fixed
+
+- Stopped Provider/Network picker catalogs from being written into Jellyfin's
+  saved plugin configuration. Only administrator-selected Provider and Network
+  names are now saved; full source catalogs remain temporary picker data.
+- Protected the settings endpoint from accepting dashboard-supplied catalog
+  arrays, preserving only names discovered by actual title scans.
+
+### Test-release notes
+
+- This supersedes `0.1.0.40-test` and remains a public test build, not a
+  stable release.
+
 ## [0.1.0.40-test] - 2026-07-23
 
 ### Fixed
