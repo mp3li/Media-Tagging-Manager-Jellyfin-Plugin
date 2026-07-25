@@ -21,6 +21,7 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<LogoLoadStateStore>();
         serviceCollection.AddSingleton<NetworkCatalogCache>();
         serviceCollection.AddSingleton<CastCrewStateStore>();
+        serviceCollection.AddSingleton<MoreLikeThisStateStore>();
         serviceCollection.AddSingleton<CastCrewChangeStore>();
         serviceCollection.AddSingleton<CastCrewOwnershipStore>();
         serviceCollection.AddSingleton<CastCrewManager>();
@@ -28,9 +29,11 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<ProviderNetworkScanner>();
         serviceCollection.AddSingleton<ManualScanRequestQueue>();
         serviceCollection.AddSingleton<CastCrewPhotoScanRequestQueue>();
+        serviceCollection.AddSingleton<MoreLikeThisScanRequestQueue>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, RefreshAvailabilityTask>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, ManualScanTask>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, CastCrewPhotoScanTask>();
+        serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, MoreLikeThisScanTask>();
         serviceCollection.AddSingleton<MediaBrowser.Controller.Library.ILibraryPostScanTask, NewMediaPostScanTask>();
         serviceCollection.AddHttpClient<TmdbAvailabilitySource>();
         serviceCollection.AddHttpClient<WatchmodeAvailabilitySource>();

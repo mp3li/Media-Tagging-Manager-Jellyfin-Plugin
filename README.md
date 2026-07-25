@@ -288,6 +288,21 @@ into a separate plugin-owned cache. The image cache is capped at 5 MB per
 poster and at the configurable total limit (100 MB by default); it does not
 alter Jellyfin posters or media files. You may enable one or both options.
 
+#### Load Recommendations and Similar Titles
+
+Use **Load Recommendations and Similar Titles** to fetch relationship data for
+selected-library Movies and Series that do not already have a saved record,
+without running the full tag scan. Save this tab first. **Sync Recommendations
+and Similar Titles** rechecks every saved selected-library record and removes
+relationships TMDb no longer returns. A normal full or incoming-media scan
+also refreshes enabled relationship data.
+
+**Remove Recommendations and Similar Titles** removes only this plugin’s
+stored relationship records for the selected libraries. It never changes
+Jellyfin tags, NFO files, media, Jellyfin posters, or the optional poster cache.
+The dedicated load/sync task shows Jellyfin-managed progress and a completion
+summary.
+
 #### Recommendations and Similar Titles Additions and Removals
 
 This collapsed overview groups current saved relationships by library. It shows

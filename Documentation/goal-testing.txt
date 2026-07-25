@@ -180,6 +180,18 @@ More Like This Settings
     confirm only selected-library Movies and Series with TMDb IDs receive
     saved direct TMDb relationship records. Confirm no Jellyfin tags, NFO
     fields, media files, posters, or watch-history data are changed.
+[ ] Save More Like This Settings, use Load Recommendations and Similar Titles,
+    and confirm it queues a dedicated Jellyfin task that only processes saved
+    selected-library Movies and Series without running Provider, Network,
+    Genre, Keyword, Collection, or Cast/Crew changes.
+[ ] Use Sync Recommendations and Similar Titles after an initial load and
+    confirm it refreshes every saved selected-library record, displays progress
+    and a completion summary, adds new TMDb relationship titles, and shows
+    removed title relationships in the saved removal color.
+[ ] Use Remove Recommendations and Similar Titles and confirm it removes only
+    plugin-stored selected-library relationship records, leaves tags/NFO/media
+    unchanged, retains the optional poster cache, and does not affect an
+    unselected library.
 [ ] With Save image links to save space enabled, confirm the overview displays
     returned TMDb posters and the saved relationship data retains poster links
     without filling the local poster cache.

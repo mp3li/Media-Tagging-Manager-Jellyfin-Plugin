@@ -31,6 +31,8 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly CastCrewManager _castCrew;
     private readonly CastCrewPhotoScanRequestQueue _castCrewPhotoRequests;
     private readonly MoreLikeThisManager _moreLikeThis;
+    private readonly MoreLikeThisStateStore _moreLikeThisState;
+    private readonly MoreLikeThisScanRequestQueue _moreLikeThisRequests;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -48,7 +50,9 @@ public sealed class ProviderNetworkController : ControllerBase
         NetworkCatalogCache networkCatalog,
         CastCrewManager castCrew,
         CastCrewPhotoScanRequestQueue castCrewPhotoRequests,
-        MoreLikeThisManager moreLikeThis)
+        MoreLikeThisManager moreLikeThis,
+        MoreLikeThisStateStore moreLikeThisState,
+        MoreLikeThisScanRequestQueue moreLikeThisRequests)
     {
         _scanner = scanner;
         _state = state;
@@ -65,6 +69,8 @@ public sealed class ProviderNetworkController : ControllerBase
         _castCrew = castCrew;
         _castCrewPhotoRequests = castCrewPhotoRequests;
         _moreLikeThis = moreLikeThis;
+        _moreLikeThisState = moreLikeThisState;
+        _moreLikeThisRequests = moreLikeThisRequests;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -378,6 +384,46 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("more-like-this/images/status")]
     public async Task<ActionResult<MoreLikeThisImageCacheStatus>> GetMoreLikeThisPosterStatus(CancellationToken cancellationToken) =>
         Ok(await _moreLikeThis.GetImageCacheStatusAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Returns dedicated relationship load or synchronization status for dashboard polling.</summary>
+    [HttpGet("more-like-this/status")]
+    public ActionResult<MoreLikeThisScanProgress> GetMoreLikeThisStatus() => Ok(_moreLikeThisState.GetProgress());
+
+    /// <summary>Queues a selected-library initial relationship load or a full relationship synchronization through Jellyfin's task manager.</summary>
+    [HttpPost("more-like-this/{action}")]
+    public IActionResult StartMoreLikeThisAction(string action)
+    {
+        var validationError = _moreLikeThis.GetScanValidationError();
+        if (validationError is not null)
+        {
+            return BadRequest(validationError);
+        }
+
+        switch (action.Trim().ToLowerInvariant())
+        {
+            case "load":
+                _moreLikeThisRequests.EnqueueLoad();
+                _moreLikeThisState.Queue("Loading Recommendations and Similar Titles");
+                break;
+            case "sync":
+                _moreLikeThisRequests.EnqueueSync();
+                _moreLikeThisState.Queue("Synchronizing Recommendations and Similar Titles");
+                break;
+            default:
+                return BadRequest("Choose Load or Sync for Recommendations and Similar Titles.");
+        }
+
+        _taskManager.QueueScheduledTask<MoreLikeThisScanTask>();
+        return Accepted();
+    }
+
+    /// <summary>Removes only plugin-stored selected-library relationship records without changing Jellyfin metadata.</summary>
+    [HttpDelete("more-like-this")]
+    public async Task<ActionResult<object>> RemoveMoreLikeThis(CancellationToken cancellationToken)
+    {
+        var removed = await _moreLikeThis.RemoveConfiguredLibraryRecordsAsync(cancellationToken).ConfigureAwait(false);
+        return Ok(new { RecordsRemoved = removed });
+    }
 
     /// <summary>Queues the administrator-requested photo-only scan through Jellyfin's task manager.</summary>
     [HttpPost("cast-crew/photos/scan")]

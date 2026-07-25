@@ -4,6 +4,17 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.58-test] - 2026-07-25
+
+### Added
+
+- Added a dedicated Jellyfin-managed **Load Recommendations and Similar
+  Titles** action, so selected-library TMDb relationship data can be populated
+  without running the full tag scan.
+- Added **Sync Recommendations and Similar Titles**, record-only removal,
+  progress, and completion feedback. Sync refreshes existing selected-library
+  records and retains exact removed titles for the colored overview.
+
 ## [0.1.0.57-test] - 2026-07-25
 
 ### Added

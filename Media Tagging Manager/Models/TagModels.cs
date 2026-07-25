@@ -309,6 +309,31 @@ public sealed record MoreLikeThisOverviewItemDto(
 /// <summary>Current More Like This poster-cache usage.</summary>
 public sealed record MoreLikeThisImageCacheStatus(int Count, long Bytes, int LimitMegabytes);
 
+/// <summary>Progress and result details for the dedicated More Like This selected-library action.</summary>
+public sealed class MoreLikeThisScanProgress
+{
+    /// <summary>Gets or sets whether a dedicated relationship load or sync is running.</summary>
+    public bool IsRunning { get; set; }
+
+    /// <summary>Gets or sets the selected-library items planned for this action.</summary>
+    public int TotalItems { get; set; }
+
+    /// <summary>Gets or sets the selected-library items inspected.</summary>
+    public int CompletedItems { get; set; }
+
+    /// <summary>Gets or sets the number of items whose relationship record was created or refreshed.</summary>
+    public int RecordsSaved { get; set; }
+
+    /// <summary>Gets or sets the number of recommendation titles currently saved by the action.</summary>
+    public int RecommendationsSaved { get; set; }
+
+    /// <summary>Gets or sets the number of similar titles currently saved by the action.</summary>
+    public int SimilarTitlesSaved { get; set; }
+
+    /// <summary>Gets or sets the current administrator-facing action status.</summary>
+    public string Message { get; set; } = "No Recommendation or Similar Title action is currently running.";
+}
+
 /// <summary>A dashboard-facing summary of one library item.</summary>
 public sealed record TaggedItemDto(
     Guid ItemId,

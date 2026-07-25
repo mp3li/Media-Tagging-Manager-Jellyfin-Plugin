@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.MediaTaggingManager.Models;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -16,32 +17,34 @@ public sealed class MoreLikeThisManager
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly ILibraryManager _libraryManager;
     private readonly TmdbAvailabilitySource _tmdb;
+    private readonly MoreLikeThisStateStore _state;
     private readonly SemaphoreSlim _storeLock = new(1, 1);
     private readonly SemaphoreSlim _posterLock = new(1, 1);
 
     /// <summary>Initializes a new instance of the <see cref="MoreLikeThisManager"/> class.</summary>
-    public MoreLikeThisManager(ILibraryManager libraryManager, TmdbAvailabilitySource tmdb)
+    public MoreLikeThisManager(ILibraryManager libraryManager, TmdbAvailabilitySource tmdb, MoreLikeThisStateStore state)
     {
         _libraryManager = libraryManager;
         _tmdb = tmdb;
+        _state = state;
     }
 
     /// <summary>Gets whether a normal scan has any More Like This work enabled.</summary>
     public static bool IsConfigured(Configuration.PluginConfiguration configuration) => configuration.AddRecommendations || configuration.AddSimilarTitles;
 
     /// <summary>Refreshes the enabled TMDb direct relationship lists for one selected-library Movie or Series.</summary>
-    public async Task ApplyConfiguredAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
+    public async Task<MoreLikeThisItemResult> ApplyConfiguredAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
         if (!IsConfigured(configuration) || item is not Movie && item is not Series)
         {
-            return;
+            return MoreLikeThisItemResult.Empty;
         }
 
         var ids = new ExternalIds(GetProviderId(item, "Tmdb"), GetProviderId(item, "Imdb"), item.GetType().Name);
         if (string.IsNullOrWhiteSpace(ids.Tmdb))
         {
-            return;
+            return MoreLikeThisItemResult.Empty;
         }
 
         TmdbRelatedTitlesResult result;
@@ -53,17 +56,17 @@ public sealed class MoreLikeThisManager
         {
             // Relationship data is optional. A temporary TMDb outage must not
             // cancel Provider/Network, genre, keyword, or people updates.
-            return;
+            return MoreLikeThisItemResult.Empty;
         }
         catch (JsonException)
         {
             // Keep existing stored relationships if TMDb returns one malformed
             // relationship response rather than treating it as an empty list.
-            return;
+            return MoreLikeThisItemResult.Empty;
         }
         if (!string.IsNullOrWhiteSpace(result.Note))
         {
-            return;
+            return MoreLikeThisItemResult.Empty;
         }
 
         var recommendations = await PrepareTitlesAsync(result.Recommendations, configuration, cancellationToken).ConfigureAwait(false);
@@ -88,11 +91,13 @@ public sealed class MoreLikeThisManager
             if (configuration.AddRecommendations)
             {
                 existing.Recommendations = recommendations.ToList();
+                existing.RecommendationsLoaded = true;
             }
 
             if (configuration.AddSimilarTitles)
             {
                 existing.SimilarTitles = similarTitles.ToList();
+                existing.SimilarTitlesLoaded = true;
             }
 
             document.LastChanges.RemoveAll(value => value.ItemId == item.Id);
@@ -107,6 +112,87 @@ public sealed class MoreLikeThisManager
                 RemovedSimilarTitles = configuration.AddSimilarTitles ? RemovedTitles(previousSimilarTitles, similarTitles) : []
             });
             await WriteAsync(document, cancellationToken).ConfigureAwait(false);
+            return new MoreLikeThisItemResult(recommendations.Count, similarTitles.Count, true);
+        }
+        finally
+        {
+            _storeLock.Release();
+        }
+    }
+
+    /// <summary>Returns a clear administrator-facing prerequisite error for dedicated relationship actions.</summary>
+    public string? GetScanValidationError()
+    {
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("The plugin configuration is unavailable.");
+        if (!IsConfigured(configuration))
+        {
+            return "Enable Add recommendations and/or Add similar titles, then save More Like This Settings before loading or syncing.";
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration.TmdbApiKey))
+        {
+            return "Save a TMDb API Read Access Token before loading recommendations and similar titles.";
+        }
+
+        return configuration.LibraryIds.Length == 0
+            ? "Select and save one or more libraries in Main Settings before loading recommendations and similar titles."
+            : null;
+    }
+
+    /// <summary>Loads missing or synchronizes every selected-library relationship record without running the normal tagging scan.</summary>
+    public async Task ScanConfiguredLibrariesAsync(bool onlyMissing, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        var validationError = GetScanValidationError();
+        if (validationError is not null)
+        {
+            throw new InvalidOperationException(validationError);
+        }
+
+        var configuration = Plugin.Instance!.Configuration;
+        var candidates = configuration.LibraryIds.SelectMany(GetLibraryItems).Select(item => (Item: item, LibraryId: item.GetTopParent().Id)).ToArray();
+        if (onlyMissing)
+        {
+            candidates = await FilterMissingRecordsAsync(candidates, cancellationToken).ConfigureAwait(false);
+        }
+
+        var action = onlyMissing ? "Loading" : "Synchronizing";
+        _state.Start(candidates.Length, action);
+        try
+        {
+            for (var index = 0; index < candidates.Length; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var result = await ApplyConfiguredAsync(candidates[index].Item, candidates[index].LibraryId, cancellationToken).ConfigureAwait(false);
+                _state.RecordItem(result.Recommendations, result.SimilarTitles, result.Saved);
+                progress?.Report(candidates.Length == 0 ? 100 : (index + 1) * 100d / candidates.Length);
+            }
+
+            _state.Complete();
+        }
+        catch (OperationCanceledException)
+        {
+            _state.Complete("Recommendations and Similar Titles action was cancelled. Records already saved remain available.");
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _state.Complete($"Recommendations and Similar Titles action stopped: {exception.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>Removes only relationship records owned by this plugin for currently selected libraries, never Jellyfin metadata.</summary>
+    public async Task<int> RemoveConfiguredLibraryRecordsAsync(CancellationToken cancellationToken)
+    {
+        var selectedLibraries = (Plugin.Instance?.Configuration.LibraryIds ?? []).ToHashSet();
+        await _storeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var document = await ReadAsync(cancellationToken).ConfigureAwait(false);
+            var removed = document.Items.RemoveAll(value => selectedLibraries.Contains(value.LibraryId));
+            document.LastChanges.RemoveAll(value => document.Items.All(item => item.ItemId != value.ItemId));
+            await WriteAsync(document, cancellationToken).ConfigureAwait(false);
+            return removed;
         }
         finally
         {
@@ -219,6 +305,30 @@ public sealed class MoreLikeThisManager
         return values.Select(value => configuration.SaveMoreLikeThisImageLinks ? value : value with { PosterUrl = null }).ToArray();
     }
 
+    private async Task<(BaseItem Item, Guid LibraryId)[]> FilterMissingRecordsAsync((BaseItem Item, Guid LibraryId)[] candidates, CancellationToken cancellationToken)
+    {
+        await _storeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            var existing = (await ReadAsync(cancellationToken).ConfigureAwait(false)).Items.ToDictionary(value => value.ItemId);
+            return candidates.Where(value => !existing.TryGetValue(value.Item.Id, out var record)
+                || (configuration.AddRecommendations && !record.RecommendationsLoaded)
+                || (configuration.AddSimilarTitles && !record.SimilarTitlesLoaded)).ToArray();
+        }
+        finally
+        {
+            _storeLock.Release();
+        }
+    }
+
+    private IEnumerable<BaseItem> GetLibraryItems(Guid libraryId) => _libraryManager.GetItemList(new InternalItemsQuery
+    {
+        ParentId = libraryId,
+        Recursive = true,
+        IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
+    });
+
     private async Task CachePosterAsync(int tmdbId, string posterUrl, Configuration.PluginConfiguration configuration, CancellationToken cancellationToken)
     {
         await _posterLock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -299,6 +409,13 @@ public sealed class MoreLikeThisManager
     private static string PosterDirectory => Path.Combine(Plugin.Instance?.DataFolderPath ?? throw new InvalidOperationException("Plugin data folder is unavailable."), "more-like-this-posters");
     private static string PosterIndexPath => Path.Combine(PosterDirectory, "index.json");
     private static string Extension(string contentType) => contentType switch { "image/png" => ".png", "image/webp" => ".webp", _ => ".jpg" };
+
+    /// <summary>One item's relationship result used by normal and dedicated scans.</summary>
+    public sealed record MoreLikeThisItemResult(int Recommendations, int SimilarTitles, bool Saved)
+    {
+        /// <summary>Gets an empty relationship result.</summary>
+        public static MoreLikeThisItemResult Empty { get; } = new(0, 0, false);
+    }
 }
 
 /// <summary>Persistent private relationship data; it is deliberately not a Jellyfin tag or NFO field.</summary>
@@ -328,6 +445,10 @@ public sealed class MoreLikeThisStoredItem
     public List<RelatedTitleDto> Recommendations { get; set; } = [];
     /// <summary>Gets or sets the current direct TMDb similar titles.</summary>
     public List<RelatedTitleDto> SimilarTitles { get; set; } = [];
+    /// <summary>Gets or sets whether the current Recommendation setting has been loaded at least once for this item.</summary>
+    public bool RecommendationsLoaded { get; set; }
+    /// <summary>Gets or sets whether the current Similar Titles setting has been loaded at least once for this item.</summary>
+    public bool SimilarTitlesLoaded { get; set; }
 }
 
 /// <summary>Colored latest-operation changes for one related-title record.</summary>
