@@ -126,7 +126,7 @@ public sealed class MoreLikeThisManager
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("The plugin configuration is unavailable.");
         if (!IsConfigured(configuration))
         {
-            return "Enable Add recommendations and/or Add similar titles, then save More Like This Settings before loading or syncing.";
+            return "Enable Add recommendations and/or Add similar titles, then save More Like This Settings before loading or updating.";
         }
 
         if (string.IsNullOrWhiteSpace(configuration.TmdbApiKey))
@@ -139,7 +139,7 @@ public sealed class MoreLikeThisManager
             : null;
     }
 
-    /// <summary>Loads missing or synchronizes every selected-library relationship record without running the normal tagging scan.</summary>
+    /// <summary>Loads missing records or updates every selected-library relationship record without running the normal tagging scan.</summary>
     public async Task ScanConfiguredLibrariesAsync(bool onlyMissing, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         var validationError = GetScanValidationError();
@@ -155,7 +155,7 @@ public sealed class MoreLikeThisManager
             candidates = await FilterMissingRecordsAsync(candidates, cancellationToken).ConfigureAwait(false);
         }
 
-        var action = onlyMissing ? "Loading" : "Synchronizing";
+        var action = onlyMissing ? "Loading" : "Updating";
         _state.Start(candidates.Length, action);
         try
         {

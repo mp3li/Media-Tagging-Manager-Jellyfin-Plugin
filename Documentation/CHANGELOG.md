@@ -4,6 +4,18 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.59-test] - 2026-07-25
+
+### Fixed
+
+- Replaced the generic More Like This action route with distinct, explicit
+  Jellyfin dashboard routes for **Load** and **Update**, resolving the failed
+  Load action while keeping the work queued through Jellyfin's task manager.
+- Renamed **Sync Recommendations and Similar Titles** to **Update
+  Recommendations and Similar Titles** throughout the dashboard and
+  documentation. Update retains the former Sync behavior: it refreshes saved
+  selected-library records and removes relationships TMDb no longer returns.
+
 ## [0.1.0.58-test] - 2026-07-25
 
 ### Added

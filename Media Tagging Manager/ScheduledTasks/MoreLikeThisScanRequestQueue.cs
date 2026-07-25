@@ -8,8 +8,8 @@ public sealed class MoreLikeThisScanRequestQueue
     /// <summary>Requests an initial load for selected-library titles that do not yet have a relationship record.</summary>
     public void EnqueueLoad() => Interlocked.Exchange(ref _action, 1);
 
-    /// <summary>Requests a full selected-library refresh that reconciles saved relationship records with TMDb.</summary>
-    public void EnqueueSync() => Interlocked.Exchange(ref _action, 2);
+    /// <summary>Requests a full selected-library update that reconciles saved relationship records with TMDb.</summary>
+    public void EnqueueUpdate() => Interlocked.Exchange(ref _action, 2);
 
     /// <summary>Consumes one pending action, if present.</summary>
     public bool TryDequeue(out bool onlyMissing)

@@ -389,9 +389,9 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("more-like-this/status")]
     public ActionResult<MoreLikeThisScanProgress> GetMoreLikeThisStatus() => Ok(_moreLikeThisState.GetProgress());
 
-    /// <summary>Queues a selected-library initial relationship load or a full relationship synchronization through Jellyfin's task manager.</summary>
-    [HttpPost("more-like-this/{action}")]
-    public IActionResult StartMoreLikeThisAction(string action)
+    /// <summary>Queues an initial selected-library relationship load through Jellyfin's task manager.</summary>
+    [HttpPost("more-like-this/load")]
+    public IActionResult LoadMoreLikeThis()
     {
         var validationError = _moreLikeThis.GetScanValidationError();
         if (validationError is not null)
@@ -399,20 +399,24 @@ public sealed class ProviderNetworkController : ControllerBase
             return BadRequest(validationError);
         }
 
-        switch (action.Trim().ToLowerInvariant())
+        _moreLikeThisRequests.EnqueueLoad();
+        _moreLikeThisState.Queue("Loading Recommendations and Similar Titles");
+        _taskManager.QueueScheduledTask<MoreLikeThisScanTask>();
+        return Accepted();
+    }
+
+    /// <summary>Queues a full selected-library relationship update through Jellyfin's task manager.</summary>
+    [HttpPost("more-like-this/update")]
+    public IActionResult UpdateMoreLikeThis()
+    {
+        var validationError = _moreLikeThis.GetScanValidationError();
+        if (validationError is not null)
         {
-            case "load":
-                _moreLikeThisRequests.EnqueueLoad();
-                _moreLikeThisState.Queue("Loading Recommendations and Similar Titles");
-                break;
-            case "sync":
-                _moreLikeThisRequests.EnqueueSync();
-                _moreLikeThisState.Queue("Synchronizing Recommendations and Similar Titles");
-                break;
-            default:
-                return BadRequest("Choose Load or Sync for Recommendations and Similar Titles.");
+            return BadRequest(validationError);
         }
 
+        _moreLikeThisRequests.EnqueueUpdate();
+        _moreLikeThisState.Queue("Updating Recommendations and Similar Titles");
         _taskManager.QueueScheduledTask<MoreLikeThisScanTask>();
         return Accepted();
     }

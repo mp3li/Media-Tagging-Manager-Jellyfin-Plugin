@@ -292,7 +292,7 @@ alter Jellyfin posters or media files. You may enable one or both options.
 
 Use **Load Recommendations and Similar Titles** to fetch relationship data for
 selected-library Movies and Series that do not already have a saved record,
-without running the full tag scan. Save this tab first. **Sync Recommendations
+without running the full tag scan. Save this tab first. **Update Recommendations
 and Similar Titles** rechecks every saved selected-library record and removes
 relationships TMDb no longer returns. A normal full or incoming-media scan
 also refreshes enabled relationship data.
@@ -300,7 +300,7 @@ also refreshes enabled relationship data.
 **Remove Recommendations and Similar Titles** removes only this plugin’s
 stored relationship records for the selected libraries. It never changes
 Jellyfin tags, NFO files, media, Jellyfin posters, or the optional poster cache.
-The dedicated load/sync task shows Jellyfin-managed progress and a completion
+The dedicated load/update task shows Jellyfin-managed progress and a completion
 summary.
 
 #### Recommendations and Similar Titles Additions and Removals

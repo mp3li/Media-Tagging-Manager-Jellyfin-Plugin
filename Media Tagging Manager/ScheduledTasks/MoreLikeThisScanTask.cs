@@ -3,7 +3,7 @@ using MediaBrowser.Model.Tasks;
 
 namespace Jellyfin.Plugin.MediaTaggingManager.ScheduledTasks;
 
-/// <summary>Runs Dashboard-requested TMDb recommendation and similar-title actions through Jellyfin's task manager.</summary>
+/// <summary>Runs Dashboard-requested TMDb recommendation and similar-title loads and updates through Jellyfin's task manager.</summary>
 public sealed class MoreLikeThisScanTask : IScheduledTask
 {
     private readonly MoreLikeThisManager _manager;
@@ -23,7 +23,7 @@ public sealed class MoreLikeThisScanTask : IScheduledTask
     public string Key => "MediaTaggingManagerMoreLikeThis";
 
     /// <inheritdoc />
-    public string Description => "Loads or synchronizes TMDb recommendations and similar titles for selected libraries.";
+    public string Description => "Loads or updates TMDb recommendations and similar titles for selected libraries.";
 
     /// <inheritdoc />
     public string Category => "Library";

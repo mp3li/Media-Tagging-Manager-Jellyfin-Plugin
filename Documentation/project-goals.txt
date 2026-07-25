@@ -67,7 +67,7 @@ Acceptance criteria:
     saved TMDb Recommendation and Similar Title choices for selected-library
     Movies and Series, plus bounded poster-image caching and lightweight image
     link storage for compatible future plugins.
-[x] Let an administrator load missing or synchronize saved selected-library
+[x] Let an administrator load missing or update saved selected-library
     TMDb Recommendation and Similar Title records without running the full tag
     scan, with Jellyfin-managed progress and a conservative record-only remove
     action.

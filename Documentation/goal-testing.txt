@@ -184,7 +184,7 @@ More Like This Settings
     and confirm it queues a dedicated Jellyfin task that only processes saved
     selected-library Movies and Series without running Provider, Network,
     Genre, Keyword, Collection, or Cast/Crew changes.
-[ ] Use Sync Recommendations and Similar Titles after an initial load and
+[ ] Use Update Recommendations and Similar Titles after an initial load and
     confirm it refreshes every saved selected-library record, displays progress
     and a completion summary, adds new TMDb relationship titles, and shows
     removed title relationships in the saved removal color.
