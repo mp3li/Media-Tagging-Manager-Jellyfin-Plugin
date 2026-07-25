@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.56",
-        "changelog": "0.1.0.56-test adds real Jellyfin person thumbnails to the Cast and Crew overview. Test only; not a stable release.",
+        "version": "0.1.0.57",
+        "changelog": "0.1.0.57-test adds More Like This Settings: TMDb Recommendations and Similar Titles, optional poster links/cache, and a colored relationship overview. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.56-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.56-test.zip",
-        "checksum": "ba9c0d9fe9d4d3ffbc8f3a2383ec4b10",
-        "timestamp": "2026-07-25T07:01:31Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.57-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.57-test.zip",
+        "checksum": "d7624a870124d8cadd76e3ae441859da",
+        "timestamp": "2026-07-25T07:34:00Z"
       }
     ]
   }

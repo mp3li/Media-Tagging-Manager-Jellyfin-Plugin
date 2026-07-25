@@ -259,6 +259,43 @@ recorded as creating. A person credit, image, or user edit Jellyfin did not get
 from this plugin is left alone. The image cleanup is limited to people still
 represented in the currently selected libraries.
 
+### More Like This Settings
+
+This secondary Main Settings tab stores TMDb’s direct title-to-title
+relationships for selected-library Movies and Series. It is deliberately not a
+Jellyfin tag, NFO field, watch-history record, or personalized “Because You
+Watched” result. Compatible future plugins can reuse this locally stored data
+for detail pages, recommendation shelves, and similar-title areas.
+
+#### Recommendation Settings
+
+**Add recommendations** saves the first paginated TMDb recommendation page for
+each selected-library Movie or Series during a normal full or incoming-media
+scan. Each result retains its TMDb ID, title, year, overview, genre IDs,
+popularity, TMDb rating, vote count, and optional poster reference.
+
+#### Similar Titles Settings
+
+**Add similar titles** uses TMDb’s separate similar-title endpoint and saves
+the same compact title data for selected-library Movies and Series during
+normal scans. Enable either setting, both settings, or neither one.
+
+#### Image Settings
+
+**Save image links to save space** preserves the TMDb poster URL in the stored
+relationship data. **Save poster images to disk** optionally downloads posters
+into a separate plugin-owned cache. The image cache is capped at 5 MB per
+poster and at the configurable total limit (100 MB by default); it does not
+alter Jellyfin posters or media files. You may enable one or both options.
+
+#### Recommendations and Similar Titles Additions and Removals
+
+This collapsed overview groups current saved relationships by library. It shows
+recommendation and similar-title posters at their proper portrait aspect ratio,
+with each library independently collapsible. Newest-scan additions use the
+saved green color and newest-scan removals use the saved red color; both colors
+are configurable in the tab.
+
 ### Network and Provider Settings
 
 #### Availability Region Settings

@@ -279,6 +279,36 @@ public sealed record CastCrewOverviewItemDto(
 /// <summary>One current Jellyfin person primary image available to display in the Cast and Crew overview.</summary>
 public sealed record CastCrewPersonPhotoDto(Guid PersonId, string Name);
 
+/// <summary>One stored TMDb title-to-title relationship for reuse by this and future plugins.</summary>
+public sealed record RelatedTitleDto(
+    int TmdbId,
+    string Title,
+    int? Year,
+    string Overview,
+    string? PosterUrl,
+    IReadOnlyCollection<int> GenreIds,
+    double? Popularity,
+    double? VoteAverage,
+    int? VoteCount);
+
+/// <summary>One selected-library item's saved TMDb recommendations and similar titles, with latest-scan changes.</summary>
+public sealed record MoreLikeThisOverviewItemDto(
+    Guid ItemId,
+    string Name,
+    string ItemType,
+    Guid LibraryId,
+    IReadOnlyCollection<RelatedTitleDto> Recommendations,
+    IReadOnlyCollection<RelatedTitleDto> SimilarTitles,
+    IReadOnlyCollection<RelatedTitleDto> RemovedRecommendations,
+    IReadOnlyCollection<RelatedTitleDto> RemovedSimilarTitles,
+    IReadOnlyCollection<int> AddedRecommendationIds,
+    IReadOnlyCollection<int> RemovedRecommendationIds,
+    IReadOnlyCollection<int> AddedSimilarTitleIds,
+    IReadOnlyCollection<int> RemovedSimilarTitleIds);
+
+/// <summary>Current More Like This poster-cache usage.</summary>
+public sealed record MoreLikeThisImageCacheStatus(int Count, long Bytes, int LimitMegabytes);
+
 /// <summary>A dashboard-facing summary of one library item.</summary>
 public sealed record TaggedItemDto(
     Guid ItemId,

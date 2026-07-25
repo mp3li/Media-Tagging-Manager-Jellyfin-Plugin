@@ -4,6 +4,18 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.57-test] - 2026-07-25
+
+### Added
+
+- Added the second secondary-row **More Like This Settings** tab. Normal
+  selected-library scans can now store TMDb’s direct Recommendations and
+  Similar Titles separately from Jellyfin tags and NFO metadata.
+- Added optional lightweight TMDb poster-link storage, optional bounded local
+  poster caching (5 MB per poster and configurable total limit), and a
+  collapsed, library-grouped Recommendations and Similar Titles overview with
+  portrait posters and accessible addition/removal colors.
+
 ## [0.1.0.56-test] - 2026-07-25
 
 ### Fixed

@@ -24,6 +24,7 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<CastCrewChangeStore>();
         serviceCollection.AddSingleton<CastCrewOwnershipStore>();
         serviceCollection.AddSingleton<CastCrewManager>();
+        serviceCollection.AddSingleton<MoreLikeThisManager>();
         serviceCollection.AddSingleton<ProviderNetworkScanner>();
         serviceCollection.AddSingleton<ManualScanRequestQueue>();
         serviceCollection.AddSingleton<CastCrewPhotoScanRequestQueue>();

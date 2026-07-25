@@ -92,7 +92,14 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         SelectedCrewJobs = (source.SelectedCrewJobs ?? []).ToArray(),
         FillMissingCrewPhotos = source.FillMissingCrewPhotos,
         CastCrewAddedColor = source.CastCrewAddedColor,
-        CastCrewRemovedColor = source.CastCrewRemovedColor
+        CastCrewRemovedColor = source.CastCrewRemovedColor,
+        AddRecommendations = source.AddRecommendations,
+        AddSimilarTitles = source.AddSimilarTitles,
+        SaveMoreLikeThisImageLinks = source.SaveMoreLikeThisImageLinks,
+        SaveMoreLikeThisImagesToDisk = source.SaveMoreLikeThisImagesToDisk,
+        MoreLikeThisImageCacheLimitMegabytes = source.MoreLikeThisImageCacheLimitMegabytes,
+        MoreLikeThisAddedColor = source.MoreLikeThisAddedColor,
+        MoreLikeThisRemovedColor = source.MoreLikeThisRemovedColor
     };
 
     /// <inheritdoc />

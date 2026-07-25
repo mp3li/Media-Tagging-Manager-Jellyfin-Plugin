@@ -30,6 +30,7 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly NetworkCatalogCache _networkCatalog;
     private readonly CastCrewManager _castCrew;
     private readonly CastCrewPhotoScanRequestQueue _castCrewPhotoRequests;
+    private readonly MoreLikeThisManager _moreLikeThis;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -46,7 +47,8 @@ public sealed class ProviderNetworkController : ControllerBase
         LogoLoadStateStore logoLoadState,
         NetworkCatalogCache networkCatalog,
         CastCrewManager castCrew,
-        CastCrewPhotoScanRequestQueue castCrewPhotoRequests)
+        CastCrewPhotoScanRequestQueue castCrewPhotoRequests,
+        MoreLikeThisManager moreLikeThis)
     {
         _scanner = scanner;
         _state = state;
@@ -62,6 +64,7 @@ public sealed class ProviderNetworkController : ControllerBase
         _networkCatalog = networkCatalog;
         _castCrew = castCrew;
         _castCrewPhotoRequests = castCrewPhotoRequests;
+        _moreLikeThis = moreLikeThis;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -226,6 +229,33 @@ public sealed class ProviderNetworkController : ControllerBase
         }));
     }
 
+    /// <summary>Saves only the controls on the More Like This Settings tab.</summary>
+    [HttpPost("settings/more-like-this")]
+    public IActionResult SaveMoreLikeThisSettings([FromBody] MoreLikeThisSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.AddRecommendations = submitted.AddRecommendations;
+            configuration.AddSimilarTitles = submitted.AddSimilarTitles;
+            configuration.SaveMoreLikeThisImageLinks = submitted.SaveImageLinks;
+            configuration.SaveMoreLikeThisImagesToDisk = submitted.SaveImagesToDisk;
+            configuration.MoreLikeThisImageCacheLimitMegabytes = Math.Clamp(submitted.ImageCacheLimitMegabytes, 10, 1024);
+        }));
+    }
+
+    /// <summary>Saves accessible colors used by the More Like This relationship overview.</summary>
+    [HttpPost("settings/more-like-this-colors")]
+    public IActionResult SaveMoreLikeThisColors([FromBody] MoreLikeThisColorSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.MoreLikeThisAddedColor = NormalizeCssColor(submitted.AddedColor, "#4CAF50");
+            configuration.MoreLikeThisRemovedColor = NormalizeCssColor(submitted.RemovedColor, "#F44336");
+        }));
+    }
+
     /// <summary>Saves only Scheduled Tasks controls shared between the two tabs.</summary>
     [HttpPost("settings/scheduled-tasks")]
     public IActionResult SaveScheduledTasks([FromBody] ScheduledTasksSettingsRequest submitted)
@@ -330,6 +360,24 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("cast-crew/overview")]
     public ActionResult<IEnumerable<CastCrewOverviewItemDto>> GetCastCrewOverview([FromQuery] Guid? libraryId) =>
         Ok(_castCrew.GetOverview(libraryId));
+
+    /// <summary>Returns the current persisted TMDb recommendation and similar-title data for selected-library media.</summary>
+    [HttpGet("more-like-this/overview")]
+    public async Task<ActionResult<IReadOnlyCollection<MoreLikeThisOverviewItemDto>>> GetMoreLikeThisOverview([FromQuery] Guid? libraryId, CancellationToken cancellationToken) =>
+        Ok(await _moreLikeThis.GetOverviewAsync(libraryId, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Serves one optional plugin-cached TMDb poster without exposing the plugin data folder.</summary>
+    [HttpGet("more-like-this/images/{tmdbId:int}")]
+    public async Task<IActionResult> GetMoreLikeThisPoster(int tmdbId, CancellationToken cancellationToken)
+    {
+        var poster = await _moreLikeThis.OpenPosterAsync(tmdbId, cancellationToken).ConfigureAwait(false);
+        return poster is null ? NotFound() : File(poster.Value.Stream, poster.Value.ContentType);
+    }
+
+    /// <summary>Returns the bounded TMDb-poster cache usage for More Like This Settings.</summary>
+    [HttpGet("more-like-this/images/status")]
+    public async Task<ActionResult<MoreLikeThisImageCacheStatus>> GetMoreLikeThisPosterStatus(CancellationToken cancellationToken) =>
+        Ok(await _moreLikeThis.GetImageCacheStatusAsync(cancellationToken).ConfigureAwait(false));
 
     /// <summary>Queues the administrator-requested photo-only scan through Jellyfin's task manager.</summary>
     [HttpPost("cast-crew/photos/scan")]

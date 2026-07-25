@@ -172,3 +172,32 @@ public sealed class CastCrewColorSettingsRequest
     /// <summary>Gets or sets the color for cast, crew, and people photos removed by the latest operation.</summary>
     public string? RemovedColor { get; set; }
 }
+
+/// <summary>Only the controls on the More Like This Settings tab.</summary>
+public sealed class MoreLikeThisSettingsRequest
+{
+    /// <summary>Gets or sets whether normal scans save TMDb recommendations.</summary>
+    public bool AddRecommendations { get; set; }
+
+    /// <summary>Gets or sets whether normal scans save TMDb similar titles.</summary>
+    public bool AddSimilarTitles { get; set; }
+
+    /// <summary>Gets or sets whether poster URLs are retained for future plugin use.</summary>
+    public bool SaveImageLinks { get; set; }
+
+    /// <summary>Gets or sets whether posters are downloaded into the plugin cache.</summary>
+    public bool SaveImagesToDisk { get; set; }
+
+    /// <summary>Gets or sets the bounded poster-cache capacity in megabytes.</summary>
+    public int ImageCacheLimitMegabytes { get; set; }
+}
+
+/// <summary>Accessible colors used by the More Like This relationship overview.</summary>
+public sealed class MoreLikeThisColorSettingsRequest
+{
+    /// <summary>Gets or sets the color for relationships added by the latest scan.</summary>
+    public string? AddedColor { get; set; }
+
+    /// <summary>Gets or sets the color for relationships removed by the latest scan.</summary>
+    public string? RemovedColor { get; set; }
+}

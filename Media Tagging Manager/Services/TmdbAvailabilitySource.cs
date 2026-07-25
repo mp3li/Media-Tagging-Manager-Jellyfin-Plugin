@@ -10,6 +10,8 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
 {
     private readonly HttpClient _httpClient;
     private readonly TmdbRequestGate _requestGate;
+    private readonly SemaphoreSlim _imageConfigurationLock = new(1, 1);
+    private string? _posterBaseUrl;
 
     /// <summary>Initializes a new instance of the <see cref="TmdbAvailabilitySource"/> class.</summary>
     public TmdbAvailabilitySource(HttpClient httpClient, TmdbRequestGate requestGate)
@@ -189,6 +191,54 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             ParseCredits(document.RootElement, "crew", isCast: false));
     }
 
+    /// <summary>Gets TMDb's first page of direct recommendations and similar titles for one Movie or Series.</summary>
+    public async Task<TmdbRelatedTitlesResult> GetRelatedTitlesAsync(ExternalIds ids, bool includeRecommendations, bool includeSimilarTitles, CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(ids.Tmdb) || (!includeRecommendations && !includeSimilarTitles))
+        {
+            return new TmdbRelatedTitlesResult([], [], null);
+        }
+
+        var type = ids.MediaType == "Series" ? "tv" : "movie";
+        var id = Uri.EscapeDataString(ids.Tmdb);
+        var recommendations = includeRecommendations
+            ? await GetRelatedTitlePageAsync(type, id, "recommendations", token, cancellationToken).ConfigureAwait(false)
+            : new TmdbRelatedTitlePage([], null);
+        var similarTitles = includeSimilarTitles
+            ? await GetRelatedTitlePageAsync(type, id, "similar", token, cancellationToken).ConfigureAwait(false)
+            : new TmdbRelatedTitlePage([], null);
+        return new TmdbRelatedTitlesResult(recommendations.Titles, similarTitles.Titles, recommendations.Error ?? similarTitles.Error);
+    }
+
+    /// <summary>Downloads one TMDb poster image into a caller-owned bounded cache.</summary>
+    public async Task<TmdbPosterImage?> DownloadPosterImageAsync(string posterUrl, CancellationToken cancellationToken)
+    {
+        if (!Uri.TryCreate(posterUrl, UriKind.Absolute, out var uri)
+            || !string.Equals(uri.Host, "image.tmdb.org", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        using var response = await _requestGate.SendAsync(
+            _httpClient,
+            () => new HttpRequestMessage(HttpMethod.Get, uri),
+            cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode || (response.Content.Headers.ContentLength ?? 0) > 5 * 1024 * 1024)
+        {
+            return null;
+        }
+
+        var contentType = response.Content.Headers.ContentType?.MediaType;
+        if (contentType is not "image/jpeg" and not "image/png" and not "image/webp")
+        {
+            return null;
+        }
+
+        var content = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        return content.Length > 5 * 1024 * 1024 ? null : new TmdbPosterImage(content, contentType, content.Length);
+    }
+
     /// <summary>Downloads one TMDb profile image for handoff to Jellyfin's supported image writer.</summary>
     public async Task<TmdbPersonImage?> DownloadPersonImageAsync(string profilePath, CancellationToken cancellationToken)
     {
@@ -214,6 +264,107 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
 
         var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         return bytes.Length > 5 * 1024 * 1024 ? null : new TmdbPersonImage(bytes, contentType, response.Content.Headers.ContentLength ?? bytes.Length);
+    }
+
+    private async Task<TmdbRelatedTitlePage> GetRelatedTitlePageAsync(string type, string id, string relationship, string token, CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync($"https://api.themoviedb.org/3/{type}/{id}/{relationship}?language=en-US&page=1", token, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return new TmdbRelatedTitlePage([], $"TMDb {relationship} lookup returned HTTP {(int)response.StatusCode}.");
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        if (!document.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
+        {
+            return new TmdbRelatedTitlePage([], null);
+        }
+
+        var imageBaseUrl = await GetPosterBaseUrlAsync(token, cancellationToken).ConfigureAwait(false);
+        return new TmdbRelatedTitlePage(results.EnumerateArray()
+            .Select(value => ParseRelatedTitle(value, imageBaseUrl))
+            .Where(static value => value is not null)
+            .Cast<RelatedTitleDto>()
+            .OrderByDescending(static value => value.Popularity ?? 0)
+            .ThenBy(static value => value.Title, StringComparer.OrdinalIgnoreCase)
+            .ToArray(), null);
+    }
+
+    private async Task<string> GetPosterBaseUrlAsync(string token, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(_posterBaseUrl))
+        {
+            return _posterBaseUrl;
+        }
+
+        await _imageConfigurationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(_posterBaseUrl))
+            {
+                return _posterBaseUrl;
+            }
+
+        using var response = await SendAsync("https://api.themoviedb.org/3/configuration", token, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return _posterBaseUrl = "https://image.tmdb.org/t/p/w342";
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        if (!document.RootElement.TryGetProperty("images", out var images)
+            || !images.TryGetProperty("secure_base_url", out var baseUrl)
+            || string.IsNullOrWhiteSpace(baseUrl.GetString()))
+        {
+            return _posterBaseUrl = "https://image.tmdb.org/t/p/w342";
+        }
+
+        var size = "w342";
+        if (images.TryGetProperty("poster_sizes", out var sizes) && sizes.ValueKind == JsonValueKind.Array)
+        {
+            var available = sizes.EnumerateArray().Select(static value => value.GetString()).Where(static value => !string.IsNullOrWhiteSpace(value)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            size = available.Contains("w342") ? "w342" : available.Contains("w500") ? "w500" : available.Contains("original") ? "original" : "w342";
+        }
+
+        return _posterBaseUrl = baseUrl.GetString()!.TrimEnd('/') + "/" + size;
+        }
+        finally
+        {
+            _imageConfigurationLock.Release();
+        }
+    }
+
+    private static RelatedTitleDto? ParseRelatedTitle(JsonElement value, string imageBaseUrl)
+    {
+        if (!value.TryGetProperty("id", out var id) || !id.TryGetInt32(out var tmdbId))
+        {
+            return null;
+        }
+
+        var title = value.TryGetProperty("title", out var movieTitle) ? movieTitle.GetString()
+            : value.TryGetProperty("name", out var tvTitle) ? tvTitle.GetString()
+            : null;
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return null;
+        }
+
+        var date = value.TryGetProperty("release_date", out var releaseDate) ? releaseDate.GetString()
+            : value.TryGetProperty("first_air_date", out var firstAirDate) ? firstAirDate.GetString()
+            : null;
+        int? year = date is { Length: >= 4 } && int.TryParse(date[..4], out var parsedYear) ? parsedYear : null;
+        var posterPath = value.TryGetProperty("poster_path", out var poster) ? poster.GetString() : null;
+        var posterUrl = !string.IsNullOrWhiteSpace(posterPath) && posterPath.StartsWith("/", StringComparison.Ordinal)
+            ? imageBaseUrl + posterPath
+            : null;
+        var genres = value.TryGetProperty("genre_ids", out var genreIds) && genreIds.ValueKind == JsonValueKind.Array
+            ? genreIds.EnumerateArray().Where(static item => item.TryGetInt32(out _)).Select(static item => item.GetInt32()).ToArray()
+            : [];
+        double? popularity = value.TryGetProperty("popularity", out var popularityValue) && popularityValue.TryGetDouble(out var popularityNumber) ? popularityNumber : null;
+        double? voteAverage = value.TryGetProperty("vote_average", out var voteAverageValue) && voteAverageValue.TryGetDouble(out var voteAverageNumber) ? voteAverageNumber : null;
+        int? voteCount = value.TryGetProperty("vote_count", out var voteCountValue) && voteCountValue.TryGetInt32(out var voteCountNumber) ? voteCountNumber : null;
+        var overview = value.TryGetProperty("overview", out var overviewValue) ? overviewValue.GetString() ?? string.Empty : string.Empty;
+        return new RelatedTitleDto(tmdbId, title.Trim(), year, overview, posterUrl, genres, popularity, voteAverage, voteCount);
     }
 
     /// <summary>Gets TMDb's complete movie and TV watch-provider catalogs for the configured availability countries.</summary>
@@ -553,3 +704,12 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
 
     private sealed record TmdbNetworkSeed(int Id, string Name);
 }
+
+/// <summary>TMDb's compact first-page direct title-to-title relationship response.</summary>
+public sealed record TmdbRelatedTitlesResult(IReadOnlyCollection<RelatedTitleDto> Recommendations, IReadOnlyCollection<RelatedTitleDto> SimilarTitles, string? Note);
+
+/// <summary>One parsed TMDb relationship page or its recoverable request error.</summary>
+public sealed record TmdbRelatedTitlePage(IReadOnlyCollection<RelatedTitleDto> Titles, string? Error);
+
+/// <summary>One bounded poster image downloaded from TMDb.</summary>
+public sealed record TmdbPosterImage(byte[] Content, string ContentType, long SourceBytes);

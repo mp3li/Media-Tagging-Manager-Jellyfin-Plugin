@@ -63,6 +63,10 @@ Acceptance criteria:
 [x] Add a Cast and Crew Settings secondary Main Settings tab with independently
     saved cast, crew-job, and people-photo choices that never overwrite other
     dashboard-tab settings.
+[x] Add a More Like This Settings secondary Main Settings tab with separately
+    saved TMDb Recommendation and Similar Title choices for selected-library
+    Movies and Series, plus bounded poster-image caching and lightweight image
+    link storage for compatible future plugins.
 [x] Read existing Jellyfin people metadata for selected Movies and Series,
     preserve existing credits, and optionally append only missing TMDb cast or
     selected-job crew credits plus missing person primary images.

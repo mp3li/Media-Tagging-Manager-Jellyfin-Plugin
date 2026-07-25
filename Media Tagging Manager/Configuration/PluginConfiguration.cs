@@ -121,6 +121,27 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets the dashboard color used for cast, crew, and people photos removed by the latest operation.</summary>
     public string CastCrewRemovedColor { get; set; } = "#F44336";
+
+    /// <summary>Gets or sets whether normal scans save TMDb recommendation lists for selected-library Movies and Series.</summary>
+    public bool AddRecommendations { get; set; }
+
+    /// <summary>Gets or sets whether normal scans save TMDb similar-title lists for selected-library Movies and Series.</summary>
+    public bool AddSimilarTitles { get; set; }
+
+    /// <summary>Gets or sets whether TMDb poster URLs are retained in the plugin's relationship records.</summary>
+    public bool SaveMoreLikeThisImageLinks { get; set; } = true;
+
+    /// <summary>Gets or sets whether TMDb posters are downloaded into the bounded plugin cache.</summary>
+    public bool SaveMoreLikeThisImagesToDisk { get; set; }
+
+    /// <summary>Gets or sets the maximum on-disk size of the More Like This poster cache in megabytes.</summary>
+    public int MoreLikeThisImageCacheLimitMegabytes { get; set; } = 100;
+
+    /// <summary>Gets or sets the dashboard color used for recommendations and similar titles newly saved in the latest scan.</summary>
+    public string MoreLikeThisAddedColor { get; set; } = "#4CAF50";
+
+    /// <summary>Gets or sets the dashboard color used for recommendations and similar titles removed in the latest scan.</summary>
+    public string MoreLikeThisRemovedColor { get; set; } = "#F44336";
 }
 
 /// <summary>An administrator-defined canonical name for an external Provider or Network tag.</summary>

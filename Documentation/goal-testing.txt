@@ -169,6 +169,29 @@ Cast and Crew Settings
     credit or image recorded as plugin-created, leaves user/Jellyfin-created
     people metadata untouched, and does not affect an unselected library.
 
+More Like This Settings
+-----------------------
+
+[ ] Open More Like This Settings, save Recommendation-only changes, leave and
+    reopen the page, and confirm the selection persists without changing
+    libraries, credentials, Provider/Network choices, Genre choices, or Cast
+    and Crew settings.
+[ ] Enable Recommendations and/or Similar Titles, run a normal scan, and
+    confirm only selected-library Movies and Series with TMDb IDs receive
+    saved direct TMDb relationship records. Confirm no Jellyfin tags, NFO
+    fields, media files, posters, or watch-history data are changed.
+[ ] With Save image links to save space enabled, confirm the overview displays
+    returned TMDb posters and the saved relationship data retains poster links
+    without filling the local poster cache.
+[ ] With Save poster images to disk enabled, confirm cached posters render in
+    the overview, each cache entry remains at or below 5 MB, and the displayed
+    cache total never exceeds the saved limit.
+[ ] Expand Recommendations and Similar Titles Additions and Removals before
+    and after a scan. Confirm libraries can be independently collapsed, poster
+    aspect ratios remain portrait, new titles use the saved addition color, and
+    removed titles use the saved removal color without recoloring unrelated
+    titles.
+
 3. Source configuration and credential safety
 ----------------------------------------------
 
@@ -676,3 +699,10 @@ Jellyfin 10.11.11, plugin 0.1.0.49-test | Sync with Only Selected Providers
 and Sync with Only Selected Networks both completed successfully. A subsequent
 full scan of two selected libraries completed successfully and the resulting
 tagging workflow behaved as expected.
+2026-07-25 | Cast and Crew Settings, shared people-photo scan, and overview | Pass |
+Jellyfin 10.11.11, plugin 0.1.0.56-test | The dedicated selected-library photo
+scan completed for 730 items, found 2,115 missing people photos, found 258
+available TMDb photos, and saved all 258 to Jellyfin metadata (3.2 MB). The
+Cast and Crew Additions and Removals overview loaded correctly, showed current
+selected-library metadata without requiring another scan, and displayed real
+Jellyfin person thumbnails beside cast, crew, and people-with-photo names.
