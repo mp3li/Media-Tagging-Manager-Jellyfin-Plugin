@@ -4,6 +4,14 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.51-test] - 2026-07-24
+
+### Fixed
+
+- Rebalanced the Provider, Network, Genre, Keyword, and Collection review
+  tables: Title no longer consumes most of the width, Provider and Network are
+  visibly separated, and tag names wrap within their own readable columns.
+
 ## [0.1.0.50-test] - 2026-07-24
 
 ### Added
