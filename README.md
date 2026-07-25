@@ -256,13 +256,20 @@ actually wanted.
 
 #### Select Networks
 
-This separate settings section loads Watchmode's complete TV-network catalog
-for the selected availability countries when its key is configured, plus
-networks previously discovered by the plugin. It therefore supports choosing
-network names before the first media scan without presenting Watchmode's entire
-worldwide catalog. On a Watchmode fallback lookup, title-level network names
-are written only as `Network:` tags and current availability is written only as
-`Provider:` tags.
+Networks load separately from Providers. Use **Load Networks** to explicitly
+build the Network picker for the currently saved availability regions. The
+plugin reads TMDb's official Network export and verifies each included
+Network's origin country with TMDb, then merges Watchmode's own
+country-filtered Network catalog when Watchmode is configured. The resulting
+list is cached locally for the saved regions; changing regions requires loading
+Networks again. This background catalog action never scans media or changes
+tags.
+
+The initial TMDb build can take several minutes because TMDb publishes Network
+names/IDs in one export but supplies each Network's origin country through its
+own detail record. Later use of the matching cache is immediate. On a
+Watchmode fallback lookup, title-level network names are written only as
+`Network:` tags and current availability is written only as `Provider:` tags.
 
 Use **Sync with Only Selected Networks** when your selected libraries already
 have more network tags than you want. It creates a backup, deletes network tags

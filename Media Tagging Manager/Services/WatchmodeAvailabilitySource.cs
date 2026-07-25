@@ -94,7 +94,7 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
     }
 
     /// <summary>Gets Watchmode's complete provider and TV-network reference catalogs without matching any Jellyfin media item.</summary>
-    public async Task<SourceCatalogResult> GetReferenceCatalogAsync(CancellationToken cancellationToken)
+    public async Task<SourceCatalogResult> GetReferenceCatalogAsync(CancellationToken cancellationToken, bool includeNetworks = true)
     {
         var configuration = Plugin.Instance?.Configuration;
         if (configuration is null || string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey))
@@ -110,7 +110,9 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
         {
             var regions = Uri.EscapeDataString(string.Join(',', GetRegions(configuration)));
             var providerNote = await AddCatalogNamesAsync($"https://api.watchmode.com/v1/sources/?regions={regions}", "name", providers, providerLogos, null, configuration.WatchmodeApiKey, cancellationToken).ConfigureAwait(false);
-            var networkNote = await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, null, networkTmdbIds, configuration.WatchmodeApiKey, cancellationToken, GetRegions(configuration)).ConfigureAwait(false);
+            var networkNote = includeNetworks
+                ? await AddCatalogNamesAsync("https://api.watchmode.com/v1/networks/", "name", networks, null, networkTmdbIds, configuration.WatchmodeApiKey, cancellationToken, GetRegions(configuration)).ConfigureAwait(false)
+                : null;
             var note = string.Join(" ", new[] { providerNote, networkNote }
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.Ordinal));
@@ -140,6 +142,49 @@ public sealed class WatchmodeAvailabilitySource : IAvailabilitySource
                 networkTmdbIds);
         }
 
+    }
+
+    /// <summary>Gets Watchmode's own Network names and origin countries for the requested countries in one catalog request.</summary>
+    public async Task<IReadOnlyCollection<NetworkCatalogEntry>> GetCountryNetworkCatalogAsync(IReadOnlyCollection<string> regions, CancellationToken cancellationToken)
+    {
+        var configuration = Plugin.Instance?.Configuration;
+        if (configuration is null || string.IsNullOrWhiteSpace(configuration.WatchmodeApiKey))
+        {
+            return [];
+        }
+
+        if (!_quota.TryReserve(1, out var quotaReason))
+        {
+            throw new InvalidOperationException(quotaReason);
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.watchmode.com/v1/networks/");
+        request.Headers.Add("X-API-Key", configuration.WatchmodeApiKey);
+        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        _quota.RecordServerUsage(TryParseHeader(response, "X-Account-Quota-Used"));
+        response.EnsureSuccessStatusCode();
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        if (document.RootElement.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException("Watchmode's Network catalog returned unexpected data.");
+        }
+
+        var allowedRegions = new HashSet<string>(regions, StringComparer.OrdinalIgnoreCase);
+        var entries = new List<NetworkCatalogEntry>();
+        foreach (var item in document.RootElement.EnumerateArray())
+        {
+            if (!item.TryGetProperty("name", out var name) || string.IsNullOrWhiteSpace(name.GetString())
+                || !item.TryGetProperty("origin_country", out var country) || string.IsNullOrWhiteSpace(country.GetString())
+                || !allowedRegions.Contains(country.GetString()!))
+            {
+                continue;
+            }
+
+            int? tmdbId = item.TryGetProperty("tmdb_id", out var id) && id.TryGetInt32(out var parsed) && parsed > 0 ? parsed : null;
+            entries.Add(new NetworkCatalogEntry(name.GetString()!.Trim(), country.GetString()!.Trim().ToUpperInvariant(), Name, tmdbId));
+        }
+
+        return entries.OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     private async Task<string?> AddCatalogNamesAsync(

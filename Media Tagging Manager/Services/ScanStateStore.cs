@@ -26,7 +26,13 @@ public sealed class ScanStateStore
                 EstimatedRemaining = _progress.EstimatedRemaining,
                 TagsAdded = _progress.TagsAdded,
                 MediaItemsTagged = _progress.MediaItemsTagged,
-                LastError = _progress.LastError
+                LastError = _progress.LastError,
+                TmdbNetworkTagsReturned = _progress.TmdbNetworkTagsReturned,
+                WatchmodeNetworkTagsReturned = _progress.WatchmodeNetworkTagsReturned,
+                NetworkTagsFilteredBySelection = _progress.NetworkTagsFilteredBySelection,
+                TmdbNetworkLookupFailures = _progress.TmdbNetworkLookupFailures,
+                WatchmodeNetworkFallbackAttempts = _progress.WatchmodeNetworkFallbackAttempts,
+                WatchmodeNetworkLookupFailures = _progress.WatchmodeNetworkLookupFailures
             };
         }
     }
@@ -85,6 +91,42 @@ public sealed class ScanStateStore
 
             _progress.TagsAdded += count;
             _progress.MediaItemsTagged++;
+        }
+    }
+
+    /// <summary>Records an auditable Network-source outcome without changing scan success state.</summary>
+    public void RecordNetworkOutcome(
+        int tmdbReturned,
+        int watchmodeReturned,
+        int filteredBySelection,
+        bool tmdbLookupFailed,
+        bool watchmodeFallbackAttempted,
+        bool watchmodeLookupFailed)
+    {
+        lock (_progressLock)
+        {
+            if (!_progress.IsRunning)
+            {
+                return;
+            }
+
+            _progress.TmdbNetworkTagsReturned += Math.Max(0, tmdbReturned);
+            _progress.WatchmodeNetworkTagsReturned += Math.Max(0, watchmodeReturned);
+            _progress.NetworkTagsFilteredBySelection += Math.Max(0, filteredBySelection);
+            if (tmdbLookupFailed)
+            {
+                _progress.TmdbNetworkLookupFailures++;
+            }
+
+            if (watchmodeFallbackAttempted)
+            {
+                _progress.WatchmodeNetworkFallbackAttempts++;
+            }
+
+            if (watchmodeLookupFailed)
+            {
+                _progress.WatchmodeNetworkLookupFailures++;
+            }
         }
     }
 

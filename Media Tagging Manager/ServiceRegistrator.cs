@@ -19,6 +19,7 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<WatchmodeQuotaTracker>();
         serviceCollection.AddSingleton<ProviderNetworkLogoCache>();
         serviceCollection.AddSingleton<LogoLoadStateStore>();
+        serviceCollection.AddSingleton<NetworkCatalogCache>();
         serviceCollection.AddSingleton<ProviderNetworkScanner>();
         serviceCollection.AddSingleton<ManualScanRequestQueue>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, RefreshAvailabilityTask>();

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Net.Http.Headers;
+using System.IO.Compression;
 using Jellyfin.Plugin.MediaTaggingManager.Models;
 
 namespace Jellyfin.Plugin.MediaTaggingManager.Services;
@@ -223,6 +224,50 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
         return new SourceCatalogResult(names.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(), [], null, logos);
     }
 
+    /// <summary>Loads TMDb's official Network export, then obtains each Network's own origin country from TMDb.</summary>
+    public async Task<IReadOnlyCollection<NetworkCatalogEntry>> GetCountryNetworkCatalogAsync(
+        IReadOnlyCollection<string> regions,
+        Action<int>? setTotal,
+        Action<int>? reportCompleted,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(Plugin.Instance?.Configuration.TmdbApiKey))
+        {
+            return [];
+        }
+
+        var seeds = await GetNetworkExportAsync(cancellationToken).ConfigureAwait(false);
+        setTotal?.Invoke(seeds.Count);
+        var allowedRegions = new HashSet<string>(regions, StringComparer.OrdinalIgnoreCase);
+        var entries = new System.Collections.Concurrent.ConcurrentBag<NetworkCatalogEntry>();
+        var completed = 0;
+        await Parallel.ForEachAsync(seeds, new ParallelOptions { CancellationToken = cancellationToken, MaxDegreeOfParallelism = 12 }, async (seed, token) =>
+        {
+            try
+            {
+                var country = await GetNetworkOriginCountryAsync(seed.Id, token).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(country) && allowedRegions.Contains(country))
+                {
+                    entries.Add(new NetworkCatalogEntry(seed.Name, country, Name, seed.Id));
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // One unavailable Network record must not discard the rest of the catalog.
+            }
+            catch (JsonException)
+            {
+                // One malformed Network record must not discard the rest of the catalog.
+            }
+            finally
+            {
+                reportCompleted?.Invoke(Interlocked.Increment(ref completed));
+            }
+        }).ConfigureAwait(false);
+
+        return entries.OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
     /// <summary>Gets TMDb network-logo URLs for known network IDs without looking up any Jellyfin media item.</summary>
     public async Task<IReadOnlyCollection<SourceTag>> GetNetworkLogoTagsAsync(IReadOnlyDictionary<string, int> networkTmdbIds, CancellationToken cancellationToken)
     {
@@ -345,7 +390,9 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             }
             else
             {
-                issue ??= $"TV-network lookup returned HTTP {(int)detailsResponse.StatusCode}";
+                issue = string.IsNullOrWhiteSpace(issue)
+                    ? $"TV-network lookup returned HTTP {(int)detailsResponse.StatusCode}"
+                    : issue + $"; TV-network lookup returned HTTP {(int)detailsResponse.StatusCode}";
             }
         }
 
@@ -362,6 +409,59 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
     private Task<HttpResponseMessage> SendAsync(string uri, string token, CancellationToken cancellationToken) =>
         _requestGate.SendAsync(_httpClient, () => CreateRequest(uri, token), cancellationToken);
 
+    private async Task<IReadOnlyCollection<TmdbNetworkSeed>> GetNetworkExportAsync(CancellationToken cancellationToken)
+    {
+        for (var daysAgo = 0; daysAgo < 3; daysAgo++)
+        {
+            var date = DateTime.UtcNow.Date.AddDays(-daysAgo);
+            var uri = $"https://files.tmdb.org/p/exports/tv_network_ids_{date:MM_dd_yyyy}.json.gz";
+            using var response = await _httpClient.GetAsync(uri, cancellationToken).ConfigureAwait(false);
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                continue;
+            }
+
+            response.EnsureSuccessStatusCode();
+            var values = new List<TmdbNetworkSeed>();
+            await using var compressed = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            await using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+            using var reader = new StreamReader(gzip);
+            while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
+            {
+                using var document = JsonDocument.Parse(line);
+                if (document.RootElement.TryGetProperty("id", out var id) && id.TryGetInt32(out var networkId)
+                    && document.RootElement.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                {
+                    values.Add(new TmdbNetworkSeed(networkId, name.GetString()!.Trim()));
+                }
+            }
+
+            return values;
+        }
+
+        throw new HttpRequestException("TMDb's current Network export was not available.");
+    }
+
+    private async Task<string?> GetNetworkOriginCountryAsync(int networkId, CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        using var response = await SendAsync($"https://api.themoviedb.org/3/network/{networkId}", token, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        return document.RootElement.TryGetProperty("origin_country", out var country) && !string.IsNullOrWhiteSpace(country.GetString())
+            ? country.GetString()!.Trim().ToUpperInvariant()
+            : null;
+    }
+
     private static string TmdbLogoUrl(string logoPath) => $"https://image.tmdb.org/t/p/w92{logoPath}";
 
     private static IReadOnlyCollection<string> GetRegions(Configuration.PluginConfiguration configuration)
@@ -374,4 +474,6 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             .ToArray();
         return configured.Length > 0 ? configured : [configuration.Region.Trim().ToUpperInvariant()];
     }
+
+    private sealed record TmdbNetworkSeed(int Id, string Name);
 }

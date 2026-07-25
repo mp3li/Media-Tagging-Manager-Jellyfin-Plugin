@@ -55,6 +55,33 @@ public sealed record SourceCatalogResult(
     IReadOnlyDictionary<string, string>? ProviderLogoUrls = null,
     IReadOnlyDictionary<string, int>? NetworkTmdbIds = null);
 
+/// <summary>One source-owned Network catalog entry with its source-supplied origin country.</summary>
+public sealed record NetworkCatalogEntry(string Name, string OriginCountry, string Source, int? TmdbId = null);
+
+/// <summary>Current progress of the explicit Network-catalog load action.</summary>
+public sealed class NetworkCatalogLoadProgress
+{
+    /// <summary>Gets or sets whether the catalog load is active.</summary>
+    public bool IsRunning { get; set; }
+
+    /// <summary>Gets or sets the number of TMDb Network records to inspect.</summary>
+    public int Total { get; set; }
+
+    /// <summary>Gets or sets the number of TMDb Network records inspected.</summary>
+    public int Completed { get; set; }
+
+    /// <summary>Gets or sets a user-facing status message.</summary>
+    public string Message { get; set; } = "Networks have not been loaded for the saved availability regions.";
+}
+
+/// <summary>Network names cached for exactly one saved set of availability regions.</summary>
+public sealed record NetworkCatalogStatus(
+    bool IsCachedForCurrentRegions,
+    IReadOnlyCollection<string> Networks,
+    NetworkCatalogLoadProgress LoadProgress,
+    DateTimeOffset? CachedUtc,
+    IReadOnlyDictionary<string, int>? NetworkTmdbIds = null);
+
 /// <summary>Result of removing one kind of plugin-owned tag without contacting any source.</summary>
 public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);
 
@@ -118,6 +145,24 @@ public sealed class ScanProgress
 
     /// <summary>Gets or sets the latest non-fatal error.</summary>
     public string? LastError { get; set; }
+
+    /// <summary>Gets or sets the number of Network values returned by TMDb during the active or latest scan.</summary>
+    public int TmdbNetworkTagsReturned { get; set; }
+
+    /// <summary>Gets or sets the number of Network values returned by Watchmode fallback lookups during the active or latest scan.</summary>
+    public int WatchmodeNetworkTagsReturned { get; set; }
+
+    /// <summary>Gets or sets the number of returned Network values excluded by the saved Network selection.</summary>
+    public int NetworkTagsFilteredBySelection { get; set; }
+
+    /// <summary>Gets or sets the number of Series for which TMDb's Network lookup did not succeed.</summary>
+    public int TmdbNetworkLookupFailures { get; set; }
+
+    /// <summary>Gets or sets the number of Watchmode Network fallback attempts.</summary>
+    public int WatchmodeNetworkFallbackAttempts { get; set; }
+
+    /// <summary>Gets or sets the number of Watchmode Network fallback lookups that did not succeed.</summary>
+    public int WatchmodeNetworkLookupFailures { get; set; }
 }
 
 /// <summary>A dashboard-facing summary of one library item.</summary>

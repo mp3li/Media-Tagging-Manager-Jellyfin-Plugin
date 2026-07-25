@@ -4,6 +4,30 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.52-test] - 2026-07-24
+
+### Added
+
+- Added an explicit **Load Networks** action above the Network picker. It
+  builds a local catalog for the saved availability regions without scanning
+  media or changing tags, and reports its progress while TMDb Network origins
+  are checked.
+- The Network catalog merges TMDb's country-verified Networks with
+  Watchmode's own country-filtered Network catalog when that optional source
+  is configured. The cached TMDb IDs also let **Load All Logos** preload
+  eligible Network logos for the Network picker.
+
+### Fixed
+
+- Corrected Network fallback selection: an unselected TMDb Provider or Network
+  can no longer suppress a selected, source-returned Watchmode fallback value.
+- Added scan-completion Network diagnostics showing TMDb and Watchmode Network
+  returns, values excluded by the saved Network allow-list, and lookup
+  failures.
+- Opening dashboard settings no longer automatically requests Watchmode's
+  complete Network catalog. Network data is loaded only by the explicit
+  Network action or reused from its matching local cache.
+
 ## [0.1.0.51-test] - 2026-07-24
 
 ### Fixed

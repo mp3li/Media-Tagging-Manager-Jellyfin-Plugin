@@ -27,6 +27,7 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly WatchmodeQuotaTracker _watchmodeQuota;
     private readonly ProviderNetworkLogoCache _logos;
     private readonly LogoLoadStateStore _logoLoadState;
+    private readonly NetworkCatalogCache _networkCatalog;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -40,7 +41,8 @@ public sealed class ProviderNetworkController : ControllerBase
         WatchmodeAvailabilitySource watchmode,
         WatchmodeQuotaTracker watchmodeQuota,
         ProviderNetworkLogoCache logos,
-        LogoLoadStateStore logoLoadState)
+        LogoLoadStateStore logoLoadState,
+        NetworkCatalogCache networkCatalog)
     {
         _scanner = scanner;
         _state = state;
@@ -53,6 +55,7 @@ public sealed class ProviderNetworkController : ControllerBase
         _watchmodeQuota = watchmodeQuota;
         _logos = logos;
         _logoLoadState = logoLoadState;
+        _networkCatalog = networkCatalog;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -343,18 +346,32 @@ public sealed class ProviderNetworkController : ControllerBase
     {
         var discovered = _scanner.GetTagChoices();
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
-        var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
+        var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken, includeNetworks: false).ConfigureAwait(false);
+        var networkCache = await _networkCatalog.GetStatusAsync(Plugin.Instance!.Configuration, cancellationToken).ConfigureAwait(false);
         var providers = discovered.Providers.Concat(tmdb.Providers).Concat(watchmode.Providers)
             .Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
-        var networks = discovered.Networks.Concat(watchmode.Networks)
+        var networks = networkCache.Networks
             .Select(name => TagNameNormalizer.Normalize(TagKind.Network, name))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
         return Ok(new TagChoicesDto(
             providers,
             networks,
             CombineCatalogNotes(tmdb.Note, watchmode.Note),
-            watchmode.Note));
+            networkCache.LoadProgress.Message));
+    }
+
+    /// <summary>Returns the status of the explicit Network-catalog load action.</summary>
+    [HttpGet("network-catalog/status")]
+    public async Task<ActionResult<NetworkCatalogStatus>> GetNetworkCatalogStatus(CancellationToken cancellationToken) =>
+        Ok(await _networkCatalog.GetStatusAsync(Plugin.Instance!.Configuration, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Starts a background TMDb and Watchmode Network-catalog load for the saved availability regions.</summary>
+    [HttpPost("network-catalog/load")]
+    public IActionResult LoadNetworkCatalog()
+    {
+        var started = _networkCatalog.TryStart(Plugin.Instance?.Configuration ?? throw new InvalidOperationException("The plugin configuration is unavailable."));
+        return started ? Accepted() : Conflict("A Network catalog load is already running.");
     }
 
     /// <summary>Serves a previously cached source-supplied provider or network logo for dashboard reuse.</summary>
@@ -376,10 +393,11 @@ public sealed class ProviderNetworkController : ControllerBase
     public async Task<ActionResult<IReadOnlyCollection<UnknownTaggedNameDto>>> GetUnknownTags(CancellationToken cancellationToken)
     {
         var tmdb = await _tmdb.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
-        var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken).ConfigureAwait(false);
+        var watchmode = await _watchmode.GetReferenceCatalogAsync(cancellationToken, includeNetworks: false).ConfigureAwait(false);
+        var networkCache = await _networkCatalog.GetStatusAsync(Plugin.Instance!.Configuration, cancellationToken).ConfigureAwait(false);
         return Ok(_scanner.GetUnknownTaggedNames(
             tmdb.Providers.Concat(watchmode.Providers),
-            tmdb.Networks.Concat(watchmode.Networks)));
+            networkCache.Networks));
     }
 
     /// <summary>Lists selected-library media carrying one unknown Provider or Network tag.</summary>
@@ -691,7 +709,9 @@ public sealed class ProviderNetworkController : ControllerBase
                 }
                 else
                 {
-                    var networks = await _tmdb.GetNetworkLogoTagsAsync(watchmode.NetworkTmdbIds ?? new Dictionary<string, int>(), CancellationToken.None).ConfigureAwait(false);
+                    var networkCache = await _networkCatalog.GetStatusAsync(configuration, CancellationToken.None).ConfigureAwait(false);
+                    var networkIds = networkCache.NetworkTmdbIds ?? watchmode.NetworkTmdbIds ?? new Dictionary<string, int>();
+                    var networks = await _tmdb.GetNetworkLogoTagsAsync(networkIds, CancellationToken.None).ConfigureAwait(false);
                     tags = tags.Concat(networks);
                 }
 

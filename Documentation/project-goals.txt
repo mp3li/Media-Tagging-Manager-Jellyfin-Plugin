@@ -84,8 +84,9 @@ Acceptance criteria:
 [x] Use Watchmode as a quota-tracked fallback when TMDb has no requested
     provider or series-network result, returning current availability as
     Provider tags and actual title-level network names as Network tags.
-[x] Load complete Provider and Network selection lists before a scan, while
-    keeping their returned title tags as separate classifications.
+[x] Load the complete Provider list before a scan and load the Network list on
+    demand for the saved availability regions, while keeping their returned
+    title tags as separate classifications.
 [x] Let an administrator save Provider and Network allow-lists independently
     for future scans without scanning media or changing current tags.
 [x] Let an administrator choose whether a television network's own streaming

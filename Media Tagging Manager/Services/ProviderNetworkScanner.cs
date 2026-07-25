@@ -563,11 +563,12 @@ public sealed class ProviderNetworkScanner
             }
         }
 
-        // Watchmode is the quota-limited fallback. It is queried only for a
-        // requested kind that TMDb did not return; TMDb stays authoritative for
-        // a kind it did return.
-        var primaryProvidersFound = results.SelectMany(result => result.Tags).Any(tag => tag.Kind == TagKind.Provider);
-        var primaryNetworksFound = results.SelectMany(result => result.Tags).Any(tag => tag.Kind == TagKind.Network);
+        // Watchmode is a quota-limited fallback. A raw TMDb value that the
+        // administrator did not select is not a usable match: it must not
+        // prevent Watchmode from supplying a selected, source-backed value.
+        var tmdbTags = tmdbAvailability?.Tags ?? [];
+        var primaryProvidersFound = tmdbTags.Any(tag => tag.Kind == TagKind.Provider && IsSelectedForScan(tag, configuration));
+        var primaryNetworksFound = tmdbTags.Any(tag => tag.Kind == TagKind.Network && IsSelectedForScan(tag, configuration));
         var watchmode = _sources.FirstOrDefault(source => string.Equals(source.Name, "Watchmode", StringComparison.Ordinal));
         var needsProviderFallback = configuration.TagProviders && !primaryProvidersFound;
         var needsNetworkFallback = configuration.TagNetworks && item is Series && !primaryNetworksFound;
@@ -580,9 +581,25 @@ public sealed class ProviderNetworkScanner
         var tags = results
             .SelectMany(result => result.Tags)
             .Where(tag => !string.Equals(tag.Source, "Watchmode", StringComparison.Ordinal)
-                || (tag.Kind == TagKind.Provider && !primaryProvidersFound)
-                || (tag.Kind == TagKind.Network && !primaryNetworksFound))
+                || (tag.Kind == TagKind.Provider && needsProviderFallback)
+                || (tag.Kind == TagKind.Network && needsNetworkFallback))
             .ToArray();
+        if (item is Series && configuration.TagNetworks)
+        {
+            var tmdbNetworks = tmdbTags.Where(tag => tag.Kind == TagKind.Network).ToArray();
+            var watchmodeNetworks = (watchmodeAvailability?.Tags ?? []).Where(tag => tag.Kind == TagKind.Network).ToArray();
+            var filtered = tmdbNetworks.Count(tag => !IsSelectedForScan(tag, configuration))
+                + watchmodeNetworks.Count(tag => !IsSelectedForScan(tag, configuration));
+            var tmdbNetworkFailure = tmdbAvailability?.Note?.Contains("TV-network", StringComparison.OrdinalIgnoreCase) == true
+                || tmdbAvailability?.Note?.Contains("no TMDb ID", StringComparison.OrdinalIgnoreCase) == true;
+            _state.RecordNetworkOutcome(
+                tmdbNetworks.Length,
+                watchmodeNetworks.Length,
+                filtered,
+                tmdbNetworkFailure,
+                needsNetworkFallback && watchmode is not null,
+                needsNetworkFallback && watchmodeAvailability?.Note is not null);
+        }
         // An empty successful availability result is meaningful: the title is
         // not currently available in the configured regions. Only remove stale
         // Provider/Network tags for kinds backed by a successful title lookup;
@@ -809,6 +826,33 @@ public sealed class ProviderNetworkScanner
 
     private static string? GetProviderId(BaseItem item, string name) =>
         item.ProviderIds is not null && item.ProviderIds.TryGetValue(name, out var value) ? value : null;
+
+    private static bool IsSelectedForScan(SourceTag tag, Configuration.PluginConfiguration configuration)
+    {
+        if (tag.Kind == TagKind.Provider)
+        {
+            if (!configuration.TagProviders || (tag.IsTvNetworkApp && string.Equals(configuration.TvNetworkAppTaggingMode, "NetworkOnly", StringComparison.Ordinal)))
+            {
+                return false;
+            }
+
+            var selected = new HashSet<string>((configuration.SelectedProviderNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Provider, name)), StringComparer.OrdinalIgnoreCase);
+            return !configuration.RestrictProvidersToSelected || selected.Contains(TagNameNormalizer.Normalize(TagKind.Provider, tag.Name));
+        }
+
+        if (tag.Kind == TagKind.Network)
+        {
+            if (!configuration.TagNetworks)
+            {
+                return false;
+            }
+
+            var selected = new HashSet<string>((configuration.SelectedNetworkNames ?? []).Select(name => TagNameNormalizer.Normalize(TagKind.Network, name)), StringComparer.OrdinalIgnoreCase);
+            return !configuration.RestrictNetworksToSelected || selected.Contains(TagNameNormalizer.Normalize(TagKind.Network, tag.Name));
+        }
+
+        return true;
+    }
 
     private void RememberKnownTags(IEnumerable<string> providers, IEnumerable<string> networks)
     {
