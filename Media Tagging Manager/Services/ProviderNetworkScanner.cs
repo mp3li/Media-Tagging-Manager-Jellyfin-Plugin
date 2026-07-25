@@ -18,6 +18,7 @@ public sealed class ProviderNetworkScanner
     private readonly TagBackupManager _backups;
     private readonly TagDestinationWriter _destinations;
     private readonly ProviderNetworkLogoCache _logos;
+    private readonly CastCrewManager _castCrew;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly object _knownTagLock = new();
 
@@ -28,7 +29,8 @@ public sealed class ProviderNetworkScanner
         ScanStateStore state,
         TagBackupManager backups,
         TagDestinationWriter destinations,
-        ProviderNetworkLogoCache logos)
+        ProviderNetworkLogoCache logos,
+        CastCrewManager castCrew)
     {
         _libraryManager = libraryManager;
         _sources = sources.ToArray();
@@ -36,6 +38,7 @@ public sealed class ProviderNetworkScanner
         _backups = backups;
         _destinations = destinations;
         _logos = logos;
+        _castCrew = castCrew;
     }
 
     /// <summary>Scans a configured library. Only movies and series receive tags; episodes inherit their series context.</summary>
@@ -680,6 +683,14 @@ public sealed class ProviderNetworkScanner
         {
             _state.Report(Volatile.Read(ref completed), entry.Item.Name);
             var tags = await ScanItemAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
+            var castCrewResult = await _castCrew.ApplyConfiguredAsync(entry.Item, token).ConfigureAwait(false);
+            _state.RecordCastCrewOutcome(
+                castCrewResult.CastAdded,
+                castCrewResult.CrewAdded,
+                castCrewResult.MissingPhotos,
+                castCrewResult.TmdbPhotosAvailable,
+                castCrewResult.PhotosAdded,
+                castCrewResult.PhotoBytes);
             foreach (var tag in tags)
             {
                 if (tag.Kind == TagKind.Provider)

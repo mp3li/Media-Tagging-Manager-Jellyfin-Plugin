@@ -25,6 +25,25 @@ public sealed record SourceTag(TagKind Kind, string Name, string Source, bool Is
 /// <summary>Stable external identifiers available for a Jellyfin item.</summary>
 public sealed record ExternalIds(string? Tmdb, string? Imdb, string MediaType);
 
+/// <summary>One TMDb cast or crew credit available to fill missing Jellyfin people data.</summary>
+public sealed record TmdbPersonCredit(
+    int TmdbPersonId,
+    string Name,
+    string? Character,
+    string? Job,
+    string? Department,
+    int Order,
+    string? ProfilePath);
+
+/// <summary>Cast and crew returned for one TMDb movie or television title.</summary>
+public sealed record TmdbCreditsResult(
+    IReadOnlyCollection<TmdbPersonCredit> Cast,
+    IReadOnlyCollection<TmdbPersonCredit> Crew,
+    string? Note = null);
+
+/// <summary>One downloaded TMDb profile image ready for Jellyfin's native image writer.</summary>
+public sealed record TmdbPersonImage(byte[] Content, string ContentType, long SourceBytes);
+
 /// <summary>The data returned from a single source adapter.</summary>
 public sealed record SourceLookupResult(string Source, IReadOnlyCollection<SourceTag> Tags, string? Note = null);
 
@@ -177,7 +196,56 @@ public sealed class ScanProgress
 
     /// <summary>Gets or sets the number of Watchmode Network fallback lookups that did not succeed.</summary>
     public int WatchmodeNetworkLookupFailures { get; set; }
+
+    /// <summary>Gets or sets the number of cast members appended during the active or latest full scan.</summary>
+    public int CastMembersAdded { get; set; }
+
+    /// <summary>Gets or sets the number of crew members appended during the active or latest full scan.</summary>
+    public int CrewMembersAdded { get; set; }
+
+    /// <summary>Gets or sets the number of missing person photos inspected during the active or latest full scan.</summary>
+    public int MissingPeoplePhotos { get; set; }
+
+    /// <summary>Gets or sets the number of missing person photos with a TMDb image available during the active or latest full scan.</summary>
+    public int TmdbPeoplePhotosAvailable { get; set; }
+
+    /// <summary>Gets or sets the number of person photos saved during the active or latest full scan.</summary>
+    public int PeoplePhotosAdded { get; set; }
+
+    /// <summary>Gets or sets the known source bytes for person photos saved during the active or latest full scan.</summary>
+    public long PeoplePhotoBytes { get; set; }
 }
+
+/// <summary>Progress and results for the dedicated missing-person-photo action.</summary>
+public sealed class CastCrewPhotoProgress
+{
+    /// <summary>Gets or sets whether a dedicated people-photo scan is running.</summary>
+    public bool IsRunning { get; set; }
+
+    /// <summary>Gets or sets the number of selected-library Movies and Series planned for inspection.</summary>
+    public int TotalItems { get; set; }
+
+    /// <summary>Gets or sets the number of selected-library items inspected.</summary>
+    public int CompletedItems { get; set; }
+
+    /// <summary>Gets or sets the number of missing people photos inspected.</summary>
+    public int MissingPhotoCount { get; set; }
+
+    /// <summary>Gets or sets the number of missing people photos for which TMDb supplied a profile image.</summary>
+    public int TmdbPhotoAvailableCount { get; set; }
+
+    /// <summary>Gets or sets the number of person photos successfully saved to Jellyfin.</summary>
+    public int PhotosAdded { get; set; }
+
+    /// <summary>Gets or sets the known source bytes downloaded for saved person photos.</summary>
+    public long EstimatedBytes { get; set; }
+
+    /// <summary>Gets or sets a user-facing status, warning, or completion message.</summary>
+    public string Message { get; set; } = "No cast and crew photo scan is currently running.";
+}
+
+/// <summary>Result of removing only people assignments explicitly recorded as added by this plugin.</summary>
+public sealed record CastCrewCleanupResult(int CastOrCrewRemoved, int PeopleImagesRemoved, int ItemsChanged, int ImagesSkipped);
 
 /// <summary>A dashboard-facing summary of one library item.</summary>
 public sealed record TaggedItemDto(

@@ -20,10 +20,15 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<ProviderNetworkLogoCache>();
         serviceCollection.AddSingleton<LogoLoadStateStore>();
         serviceCollection.AddSingleton<NetworkCatalogCache>();
+        serviceCollection.AddSingleton<CastCrewStateStore>();
+        serviceCollection.AddSingleton<CastCrewOwnershipStore>();
+        serviceCollection.AddSingleton<CastCrewManager>();
         serviceCollection.AddSingleton<ProviderNetworkScanner>();
         serviceCollection.AddSingleton<ManualScanRequestQueue>();
+        serviceCollection.AddSingleton<CastCrewPhotoScanRequestQueue>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, RefreshAvailabilityTask>();
         serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, ManualScanTask>();
+        serviceCollection.AddSingleton<MediaBrowser.Model.Tasks.IScheduledTask, CastCrewPhotoScanTask>();
         serviceCollection.AddSingleton<MediaBrowser.Controller.Library.ILibraryPostScanTask, NewMediaPostScanTask>();
         serviceCollection.AddHttpClient<TmdbAvailabilitySource>();
         serviceCollection.AddHttpClient<WatchmodeAvailabilitySource>();

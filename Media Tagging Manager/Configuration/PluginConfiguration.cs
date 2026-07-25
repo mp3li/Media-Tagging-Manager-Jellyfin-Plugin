@@ -97,6 +97,24 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets the number of Watchmode requests used during <see cref="WatchmodeUsageCycleStart"/>.</summary>
     public int WatchmodeRequestsUsed { get; set; }
+
+    /// <summary>Gets or sets whether scans may append TMDb cast members that are missing from the current Jellyfin item.</summary>
+    public bool AddMissingCast { get; set; }
+
+    /// <summary>Gets or sets the maximum total cast members retained when appending missing TMDb cast members.</summary>
+    public int MaximumCastMembers { get; set; } = 20;
+
+    /// <summary>Gets or sets whether scans may fill missing Jellyfin primary images for cast members returned by TMDb.</summary>
+    public bool FillMissingCastPhotos { get; set; }
+
+    /// <summary>Gets or sets whether scans may append TMDb crew credits that match the selected jobs.</summary>
+    public bool AddMissingCrew { get; set; }
+
+    /// <summary>Gets or sets the TMDb crew job names allowed to be appended during scans.</summary>
+    public string[] SelectedCrewJobs { get; set; } = [];
+
+    /// <summary>Gets or sets whether scans may fill missing Jellyfin primary images for selected crew members returned by TMDb.</summary>
+    public bool FillMissingCrewPhotos { get; set; }
 }
 
 /// <summary>An administrator-defined canonical name for an external Provider or Network tag.</summary>

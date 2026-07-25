@@ -140,3 +140,25 @@ public sealed class LastScanDeltaUpdateRequest
     /// <summary>Gets or sets collection names removed in the last scan.</summary>
     public string[]? RemovedCollections { get; set; }
 }
+
+/// <summary>Only the controls on the Cast and Crew Settings tab.</summary>
+public sealed class CastCrewSettingsRequest
+{
+    /// <summary>Gets or sets whether scans may append missing TMDb cast members.</summary>
+    public bool AddMissingCast { get; set; }
+
+    /// <summary>Gets or sets the maximum total cast members retained when adding missing cast.</summary>
+    public int MaximumCastMembers { get; set; }
+
+    /// <summary>Gets or sets whether scans may fill missing cast photos returned by TMDb.</summary>
+    public bool FillMissingCastPhotos { get; set; }
+
+    /// <summary>Gets or sets whether scans may append missing TMDb crew members for selected jobs.</summary>
+    public bool AddMissingCrew { get; set; }
+
+    /// <summary>Gets or sets the TMDb crew jobs allowed to be appended.</summary>
+    public string[]? SelectedCrewJobs { get; set; }
+
+    /// <summary>Gets or sets whether scans may fill missing crew photos returned by TMDb.</summary>
+    public bool FillMissingCrewPhotos { get; set; }
+}

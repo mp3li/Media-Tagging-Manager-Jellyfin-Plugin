@@ -84,7 +84,13 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         WatchmodeMonthlyLimit = source.WatchmodeMonthlyLimit,
         WatchmodeQuotaResetsOn = source.WatchmodeQuotaResetsOn,
         WatchmodeUsageCycleStart = source.WatchmodeUsageCycleStart,
-        WatchmodeRequestsUsed = source.WatchmodeRequestsUsed
+        WatchmodeRequestsUsed = source.WatchmodeRequestsUsed,
+        AddMissingCast = source.AddMissingCast,
+        MaximumCastMembers = source.MaximumCastMembers,
+        FillMissingCastPhotos = source.FillMissingCastPhotos,
+        AddMissingCrew = source.AddMissingCrew,
+        SelectedCrewJobs = (source.SelectedCrewJobs ?? []).ToArray(),
+        FillMissingCrewPhotos = source.FillMissingCrewPhotos
     };
 
     /// <inheritdoc />

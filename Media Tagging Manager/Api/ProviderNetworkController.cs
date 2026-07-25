@@ -28,6 +28,8 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly ProviderNetworkLogoCache _logos;
     private readonly LogoLoadStateStore _logoLoadState;
     private readonly NetworkCatalogCache _networkCatalog;
+    private readonly CastCrewManager _castCrew;
+    private readonly CastCrewPhotoScanRequestQueue _castCrewPhotoRequests;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -42,7 +44,9 @@ public sealed class ProviderNetworkController : ControllerBase
         WatchmodeQuotaTracker watchmodeQuota,
         ProviderNetworkLogoCache logos,
         LogoLoadStateStore logoLoadState,
-        NetworkCatalogCache networkCatalog)
+        NetworkCatalogCache networkCatalog,
+        CastCrewManager castCrew,
+        CastCrewPhotoScanRequestQueue castCrewPhotoRequests)
     {
         _scanner = scanner;
         _state = state;
@@ -56,6 +60,8 @@ public sealed class ProviderNetworkController : ControllerBase
         _logos = logos;
         _logoLoadState = logoLoadState;
         _networkCatalog = networkCatalog;
+        _castCrew = castCrew;
+        _castCrewPhotoRequests = castCrewPhotoRequests;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -187,6 +193,27 @@ public sealed class ProviderNetworkController : ControllerBase
         return Ok(configuration);
     }
 
+    /// <summary>Saves only the controls on the Cast and Crew Settings tab.</summary>
+    [HttpPost("settings/cast-crew")]
+    public IActionResult SaveCastCrewSettings([FromBody] CastCrewSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        var allowedJobs = CastCrewManager.AvailableCrewJobs.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.AddMissingCast = submitted.AddMissingCast;
+            configuration.MaximumCastMembers = Math.Clamp(submitted.MaximumCastMembers, 1, 200);
+            configuration.FillMissingCastPhotos = submitted.FillMissingCastPhotos;
+            configuration.AddMissingCrew = submitted.AddMissingCrew;
+            configuration.SelectedCrewJobs = (submitted.SelectedCrewJobs ?? [])
+                .Where(job => !string.IsNullOrWhiteSpace(job) && allowedJobs.Contains(job.Trim()))
+                .Select(job => CastCrewManager.AvailableCrewJobs.First(allowed => string.Equals(allowed, job.Trim(), StringComparison.OrdinalIgnoreCase)))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            configuration.FillMissingCrewPhotos = submitted.FillMissingCrewPhotos;
+        }));
+    }
+
     /// <summary>Saves only Scheduled Tasks controls shared between the two tabs.</summary>
     [HttpPost("settings/scheduled-tasks")]
     public IActionResult SaveScheduledTasks([FromBody] ScheduledTasksSettingsRequest submitted)
@@ -277,6 +304,36 @@ public sealed class ProviderNetworkController : ControllerBase
     /// <summary>Returns active scan status, including an estimated remaining duration.</summary>
     [HttpGet("status")]
     public ActionResult<ScanProgress> GetStatus() => Ok(_state.GetProgress());
+
+    /// <summary>Returns progress and results for the dedicated missing cast-and-crew-photo scan.</summary>
+    [HttpGet("cast-crew/photos/status")]
+    public ActionResult<CastCrewPhotoProgress> GetCastCrewPhotoStatus() => Ok(_castCrew.GetPhotoProgress());
+
+    /// <summary>Queues the administrator-requested photo-only scan through Jellyfin's task manager.</summary>
+    [HttpPost("cast-crew/photos/scan")]
+    public IActionResult ScanCastCrewPhotos()
+    {
+        var validationError = _castCrew.GetPhotoScanValidationError();
+        if (validationError is not null)
+        {
+            return BadRequest(validationError);
+        }
+
+        _castCrewPhotoRequests.Enqueue();
+        _castCrew.MarkPhotoScanQueued();
+        _taskManager.QueueScheduledTask<CastCrewPhotoScanTask>();
+        return Accepted();
+    }
+
+    /// <summary>Removes only cast and crew entries previously recorded as created by this plugin.</summary>
+    [HttpPost("cast-crew/remove")]
+    public async Task<ActionResult<CastCrewCleanupResult>> RemoveCastCrew(CancellationToken cancellationToken) =>
+        Ok(await _castCrew.RemoveOwnedAssignmentsAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Removes only exact person primary images previously recorded as created by this plugin.</summary>
+    [HttpPost("cast-crew/remove-images")]
+    public async Task<ActionResult<CastCrewCleanupResult>> RemoveCastCrewImages(CancellationToken cancellationToken) =>
+        Ok(await _castCrew.RemoveOwnedImagesAsync(cancellationToken).ConfigureAwait(false));
 
     /// <summary>Returns exact plugin-owned additions and removals from the most recently started scan.</summary>
     [HttpGet("last-scan-changes")]

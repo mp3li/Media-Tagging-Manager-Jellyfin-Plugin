@@ -167,6 +167,55 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             : null;
     }
 
+    /// <summary>Gets the cast and crew attached to one TMDb movie or television title.</summary>
+    public async Task<TmdbCreditsResult> GetCreditsAsync(ExternalIds ids, CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(ids.Tmdb))
+        {
+            return new TmdbCreditsResult([], [], "The item has no configured TMDb credential or TMDb ID.");
+        }
+
+        var type = ids.MediaType == "Series" ? "tv" : "movie";
+        using var response = await SendAsync($"https://api.themoviedb.org/3/{type}/{Uri.EscapeDataString(ids.Tmdb)}/credits?language=en-US", token, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return new TmdbCreditsResult([], [], $"TMDb credits lookup returned HTTP {(int)response.StatusCode}.");
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        return new TmdbCreditsResult(
+            ParseCredits(document.RootElement, "cast", isCast: true),
+            ParseCredits(document.RootElement, "crew", isCast: false));
+    }
+
+    /// <summary>Downloads one TMDb profile image for handoff to Jellyfin's supported image writer.</summary>
+    public async Task<TmdbPersonImage?> DownloadPersonImageAsync(string profilePath, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(profilePath) || !profilePath.StartsWith("/", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        using var response = await _requestGate.SendAsync(
+            _httpClient,
+            () => new HttpRequestMessage(HttpMethod.Get, $"https://image.tmdb.org/t/p/w185{profilePath}"),
+            cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode || (response.Content.Headers.ContentLength ?? 0) > 5 * 1024 * 1024)
+        {
+            return null;
+        }
+
+        var contentType = response.Content.Headers.ContentType?.MediaType;
+        if (contentType is not "image/jpeg" and not "image/png" and not "image/webp")
+        {
+            return null;
+        }
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+        return bytes.Length > 5 * 1024 * 1024 ? null : new TmdbPersonImage(bytes, contentType, response.Content.Headers.ContentLength ?? bytes.Length);
+    }
+
     /// <summary>Gets TMDb's complete movie and TV watch-provider catalogs for the configured availability countries.</summary>
     public async Task<SourceCatalogResult> GetReferenceCatalogAsync(CancellationToken cancellationToken)
     {
@@ -408,6 +457,33 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
 
     private Task<HttpResponseMessage> SendAsync(string uri, string token, CancellationToken cancellationToken) =>
         _requestGate.SendAsync(_httpClient, () => CreateRequest(uri, token), cancellationToken);
+
+    private static IReadOnlyCollection<TmdbPersonCredit> ParseCredits(JsonElement root, string propertyName, bool isCast)
+    {
+        if (!root.TryGetProperty(propertyName, out var values) || values.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var credits = new List<TmdbPersonCredit>();
+        foreach (var value in values.EnumerateArray())
+        {
+            if (!value.TryGetProperty("id", out var id) || !id.TryGetInt32(out var personId)
+                || !value.TryGetProperty("name", out var name) || string.IsNullOrWhiteSpace(name.GetString()))
+            {
+                continue;
+            }
+
+            var character = isCast && value.TryGetProperty("character", out var characterValue) ? characterValue.GetString() : null;
+            var job = !isCast && value.TryGetProperty("job", out var jobValue) ? jobValue.GetString() : null;
+            var department = !isCast && value.TryGetProperty("department", out var departmentValue) ? departmentValue.GetString() : null;
+            var order = value.TryGetProperty("order", out var orderValue) && orderValue.TryGetInt32(out var sortOrder) ? sortOrder : credits.Count;
+            var profilePath = value.TryGetProperty("profile_path", out var profileValue) && profileValue.ValueKind == JsonValueKind.String ? profileValue.GetString() : null;
+            credits.Add(new TmdbPersonCredit(personId, name.GetString()!.Trim(), character?.Trim(), job?.Trim(), department?.Trim(), order, profilePath));
+        }
+
+        return credits;
+    }
 
     private async Task<IReadOnlyCollection<TmdbNetworkSeed>> GetNetworkExportAsync(CancellationToken cancellationToken)
     {

@@ -140,6 +140,28 @@ Acceptance criteria:
 - Settings persist across a page reload and Jellyfin restart.
 - No unselected library is queried, backed up, or modified.
 
+Cast and Crew Settings
+-----------------------
+
+[ ] Open Cast and Crew Settings, save a Cast-only change, leave and reopen the
+    page, and confirm the selection persists without changing libraries, API
+    credentials, Provider/Network choices, or Genre choices.
+[ ] With Add more cast enabled and a deliberately low maximum, run a full scan
+    and confirm only missing TMDb cast entries are appended. Confirm existing
+    cast names, character names, and ordering remain unchanged.
+[ ] Enable selected crew jobs, run a full scan, and confirm only missing people
+    from those TMDb jobs are appended while existing crew is unchanged.
+[ ] Enable a cast or crew photo option, run a full scan, and confirm its scan
+    completion text reports missing people photos, TMDb-profile availability,
+    saved-photo count, and storage use.
+[ ] Run Scan for Cast and Crew Photos and confirm its Jellyfin-managed progress
+    is limited to selected-library Movies and Series and does not add people.
+[ ] Confirm a saved person photo is shared by Jellyfin across titles for that
+    person rather than creating one per-title image copy.
+[ ] Run each Cleanup Settings action and confirm it removes only the exact
+    credit or image recorded as plugin-created, leaves user/Jellyfin-created
+    people metadata untouched, and does not affect an unselected library.
+
 3. Source configuration and credential safety
 ----------------------------------------------
 

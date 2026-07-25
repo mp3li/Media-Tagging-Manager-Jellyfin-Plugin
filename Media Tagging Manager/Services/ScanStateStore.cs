@@ -36,7 +36,13 @@ public sealed class ScanStateStore
                 NetworkTagsAdded = _progress.NetworkTagsAdded,
                 TmdbNetworkLookupFailures = _progress.TmdbNetworkLookupFailures,
                 WatchmodeNetworkFallbackAttempts = _progress.WatchmodeNetworkFallbackAttempts,
-                WatchmodeNetworkLookupFailures = _progress.WatchmodeNetworkLookupFailures
+                WatchmodeNetworkLookupFailures = _progress.WatchmodeNetworkLookupFailures,
+                CastMembersAdded = _progress.CastMembersAdded,
+                CrewMembersAdded = _progress.CrewMembersAdded,
+                MissingPeoplePhotos = _progress.MissingPeoplePhotos,
+                TmdbPeoplePhotosAvailable = _progress.TmdbPeoplePhotosAvailable,
+                PeoplePhotosAdded = _progress.PeoplePhotosAdded,
+                PeoplePhotoBytes = _progress.PeoplePhotoBytes
             };
         }
     }
@@ -148,6 +154,25 @@ public sealed class ScanStateStore
             _progress.NetworkTagsAlreadyPresent += Math.Max(0, alreadyPresent);
             _progress.NetworkTagsSuppressedByStreamingAppSetting += Math.Max(0, suppressedByStreamingAppSetting);
             _progress.NetworkTagsAdded += Math.Max(0, added);
+        }
+    }
+
+    /// <summary>Records cast, crew, and people-photo work completed as part of the active full scan.</summary>
+    public void RecordCastCrewOutcome(int castAdded, int crewAdded, int missingPhotos, int tmdbPhotosAvailable, int photosAdded, long photoBytes)
+    {
+        lock (_progressLock)
+        {
+            if (!_progress.IsRunning)
+            {
+                return;
+            }
+
+            _progress.CastMembersAdded += Math.Max(0, castAdded);
+            _progress.CrewMembersAdded += Math.Max(0, crewAdded);
+            _progress.MissingPeoplePhotos += Math.Max(0, missingPhotos);
+            _progress.TmdbPeoplePhotosAvailable += Math.Max(0, tmdbPhotosAvailable);
+            _progress.PeoplePhotosAdded += Math.Max(0, photosAdded);
+            _progress.PeoplePhotoBytes += Math.Max(0, photoBytes);
         }
     }
 

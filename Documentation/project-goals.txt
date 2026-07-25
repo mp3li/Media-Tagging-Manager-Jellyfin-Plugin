@@ -60,6 +60,15 @@ Acceptance criteria:
 [x] Separate Main Settings, Network and Provider Settings, Genres and Keywords
     Settings, Collections Tags Settings, View and Edit Tags, and Scan into
     distinct dashboard tabs with their appropriate save or action controls.
+[x] Add a Cast and Crew Settings secondary Main Settings tab with independently
+    saved cast, crew-job, and people-photo choices that never overwrite other
+    dashboard-tab settings.
+[x] Read existing Jellyfin people metadata for selected Movies and Series,
+    preserve existing credits, and optionally append only missing TMDb cast or
+    selected-job crew credits plus missing person primary images.
+[x] Provide a Jellyfin-managed selected-library people-photo task with progress
+    totals, conservative private provenance, and cleanup actions limited to
+    records and image paths created by this plugin.
 [x] Provide logo settings that can stop logo saving/display and explicitly
     delete the complete local logo cache without changing media tags.
 

@@ -202,6 +202,52 @@ individual cache entries to remove, or **Delete Cached Logos** to explicitly
 remove every cached and manually uploaded logo. These actions do not modify
 media tags.
 
+### Cast and Crew Settings
+
+This secondary Main Settings tab completes missing people metadata without
+replacing the cast or crew Jellyfin already has. It reads the current Jellyfin
+people entries for each selected Movie or Series, so data originally imported
+from NFO files and later Jellyfin edits are preserved.
+
+#### Cast Settings
+
+Enable **Add more cast if more are found than you currently have** to append
+only TMDb cast members missing from the current item. Existing cast names,
+character names, and ordering remain untouched. Choose the maximum cast count
+only when that option is on; it never removes an existing cast member merely to
+meet the selected maximum. **Fill missing cast photos** saves a TMDb profile
+image only when the current Jellyfin person has no primary image.
+
+#### Crew Settings
+
+Enable **Add more crew if more are found than you currently have**, select the
+crew jobs you want, and the plugin appends only missing TMDb people for those
+jobs. Existing crew credits remain unchanged. **Fill missing crew photos**
+uses the same missing-primary-image rule for the selected crew jobs.
+
+#### Cast and Crew Photo Settings
+
+People photos become Jellyfin server metadata shared across titles. Jellyfin
+stores one image for a person and can reuse it wherever that person appears;
+the plugin does not create one image copy per title. **Scan for Cast and Crew
+Photos** runs a selected-library, photo-only task through Jellyfin’s task
+system. Its progress reports the missing-photo count, how many profiles TMDb
+had available, saved-photo count, and downloaded storage total.
+
+The photo-only task never adds people. It considers only people already
+attached to selected-library media. A normal full scan may first append an
+opted-in missing cast or crew credit and then save that newly attached person’s
+missing photo.
+
+#### Cleanup Settings
+
+**Remove Cast and Crew Added by This Plugin** and **Remove Cast and Crew Images
+Added by This Plugin** use a private plugin provenance record, not visible
+Jellyfin tags. They remove only exact entries or image paths the plugin
+recorded as creating. A person credit, image, or user edit Jellyfin did not get
+from this plugin is left alone. The image cleanup is limited to people still
+represented in the currently selected libraries.
+
 ### Network and Provider Settings
 
 #### Availability Region Settings

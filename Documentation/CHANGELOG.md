@@ -4,6 +4,21 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.54-test] - 2026-07-24
+
+### Added
+
+- Added a secondary **Cast and Crew Settings** dashboard tab with separately
+  saved cast, crew-job, and missing-photo choices.
+- Full selected-library scans can now append missing TMDb cast and selected-job
+  crew credits while preserving current Jellyfin credits, character names, and
+  cast ordering.
+- Added a Jellyfin-managed **Scan for Cast and Crew Photos** task with live
+  progress, missing-photo, TMDb-availability, saved-photo, and storage totals.
+- Added conservative cleanup actions backed by private plugin provenance. They
+  remove only exact credits or person image paths this plugin recorded as
+  creating; no visible Jellyfin tag is used for that bookkeeping.
+
 ## [0.1.0.53-test] - 2026-07-24
 
 ### Fixed

@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.53",
-        "changelog": "0.1.0.53-test makes Network scan and catalog source accounting exact. Test only; not a stable release.",
+        "version": "0.1.0.54",
+        "changelog": "0.1.0.54-test adds Cast and Crew Settings, TMDb missing-credit/photo enrichment, and conservative cleanup. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.53-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.53-test.zip",
-        "checksum": "dc7d3698222b74b1bf8cf40d71cd0f4d",
-        "timestamp": "2026-07-25T04:37:12Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.54-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.54-test.zip",
+        "checksum": "e77fcf585024325dc17b4ed9afe6b6ab",
+        "timestamp": "2026-07-25T06:07:36Z"
       }
     ]
   }
