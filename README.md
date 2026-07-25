@@ -239,6 +239,15 @@ attached to selected-library media. A normal full scan may first append an
 opted-in missing cast or crew credit and then save that newly attached person’s
 missing photo.
 
+#### Cast and Crew Additions and Removals
+
+This collapsed-by-default overview is available before any Cast and Crew scan.
+It groups every current selected-library Movie and Series by library and shows
+its current cast, crew, and people with saved Jellyfin photos. The newest full
+scan, photo-only scan, or cleanup action overlays exact additions in the saved
+green color and removals in the saved red color. A later full or photo-only
+scan starts a fresh change overlay without hiding the current people metadata.
+
 #### Cleanup Settings
 
 **Remove Cast and Crew Added by This Plugin** and **Remove Cast and Crew Images

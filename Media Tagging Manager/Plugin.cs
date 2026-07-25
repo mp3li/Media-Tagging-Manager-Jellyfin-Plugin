@@ -90,7 +90,9 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         FillMissingCastPhotos = source.FillMissingCastPhotos,
         AddMissingCrew = source.AddMissingCrew,
         SelectedCrewJobs = (source.SelectedCrewJobs ?? []).ToArray(),
-        FillMissingCrewPhotos = source.FillMissingCrewPhotos
+        FillMissingCrewPhotos = source.FillMissingCrewPhotos,
+        CastCrewAddedColor = source.CastCrewAddedColor,
+        CastCrewRemovedColor = source.CastCrewRemovedColor
     };
 
     /// <inheritdoc />

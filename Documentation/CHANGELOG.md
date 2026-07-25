@@ -4,6 +4,21 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.55-test] - 2026-07-24
+
+### Added
+
+- Added the always-available, collapsed **Cast and Crew Additions and
+  Removals** overview. It shows current selected-library people metadata before
+  any scan, then overlays exact newest-operation additions/removals in
+  administrator-selected colors.
+
+### Fixed
+
+- The Cast and Crew secondary tab no longer also highlights Main Settings.
+- Added the required save-before-scanning reminder and removed duplicated
+  completed photo-scan totals from the dashboard status line.
+
 ## [0.1.0.54-test] - 2026-07-24
 
 ### Added

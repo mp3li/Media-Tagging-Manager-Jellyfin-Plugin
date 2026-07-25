@@ -115,6 +115,12 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets whether scans may fill missing Jellyfin primary images for selected crew members returned by TMDb.</summary>
     public bool FillMissingCrewPhotos { get; set; }
+
+    /// <summary>Gets or sets the dashboard color used for cast, crew, and people photos added by the latest operation.</summary>
+    public string CastCrewAddedColor { get; set; } = "#4CAF50";
+
+    /// <summary>Gets or sets the dashboard color used for cast, crew, and people photos removed by the latest operation.</summary>
+    public string CastCrewRemovedColor { get; set; } = "#F44336";
 }
 
 /// <summary>An administrator-defined canonical name for an external Provider or Network tag.</summary>

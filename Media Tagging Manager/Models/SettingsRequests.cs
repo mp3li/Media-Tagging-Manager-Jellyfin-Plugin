@@ -162,3 +162,13 @@ public sealed class CastCrewSettingsRequest
     /// <summary>Gets or sets whether scans may fill missing crew photos returned by TMDb.</summary>
     public bool FillMissingCrewPhotos { get; set; }
 }
+
+/// <summary>Only the accessible addition/removal colors on the Cast and Crew Settings tab.</summary>
+public sealed class CastCrewColorSettingsRequest
+{
+    /// <summary>Gets or sets the color for cast, crew, and people photos added by the latest operation.</summary>
+    public string? AddedColor { get; set; }
+
+    /// <summary>Gets or sets the color for cast, crew, and people photos removed by the latest operation.</summary>
+    public string? RemovedColor { get; set; }
+}

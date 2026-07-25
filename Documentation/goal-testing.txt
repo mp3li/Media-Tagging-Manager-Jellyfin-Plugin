@@ -156,6 +156,13 @@ Cast and Crew Settings
     saved-photo count, and storage use.
 [ ] Run Scan for Cast and Crew Photos and confirm its Jellyfin-managed progress
     is limited to selected-library Movies and Series and does not add people.
+[ ] Before any Cast and Crew scan, expand Cast and Crew Additions and Removals
+    and confirm every current Movie and Series in selected libraries appears
+    with its current cast, crew, and people who have saved photos.
+[ ] After a full Cast/Crew-enabled scan, photo-only scan, and each cleanup
+    action, confirm only exact new people/photos are green and only exact
+    removals are red. Confirm the next full or photo-only scan replaces that
+    color overlay but continues to show all current selected-library items.
 [ ] Confirm a saved person photo is shared by Jellyfin across titles for that
     person rather than creating one per-title image copy.
 [ ] Run each Cleanup Settings action and confirm it removes only the exact

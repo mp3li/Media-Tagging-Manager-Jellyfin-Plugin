@@ -247,6 +247,35 @@ public sealed class CastCrewPhotoProgress
 /// <summary>Result of removing only people assignments explicitly recorded as added by this plugin.</summary>
 public sealed record CastCrewCleanupResult(int CastOrCrewRemoved, int PeopleImagesRemoved, int ItemsChanged, int ImagesSkipped);
 
+/// <summary>Cast, crew, and shared-person-image changes from the latest Cast and Crew operation.</summary>
+public sealed record CastCrewChangeItemDto(
+    Guid ItemId,
+    string Name,
+    string ItemType,
+    Guid LibraryId,
+    IReadOnlyCollection<string> AddedCast,
+    IReadOnlyCollection<string> RemovedCast,
+    IReadOnlyCollection<string> AddedCrew,
+    IReadOnlyCollection<string> RemovedCrew,
+    IReadOnlyCollection<string> AddedPeoplePhotos,
+    IReadOnlyCollection<string> RemovedPeoplePhotos);
+
+/// <summary>Current selected-library people metadata plus the newest Cast and Crew operation's colored changes.</summary>
+public sealed record CastCrewOverviewItemDto(
+    Guid ItemId,
+    string Name,
+    string ItemType,
+    Guid LibraryId,
+    IReadOnlyCollection<string> Cast,
+    IReadOnlyCollection<string> Crew,
+    IReadOnlyCollection<string> PeoplePhotos,
+    IReadOnlyCollection<string> AddedCast,
+    IReadOnlyCollection<string> RemovedCast,
+    IReadOnlyCollection<string> AddedCrew,
+    IReadOnlyCollection<string> RemovedCrew,
+    IReadOnlyCollection<string> AddedPeoplePhotos,
+    IReadOnlyCollection<string> RemovedPeoplePhotos);
+
 /// <summary>A dashboard-facing summary of one library item.</summary>
 public sealed record TaggedItemDto(
     Guid ItemId,

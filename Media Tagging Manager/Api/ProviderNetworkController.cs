@@ -214,6 +214,18 @@ public sealed class ProviderNetworkController : ControllerBase
         }));
     }
 
+    /// <summary>Saves only accessible change-review colors on the Cast and Crew Settings tab.</summary>
+    [HttpPost("settings/cast-crew-colors")]
+    public IActionResult SaveCastCrewColors([FromBody] CastCrewColorSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.CastCrewAddedColor = NormalizeCssColor(submitted.AddedColor, "#4CAF50");
+            configuration.CastCrewRemovedColor = NormalizeCssColor(submitted.RemovedColor, "#F44336");
+        }));
+    }
+
     /// <summary>Saves only Scheduled Tasks controls shared between the two tabs.</summary>
     [HttpPost("settings/scheduled-tasks")]
     public IActionResult SaveScheduledTasks([FromBody] ScheduledTasksSettingsRequest submitted)
@@ -308,6 +320,16 @@ public sealed class ProviderNetworkController : ControllerBase
     /// <summary>Returns progress and results for the dedicated missing cast-and-crew-photo scan.</summary>
     [HttpGet("cast-crew/photos/status")]
     public ActionResult<CastCrewPhotoProgress> GetCastCrewPhotoStatus() => Ok(_castCrew.GetPhotoProgress());
+
+    /// <summary>Returns cast, crew, and shared-person-image changes from the latest related operation.</summary>
+    [HttpGet("cast-crew/changes")]
+    public ActionResult<IEnumerable<CastCrewChangeItemDto>> GetCastCrewChanges([FromQuery] Guid? libraryId) =>
+        Ok(_castCrew.GetLatestChanges(libraryId));
+
+    /// <summary>Returns every current selected-library Movie and Series with cast, crew, photo, and latest-operation information.</summary>
+    [HttpGet("cast-crew/overview")]
+    public ActionResult<IEnumerable<CastCrewOverviewItemDto>> GetCastCrewOverview([FromQuery] Guid? libraryId) =>
+        Ok(_castCrew.GetOverview(libraryId));
 
     /// <summary>Queues the administrator-requested photo-only scan through Jellyfin's task manager.</summary>
     [HttpPost("cast-crew/photos/scan")]

@@ -670,6 +670,7 @@ public sealed class ProviderNetworkScanner
         CancellationToken cancellationToken)
     {
         _state.Start(items.Count);
+        _castCrew.StartChangeReview();
         var completed = 0;
         var discoveredProviders = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
         var discoveredNetworks = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
@@ -691,6 +692,7 @@ public sealed class ProviderNetworkScanner
                 castCrewResult.TmdbPhotosAvailable,
                 castCrewResult.PhotosAdded,
                 castCrewResult.PhotoBytes);
+            _castCrew.RecordFullScanChanges(entry.Item, entry.LibraryId, castCrewResult);
             foreach (var tag in tags)
             {
                 if (tag.Kind == TagKind.Provider)

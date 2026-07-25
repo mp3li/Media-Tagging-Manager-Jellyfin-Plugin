@@ -23,6 +23,7 @@ public sealed class CastCrewManager
     private readonly TmdbAvailabilitySource _tmdb;
     private readonly CastCrewOwnershipStore _ownership;
     private readonly CastCrewStateStore _state;
+    private readonly CastCrewChangeStore _changes;
     private readonly SemaphoreSlim _operationLock = new(1, 1);
 
     /// <summary>Initializes a new instance of the cast-and-crew manager.</summary>
@@ -31,13 +32,15 @@ public sealed class CastCrewManager
         IProviderManager providerManager,
         TmdbAvailabilitySource tmdb,
         CastCrewOwnershipStore ownership,
-        CastCrewStateStore state)
+        CastCrewStateStore state,
+        CastCrewChangeStore changes)
     {
         _libraryManager = libraryManager;
         _providerManager = providerManager;
         _tmdb = tmdb;
         _ownership = ownership;
         _state = state;
+        _changes = changes;
     }
 
     /// <summary>Gets dedicated people-photo scan status for dashboard polling.</summary>
@@ -45,6 +48,28 @@ public sealed class CastCrewManager
 
     /// <summary>Records that an administrator requested the dedicated photo scan before Jellyfin starts its task worker.</summary>
     public void MarkPhotoScanQueued() => _state.Queue();
+
+    /// <summary>Starts a new Cast and Crew change review for a full-library operation.</summary>
+    public void StartChangeReview() => _changes.Start();
+
+    /// <summary>Records one normal full-scan item result in the Cast and Crew change review.</summary>
+    public void RecordFullScanChanges(BaseItem item, Guid libraryId, CastCrewItemResult result) => _changes.RecordAdded(item, libraryId, result);
+
+    /// <summary>Returns Cast and Crew additions/removals from the most recent related operation.</summary>
+    public IEnumerable<CastCrewChangeItemDto> GetLatestChanges(Guid? libraryId) => _changes.GetItems(libraryId);
+
+    /// <summary>Returns every current Movie and Series in selected libraries, with latest cast/crew change colors overlaid when available.</summary>
+    public IEnumerable<CastCrewOverviewItemDto> GetOverview(Guid? requestedLibraryId)
+    {
+        var selectedLibraries = Plugin.Instance?.Configuration.LibraryIds ?? [];
+        var libraries = requestedLibraryId.HasValue
+            ? selectedLibraries.Where(id => id == requestedLibraryId.Value)
+            : selectedLibraries;
+
+        return libraries.SelectMany(libraryId => GetLibraryItems(libraryId).Select(item => ToOverview(item, libraryId)))
+            .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
 
     /// <summary>Returns a clear administrator-facing prerequisite error for the explicit photo scan, if any.</summary>
     public string? GetPhotoScanValidationError()
@@ -98,6 +123,7 @@ public sealed class CastCrewManager
         var libraryIds = configuration.LibraryIds ?? [];
         var items = libraryIds.SelectMany(GetLibraryItems).ToArray();
         _state.Start(items.Length);
+        _changes.Start();
         await _operationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -106,6 +132,7 @@ public sealed class CastCrewManager
                 cancellationToken.ThrowIfCancellationRequested();
                 var result = await ApplyCoreAsync(items[index], configuration, includePeople: false, cancellationToken).ConfigureAwait(false);
                 _state.RecordItem(result.MissingPhotos, result.TmdbPhotosAvailable, result.PhotosAdded, result.PhotoBytes);
+                _changes.RecordAdded(items[index], items[index].GetTopParent().Id, result);
                 progress?.Report(items.Length == 0 ? 100 : (index + 1) * 100d / items.Length);
             }
 
@@ -146,6 +173,7 @@ public sealed class CastCrewManager
 
             var people = _libraryManager.GetPeople(item).ToList();
             var before = people.Count;
+            var removedThisItem = new List<CastCrewOwnedAssignment>();
             foreach (var owned in group)
             {
                 var match = people.FirstOrDefault(person => Matches(person, owned));
@@ -153,6 +181,7 @@ public sealed class CastCrewManager
                 {
                     people.Remove(match);
                     removed++;
+                    removedThisItem.Add(owned);
                 }
 
                 removedRecords.Add(owned);
@@ -163,6 +192,8 @@ public sealed class CastCrewManager
                 await _libraryManager.UpdatePeopleAsync(item, people, cancellationToken).ConfigureAwait(false);
                 itemsChanged++;
             }
+
+            _changes.RecordRemovedPeople(item, item.GetTopParent().Id, removedThisItem);
         }
 
         await _ownership.RemoveAssignmentsAsync(removedRecords, cancellationToken).ConfigureAwait(false);
@@ -200,6 +231,10 @@ public sealed class CastCrewManager
             }
 
             await person.DeleteImageAsync(ImageType.Primary, 0).ConfigureAwait(false);
+            foreach (var item in (Plugin.Instance?.Configuration.LibraryIds ?? []).SelectMany(GetLibraryItems).Where(item => _libraryManager.GetPeople(item).Any(info => SameName(info.Name, owned.PersonName))))
+            {
+                _changes.RecordRemovedPhoto(item, item.GetTopParent().Id, owned.PersonName);
+            }
             handled.Add(owned);
             removed++;
         }
@@ -282,7 +317,7 @@ public sealed class CastCrewManager
         }
 
         var photoResult = await FillMissingPhotosAsync(credits, people, configuration, cancellationToken).ConfigureAwait(false);
-        return new CastCrewItemResult(castAdded, crewAdded, photoResult.Missing, photoResult.Available, photoResult.Added, photoResult.Bytes);
+        return new CastCrewItemResult(castAdded, crewAdded, photoResult.Missing, photoResult.Available, photoResult.Added, photoResult.Bytes, additions.Where(value => value.Type is PersonKind.Actor or PersonKind.GuestStar).Select(value => value.Name).ToArray(), additions.Where(value => value.Type is not PersonKind.Actor and not PersonKind.GuestStar).Select(value => value.Name).ToArray(), photoResult.Names);
     }
 
     private async Task<PhotoResult> FillMissingPhotosAsync(TmdbCreditsResult credits, IReadOnlyCollection<PersonInfo> currentPeople, Configuration.PluginConfiguration configuration, CancellationToken cancellationToken)
@@ -307,6 +342,7 @@ public sealed class CastCrewManager
         var missing = 0;
         var available = 0;
         var added = 0;
+        var names = new List<string>();
         long bytes = 0;
         foreach (var credit in candidates.GroupBy(credit => credit.Name, StringComparer.OrdinalIgnoreCase).Select(group => group.First()))
         {
@@ -358,10 +394,11 @@ public sealed class CastCrewManager
             }
 
             added++;
+            names.Add(person.Name);
             bytes += image.SourceBytes;
         }
 
-        return new PhotoResult(missing, available, added, bytes);
+        return new PhotoResult(missing, available, added, bytes, names);
     }
 
     private IEnumerable<BaseItem> GetLibraryItems(Guid libraryId) => _libraryManager.GetItemList(new InternalItemsQuery
@@ -370,6 +407,34 @@ public sealed class CastCrewManager
         Recursive = true,
         IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
     });
+
+    private CastCrewOverviewItemDto ToOverview(BaseItem item, Guid libraryId)
+    {
+        var people = _libraryManager.GetPeople(item);
+        var cast = people.Where(IsCast).Select(person => person.Name).Where(static name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var crew = people.Where(person => !IsCast(person)).Select(person => person.Name).Where(static name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var photos = people.Where(person => !string.IsNullOrWhiteSpace(person.Name))
+            .Select(person => _libraryManager.GetPerson(person.Name))
+            .Where(person => person is not null && person.HasImage(ImageType.Primary, 0))
+            .Select(person => person!.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var change = _changes.GetItem(item.Id);
+        return new CastCrewOverviewItemDto(
+            item.Id,
+            item.Name,
+            item.GetType().Name,
+            libraryId,
+            cast,
+            crew,
+            photos,
+            change?.AddedCast ?? [],
+            change?.RemovedCast ?? [],
+            change?.AddedCrew ?? [],
+            change?.RemovedCrew ?? [],
+            change?.AddedPeoplePhotos ?? [],
+            change?.RemovedPeoplePhotos ?? []);
+    }
 
     private static bool IsConfigured(Configuration.PluginConfiguration configuration) => configuration.AddMissingCast
         || configuration.AddMissingCrew
@@ -397,14 +462,14 @@ public sealed class CastCrewManager
     private static string? GetProviderId(BaseItem item, string name) => item.ProviderIds.TryGetValue(name, out var value) ? value : null;
 
     /// <summary>Counts work done for one item without exposing private source/person identifiers to the dashboard.</summary>
-    public sealed record CastCrewItemResult(int CastAdded, int CrewAdded, int MissingPhotos, int TmdbPhotosAvailable, int PhotosAdded, long PhotoBytes)
+    public sealed record CastCrewItemResult(int CastAdded, int CrewAdded, int MissingPhotos, int TmdbPhotosAvailable, int PhotosAdded, long PhotoBytes, IReadOnlyCollection<string> CastNames, IReadOnlyCollection<string> CrewNames, IReadOnlyCollection<string> PhotoNames)
     {
         /// <summary>Gets an empty result.</summary>
-        public static CastCrewItemResult Empty { get; } = new(0, 0, 0, 0, 0, 0);
+        public static CastCrewItemResult Empty { get; } = new(0, 0, 0, 0, 0, 0, [], [], []);
     }
 
-    private sealed record PhotoResult(int Missing, int Available, int Added, long Bytes)
+    private sealed record PhotoResult(int Missing, int Available, int Added, long Bytes, IReadOnlyCollection<string> Names)
     {
-        public static PhotoResult Empty { get; } = new(0, 0, 0, 0);
+        public static PhotoResult Empty { get; } = new(0, 0, 0, 0, []);
     }
 }
