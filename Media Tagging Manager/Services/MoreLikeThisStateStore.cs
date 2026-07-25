@@ -21,6 +21,9 @@ public sealed class MoreLikeThisStateStore
                 RecordsSaved = _progress.RecordsSaved,
                 RecommendationsSaved = _progress.RecommendationsSaved,
                 SimilarTitlesSaved = _progress.SimilarTitlesSaved,
+                MissingTmdbIds = _progress.MissingTmdbIds,
+                LookupFailures = _progress.LookupFailures,
+                EmptyRelationshipResults = _progress.EmptyRelationshipResults,
                 Message = _progress.Message
             };
         }
@@ -54,17 +57,21 @@ public sealed class MoreLikeThisStateStore
     }
 
     /// <summary>Records one inspected title's current relationship result.</summary>
-    public void RecordItem(int recommendations, int similarTitles, bool saved)
+    internal void RecordItem(MoreLikeThisManager.MoreLikeThisItemResult result)
     {
         lock (_lock)
         {
             _progress.CompletedItems++;
-            _progress.RecommendationsSaved += Math.Max(0, recommendations);
-            _progress.SimilarTitlesSaved += Math.Max(0, similarTitles);
-            if (saved)
+            _progress.RecommendationsSaved += Math.Max(0, result.Recommendations);
+            _progress.SimilarTitlesSaved += Math.Max(0, result.SimilarTitles);
+            if (result.Saved)
             {
                 _progress.RecordsSaved++;
             }
+
+            _progress.MissingTmdbIds += result.Outcome == MoreLikeThisManager.MoreLikeThisItemOutcome.MissingTmdbId ? 1 : 0;
+            _progress.LookupFailures += result.Outcome == MoreLikeThisManager.MoreLikeThisItemOutcome.LookupFailure ? 1 : 0;
+            _progress.EmptyRelationshipResults += result.Outcome == MoreLikeThisManager.MoreLikeThisItemOutcome.EmptyRelationshipResult ? 1 : 0;
         }
     }
 
@@ -75,7 +82,7 @@ public sealed class MoreLikeThisStateStore
         {
             _progress.IsRunning = false;
             _progress.Message = string.IsNullOrWhiteSpace(error)
-                ? $"Recommendations and Similar Titles action complete — checked {_progress.CompletedItems} of {_progress.TotalItems} media items; saved {_progress.RecommendationsSaved} recommendations and {_progress.SimilarTitlesSaved} similar titles across {_progress.RecordsSaved} updated media record(s)."
+                ? $"Recommendations and Similar Titles action complete — checked {_progress.CompletedItems} of {_progress.TotalItems} media items; saved {_progress.RecommendationsSaved} recommendations and {_progress.SimilarTitlesSaved} similar titles across {_progress.RecordsSaved} updated media record(s). {_progress.MissingTmdbIds} had no TMDb ID, {_progress.LookupFailures} TMDb lookup failure(s), and {_progress.EmptyRelationshipResults} valid TMDb response(s) contained no requested relationship titles."
                 : error;
         }
     }

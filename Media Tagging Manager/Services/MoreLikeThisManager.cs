@@ -33,18 +33,18 @@ public sealed class MoreLikeThisManager
     public static bool IsConfigured(Configuration.PluginConfiguration configuration) => configuration.AddRecommendations || configuration.AddSimilarTitles;
 
     /// <summary>Refreshes the enabled TMDb direct relationship lists for one selected-library Movie or Series.</summary>
-    public async Task<MoreLikeThisItemResult> ApplyConfiguredAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
+    internal async Task<MoreLikeThisItemResult> ApplyConfiguredAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
     {
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
         if (!IsConfigured(configuration) || item is not Movie && item is not Series)
         {
-            return MoreLikeThisItemResult.Empty;
+            return MoreLikeThisItemResult.NotConfigured;
         }
 
         var ids = new ExternalIds(GetProviderId(item, "Tmdb"), GetProviderId(item, "Imdb"), item.GetType().Name);
         if (string.IsNullOrWhiteSpace(ids.Tmdb))
         {
-            return MoreLikeThisItemResult.Empty;
+            return MoreLikeThisItemResult.MissingTmdbId;
         }
 
         TmdbRelatedTitlesResult result;
@@ -56,17 +56,17 @@ public sealed class MoreLikeThisManager
         {
             // Relationship data is optional. A temporary TMDb outage must not
             // cancel Provider/Network, genre, keyword, or people updates.
-            return MoreLikeThisItemResult.Empty;
+            return MoreLikeThisItemResult.LookupFailure;
         }
         catch (JsonException)
         {
             // Keep existing stored relationships if TMDb returns one malformed
             // relationship response rather than treating it as an empty list.
-            return MoreLikeThisItemResult.Empty;
+            return MoreLikeThisItemResult.LookupFailure;
         }
         if (!string.IsNullOrWhiteSpace(result.Note))
         {
-            return MoreLikeThisItemResult.Empty;
+            return MoreLikeThisItemResult.LookupFailure;
         }
 
         var recommendations = await PrepareTitlesAsync(result.Recommendations, configuration, cancellationToken).ConfigureAwait(false);
@@ -112,7 +112,8 @@ public sealed class MoreLikeThisManager
                 RemovedSimilarTitles = configuration.AddSimilarTitles ? RemovedTitles(previousSimilarTitles, similarTitles) : []
             });
             await WriteAsync(document, cancellationToken).ConfigureAwait(false);
-            return new MoreLikeThisItemResult(recommendations.Count, similarTitles.Count, true);
+            var totalRelationships = recommendations.Count + similarTitles.Count;
+            return new MoreLikeThisItemResult(recommendations.Count, similarTitles.Count, true, totalRelationships == 0 ? MoreLikeThisItemOutcome.EmptyRelationshipResult : MoreLikeThisItemOutcome.Saved);
         }
         finally
         {
@@ -163,7 +164,7 @@ public sealed class MoreLikeThisManager
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var result = await ApplyConfiguredAsync(candidates[index].Item, candidates[index].LibraryId, cancellationToken).ConfigureAwait(false);
-                _state.RecordItem(result.Recommendations, result.SimilarTitles, result.Saved);
+                _state.RecordItem(result);
                 progress?.Report(candidates.Length == 0 ? 100 : (index + 1) * 100d / candidates.Length);
             }
 
@@ -411,10 +412,28 @@ public sealed class MoreLikeThisManager
     private static string Extension(string contentType) => contentType switch { "image/png" => ".png", "image/webp" => ".webp", _ => ".jpg" };
 
     /// <summary>One item's relationship result used by normal and dedicated scans.</summary>
-    public sealed record MoreLikeThisItemResult(int Recommendations, int SimilarTitles, bool Saved)
+    internal enum MoreLikeThisItemOutcome
+    {
+        /// <summary>The feature was disabled while the scan was in progress.</summary>
+        NotConfigured,
+        /// <summary>The Jellyfin item has no TMDb identifier.</summary>
+        MissingTmdbId,
+        /// <summary>TMDb could not provide a usable relationship response.</summary>
+        LookupFailure,
+        /// <summary>TMDb returned a valid empty relationship response.</summary>
+        EmptyRelationshipResult,
+        /// <summary>At least one requested relationship title was saved.</summary>
+        Saved
+    }
+
+    internal sealed record MoreLikeThisItemResult(int Recommendations, int SimilarTitles, bool Saved, MoreLikeThisItemOutcome Outcome)
     {
         /// <summary>Gets an empty relationship result.</summary>
-        public static MoreLikeThisItemResult Empty { get; } = new(0, 0, false);
+        public static MoreLikeThisItemResult NotConfigured { get; } = new(0, 0, false, MoreLikeThisItemOutcome.NotConfigured);
+        /// <summary>Gets a missing-ID result.</summary>
+        public static MoreLikeThisItemResult MissingTmdbId { get; } = new(0, 0, false, MoreLikeThisItemOutcome.MissingTmdbId);
+        /// <summary>Gets a safe TMDb lookup-failure result.</summary>
+        public static MoreLikeThisItemResult LookupFailure { get; } = new(0, 0, false, MoreLikeThisItemOutcome.LookupFailure);
     }
 }
 

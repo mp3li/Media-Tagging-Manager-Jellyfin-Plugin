@@ -16,7 +16,10 @@ public enum TagKind
     Keyword,
 
     /// <summary>A direct TMDb movie collection membership.</summary>
-    Collection
+    Collection,
+
+    /// <summary>A TMDb production company saved in Jellyfin's native Studio metadata.</summary>
+    ProductionCompany
 }
 
 /// <summary>A source value with provenance, optional TV-network-app classification, and source logo URL.</summary>
@@ -43,6 +46,15 @@ public sealed record TmdbCreditsResult(
 
 /// <summary>One downloaded TMDb profile image ready for Jellyfin's native image writer.</summary>
 public sealed record TmdbPersonImage(byte[] Content, string ContentType, long SourceBytes);
+
+/// <summary>One TMDb production company associated directly with a title.</summary>
+public sealed record TmdbProductionCompany(int TmdbCompanyId, string Name, string? OriginCountry, string? LogoUrl);
+
+/// <summary>One TMDb production country associated directly with a title.</summary>
+public sealed record TmdbProductionCountry(string Code, string Name);
+
+/// <summary>Production companies and countries returned from one TMDb movie or TV detail record.</summary>
+public sealed record TmdbProductionResult(IReadOnlyCollection<TmdbProductionCompany> Companies, IReadOnlyCollection<TmdbProductionCountry> Countries, string? Note = null);
 
 /// <summary>The data returned from a single source adapter.</summary>
 public sealed record SourceLookupResult(string Source, IReadOnlyCollection<SourceTag> Tags, string? Note = null);
@@ -309,6 +321,22 @@ public sealed record MoreLikeThisOverviewItemDto(
 /// <summary>Current More Like This poster-cache usage.</summary>
 public sealed record MoreLikeThisImageCacheStatus(int Count, long Bytes, int LimitMegabytes);
 
+/// <summary>Current native production metadata plus the latest plugin-owned additions and removals.</summary>
+public sealed record ProductionOverviewItemDto(
+    Guid ItemId,
+    string Name,
+    string ItemType,
+    Guid LibraryId,
+    IReadOnlyCollection<string> Companies,
+    IReadOnlyCollection<string> Countries,
+    IReadOnlyCollection<string> AddedCompanies,
+    IReadOnlyCollection<string> RemovedCompanies,
+    IReadOnlyCollection<string> AddedCountries,
+    IReadOnlyCollection<string> RemovedCountries);
+
+/// <summary>Result from a production metadata update or cleanup.</summary>
+public sealed record ProductionOperationResult(int CompaniesAdded, int CountriesAdded, int CompaniesRemoved, int CountriesRemoved, int ItemsChanged);
+
 /// <summary>Progress and result details for the dedicated More Like This selected-library action.</summary>
 public sealed class MoreLikeThisScanProgress
 {
@@ -329,6 +357,15 @@ public sealed class MoreLikeThisScanProgress
 
     /// <summary>Gets or sets the number of similar titles currently saved by the action.</summary>
     public int SimilarTitlesSaved { get; set; }
+
+    /// <summary>Gets or sets the number of inspected items without a usable TMDb identifier.</summary>
+    public int MissingTmdbIds { get; set; }
+
+    /// <summary>Gets or sets the number of items whose TMDb relationship lookup failed.</summary>
+    public int LookupFailures { get; set; }
+
+    /// <summary>Gets or sets the number of valid TMDb responses that had no requested relationship titles.</summary>
+    public int EmptyRelationshipResults { get; set; }
 
     /// <summary>Gets or sets the current administrator-facing action status.</summary>
     public string Message { get; set; } = "No Recommendation or Similar Title action is currently running.";

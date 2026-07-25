@@ -203,6 +203,29 @@ More Like This Settings
     aspect ratios remain portrait, new titles use the saved addition color, and
     removed titles use the saved removal color without recoloring unrelated
     titles.
+[ ] Run Load Recommendations and Similar Titles and verify its completion text
+    explicitly reports saved relationship records, items without TMDb IDs,
+    TMDb lookup failures, and valid empty TMDb responses. If the overview is
+    empty, use those counts to determine the cause before treating it as a
+    display failure.
+[ ] Save Production Companies and Countries Settings with production companies
+    and selected production countries enabled. Run a normal selected-library
+    scan and confirm TMDb production companies appear in Jellyfin Studio
+    metadata, selected production countries appear in native production-country
+    metadata, and existing values remain present.
+[ ] Confirm the Production Country picker is searchable, Select All and Select
+    None change only unsaved picker choices, and saving preserves all choices
+    after a hard refresh without changing settings from other tabs.
+[ ] Confirm production-company logos use no more than one cached file per
+    company, respect the existing Main Settings logo-cache limit, appear in the
+    production overview when available, and can be removed through the existing
+    cached-logo controls.
+[ ] Confirm the Production overview is available before a scan, libraries can
+    be independently collapsed, latest additions/removals use the saved colors,
+    and direct edits update only the chosen selected-library Movie or Series.
+[ ] Use each Production cleanup button and confirm only values recorded as
+    created by this plugin are removed; pre-existing Jellyfin Studio and
+    production-country metadata remains unchanged.
 
 3. Source configuration and credential safety
 ----------------------------------------------

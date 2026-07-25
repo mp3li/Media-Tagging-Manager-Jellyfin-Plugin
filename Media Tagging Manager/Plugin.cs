@@ -99,7 +99,13 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         SaveMoreLikeThisImagesToDisk = source.SaveMoreLikeThisImagesToDisk,
         MoreLikeThisImageCacheLimitMegabytes = source.MoreLikeThisImageCacheLimitMegabytes,
         MoreLikeThisAddedColor = source.MoreLikeThisAddedColor,
-        MoreLikeThisRemovedColor = source.MoreLikeThisRemovedColor
+        MoreLikeThisRemovedColor = source.MoreLikeThisRemovedColor,
+        AddProductionCompanies = source.AddProductionCompanies,
+        SaveProductionCompanyLogos = source.SaveProductionCompanyLogos,
+        AddProductionCountries = source.AddProductionCountries,
+        SelectedProductionCountryCodes = (source.SelectedProductionCountryCodes ?? []).ToArray(),
+        ProductionAddedColor = source.ProductionAddedColor,
+        ProductionRemovedColor = source.ProductionRemovedColor
     };
 
     /// <inheritdoc />

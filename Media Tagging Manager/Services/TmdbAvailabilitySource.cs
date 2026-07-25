@@ -191,6 +191,74 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             ParseCredits(document.RootElement, "crew", isCast: false));
     }
 
+    /// <summary>Gets the direct TMDb production companies and production countries for one Movie or Series.</summary>
+    public async Task<TmdbProductionResult> GetProductionAsync(ExternalIds ids, CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(ids.Tmdb))
+        {
+            return new TmdbProductionResult([], [], "The item has no configured TMDb credential or TMDb ID.");
+        }
+
+        var type = ids.MediaType == "Series" ? "tv" : "movie";
+        using var response = await SendAsync($"https://api.themoviedb.org/3/{type}/{Uri.EscapeDataString(ids.Tmdb)}?language=en-US", token, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return new TmdbProductionResult([], [], $"TMDb production lookup returned HTTP {(int)response.StatusCode}.");
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        var companies = document.RootElement.TryGetProperty("production_companies", out var companyValues) && companyValues.ValueKind == JsonValueKind.Array
+            ? companyValues.EnumerateArray()
+                .Where(company => company.TryGetProperty("id", out var id) && id.TryGetInt32(out _)
+                    && company.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                .Select(company => new TmdbProductionCompany(
+                    company.GetProperty("id").GetInt32(),
+                    company.GetProperty("name").GetString()!.Trim(),
+                    company.TryGetProperty("origin_country", out var origin) ? origin.GetString() : null,
+                    company.TryGetProperty("logo_path", out var logo) && !string.IsNullOrWhiteSpace(logo.GetString()) ? TmdbLogoUrl(logo.GetString()!) : null))
+                .DistinctBy(company => company.TmdbCompanyId)
+                .OrderBy(company => company.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : [];
+        var countries = document.RootElement.TryGetProperty("production_countries", out var countryValues) && countryValues.ValueKind == JsonValueKind.Array
+            ? countryValues.EnumerateArray()
+                .Where(country => country.TryGetProperty("iso_3166_1", out var code) && !string.IsNullOrWhiteSpace(code.GetString())
+                    && country.TryGetProperty("name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                .Select(country => new TmdbProductionCountry(country.GetProperty("iso_3166_1").GetString()!.Trim().ToUpperInvariant(), country.GetProperty("name").GetString()!.Trim()))
+                .DistinctBy(country => country.Code, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(country => country.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : [];
+        return new TmdbProductionResult(companies, countries);
+    }
+
+    /// <summary>Gets TMDb's full ISO country list for production-country selection.</summary>
+    public async Task<IReadOnlyCollection<AvailabilityRegionDto>> GetProductionCountriesAsync(CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return [];
+        }
+
+        using var response = await SendAsync("https://api.themoviedb.org/3/configuration/countries?language=en-US", token, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        return document.RootElement.ValueKind == JsonValueKind.Array
+            ? document.RootElement.EnumerateArray()
+                .Where(country => country.TryGetProperty("iso_3166_1", out var code) && !string.IsNullOrWhiteSpace(code.GetString())
+                    && country.TryGetProperty("english_name", out var name) && !string.IsNullOrWhiteSpace(name.GetString()))
+                .Select(country => new AvailabilityRegionDto(country.GetProperty("iso_3166_1").GetString()!.Trim().ToUpperInvariant(), country.GetProperty("english_name").GetString()!.Trim()))
+                .OrderBy(country => country.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : [];
+    }
+
     /// <summary>Gets TMDb's first page of direct recommendations and similar titles for one Movie or Series.</summary>
     public async Task<TmdbRelatedTitlesResult> GetRelatedTitlesAsync(ExternalIds ids, bool includeRecommendations, bool includeSimilarTitles, CancellationToken cancellationToken)
     {

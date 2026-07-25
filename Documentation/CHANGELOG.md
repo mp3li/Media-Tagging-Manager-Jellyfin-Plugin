@@ -4,6 +4,19 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.60-test] - 2026-07-25
+
+### Added
+
+- Added **Production Companies and Countries Settings** as a third secondary
+  tab. It fills missing native Jellyfin Studio and production-country metadata
+  from direct TMDb title details, with a searchable country allow-list,
+  conservative cleanup provenance, production-company logo caching, direct
+  editing, and a collapsible additions/removals overview.
+- More Like This completion feedback now reports missing TMDb IDs, TMDb lookup
+  failures, and valid empty relationship responses alongside saved-result
+  counts.
+
 ## [0.1.0.59-test] - 2026-07-25
 
 ### Fixed

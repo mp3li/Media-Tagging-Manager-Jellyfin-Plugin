@@ -142,6 +142,24 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets the dashboard color used for recommendations and similar titles removed in the latest scan.</summary>
     public string MoreLikeThisRemovedColor { get; set; } = "#F44336";
+
+    /// <summary>Gets or sets whether scans fill missing Jellyfin Studio metadata from TMDb production companies.</summary>
+    public bool AddProductionCompanies { get; set; }
+
+    /// <summary>Gets or sets whether source-supplied TMDb production-company logos are cached.</summary>
+    public bool SaveProductionCompanyLogos { get; set; }
+
+    /// <summary>Gets or sets whether scans fill missing Jellyfin production-country metadata from TMDb.</summary>
+    public bool AddProductionCountries { get; set; }
+
+    /// <summary>Gets or sets ISO production-country codes selected for future scans.</summary>
+    public string[] SelectedProductionCountryCodes { get; set; } = [];
+
+    /// <summary>Gets or sets the accessible color used for production metadata added by the latest scan.</summary>
+    public string ProductionAddedColor { get; set; } = "#4CAF50";
+
+    /// <summary>Gets or sets the accessible color used for production metadata removed by cleanup.</summary>
+    public string ProductionRemovedColor { get; set; } = "#F44336";
 }
 
 /// <summary>An administrator-defined canonical name for an external Provider or Network tag.</summary>

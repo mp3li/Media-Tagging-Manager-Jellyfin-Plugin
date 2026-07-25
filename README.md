@@ -301,7 +301,9 @@ also refreshes enabled relationship data.
 stored relationship records for the selected libraries. It never changes
 Jellyfin tags, NFO files, media, Jellyfin posters, or the optional poster cache.
 The dedicated load/update task shows Jellyfin-managed progress and a completion
-summary.
+summary. Its completion feedback also reports items without TMDb IDs, TMDb
+lookup failures, and valid-but-empty TMDb relationship responses, so an empty
+overview is never unexplained.
 
 #### Recommendations and Similar Titles Additions and Removals
 
@@ -310,6 +312,44 @@ recommendation and similar-title posters at their proper portrait aspect ratio,
 with each library independently collapsible. Newest-scan additions use the
 saved green color and newest-scan removals use the saved red color; both colors
 are configurable in the tab.
+
+### Production Companies and Countries Settings
+
+This secondary Main Settings tab adds direct TMDb production metadata to
+selected-library Movies and Series while preserving production information that
+was already present in Jellyfin.
+
+#### Production Company Settings
+
+**Add Production Companies** fills missing native Jellyfin **Studio** metadata
+from the production companies TMDb returns for a title. It never replaces
+existing Studio values. **Save Production Company Logos** stores one
+source-supplied TMDb logo per company in the existing bounded logo cache. Use
+**Load Production Company Logos** after scans to cache any known company-logo
+sources without scanning media again.
+
+#### Production Country Settings
+
+**Add Production Countries** fills missing native Jellyfin production-country
+metadata only for the ISO countries selected in this tab. This is intentionally
+separate from Availability Region Settings: availability means where a title
+can be watched now; production country means where it was made. The searchable
+picker uses TMDb's country configuration list.
+
+#### Cleanup Settings
+
+**Remove Production Companies Added by This Plugin** and **Remove Production
+Countries Added by This Plugin** remove only exact native metadata values the
+plugin recorded as adding. Existing Jellyfin Studio and production-country data
+is preserved.
+
+#### Production Companies and Countries Additions and Removals
+
+The collapsed overview lists current native Studio/company and production-
+country metadata by selected library. Each library can be independently
+expanded or collapsed. The latest additions use the saved green color and
+plugin-owned cleanup removals use the saved red color. Use **Edit** to change
+one item's company and country values directly.
 
 ### Network and Provider Settings
 

@@ -201,3 +201,42 @@ public sealed class MoreLikeThisColorSettingsRequest
     /// <summary>Gets or sets the color for relationships removed by the latest scan.</summary>
     public string? RemovedColor { get; set; }
 }
+
+/// <summary>Only the controls on the Production Companies and Countries Settings tab.</summary>
+public sealed class ProductionSettingsRequest
+{
+    /// <summary>Gets or sets whether missing Jellyfin Studio values are filled from TMDb companies.</summary>
+    public bool AddProductionCompanies { get; set; }
+
+    /// <summary>Gets or sets whether source-supplied company logos are saved to the bounded logo cache.</summary>
+    public bool SaveProductionCompanyLogos { get; set; }
+
+    /// <summary>Gets or sets whether missing Jellyfin production-country values are filled from TMDb.</summary>
+    public bool AddProductionCountries { get; set; }
+
+    /// <summary>Gets or sets selected ISO country codes.</summary>
+    public string[]? SelectedProductionCountryCodes { get; set; }
+
+    /// <summary>Gets or sets whether the country picker was intentionally edited before saving.</summary>
+    public bool UpdateProductionCountrySelection { get; set; }
+}
+
+/// <summary>Accessible colors used by the Production Companies and Countries overview.</summary>
+public sealed class ProductionColorSettingsRequest
+{
+    /// <summary>Gets or sets the color for production metadata added by the latest operation.</summary>
+    public string? AddedColor { get; set; }
+
+    /// <summary>Gets or sets the color for production metadata removed by cleanup.</summary>
+    public string? RemovedColor { get; set; }
+}
+
+/// <summary>One administrator edit to native production-company and production-country metadata.</summary>
+public sealed class ProductionItemUpdateRequest
+{
+    /// <summary>Gets or sets the complete current Studio/company list for the item.</summary>
+    public string[]? Companies { get; set; }
+
+    /// <summary>Gets or sets the complete current production-country list for the item.</summary>
+    public string[]? Countries { get; set; }
+}

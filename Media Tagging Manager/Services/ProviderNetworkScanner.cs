@@ -20,6 +20,7 @@ public sealed class ProviderNetworkScanner
     private readonly ProviderNetworkLogoCache _logos;
     private readonly CastCrewManager _castCrew;
     private readonly MoreLikeThisManager _moreLikeThis;
+    private readonly ProductionManager _production;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly object _knownTagLock = new();
 
@@ -32,7 +33,8 @@ public sealed class ProviderNetworkScanner
         TagDestinationWriter destinations,
         ProviderNetworkLogoCache logos,
         CastCrewManager castCrew,
-        MoreLikeThisManager moreLikeThis)
+        MoreLikeThisManager moreLikeThis,
+        ProductionManager production)
     {
         _libraryManager = libraryManager;
         _sources = sources.ToArray();
@@ -42,6 +44,7 @@ public sealed class ProviderNetworkScanner
         _logos = logos;
         _castCrew = castCrew;
         _moreLikeThis = moreLikeThis;
+        _production = production;
     }
 
     /// <summary>Scans a configured library. Only movies and series receive tags; episodes inherit their series context.</summary>
@@ -674,6 +677,7 @@ public sealed class ProviderNetworkScanner
     {
         _state.Start(items.Count);
         _castCrew.StartChangeReview();
+        _production.StartChangeReview();
         var completed = 0;
         var discoveredProviders = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
         var discoveredNetworks = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
@@ -688,6 +692,7 @@ public sealed class ProviderNetworkScanner
             _state.Report(Volatile.Read(ref completed), entry.Item.Name);
             var tags = await ScanItemAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
             var castCrewResult = await _castCrew.ApplyConfiguredAsync(entry.Item, token).ConfigureAwait(false);
+            await _production.ApplyConfiguredAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
             await _moreLikeThis.ApplyConfiguredAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
             _state.RecordCastCrewOutcome(
                 castCrewResult.CastAdded,

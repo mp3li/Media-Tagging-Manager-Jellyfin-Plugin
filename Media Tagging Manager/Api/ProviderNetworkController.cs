@@ -33,6 +33,7 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly MoreLikeThisManager _moreLikeThis;
     private readonly MoreLikeThisStateStore _moreLikeThisState;
     private readonly MoreLikeThisScanRequestQueue _moreLikeThisRequests;
+    private readonly ProductionManager _production;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -52,7 +53,8 @@ public sealed class ProviderNetworkController : ControllerBase
         CastCrewPhotoScanRequestQueue castCrewPhotoRequests,
         MoreLikeThisManager moreLikeThis,
         MoreLikeThisStateStore moreLikeThisState,
-        MoreLikeThisScanRequestQueue moreLikeThisRequests)
+        MoreLikeThisScanRequestQueue moreLikeThisRequests,
+        ProductionManager production)
     {
         _scanner = scanner;
         _state = state;
@@ -71,6 +73,7 @@ public sealed class ProviderNetworkController : ControllerBase
         _moreLikeThis = moreLikeThis;
         _moreLikeThisState = moreLikeThisState;
         _moreLikeThisRequests = moreLikeThisRequests;
+        _production = production;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -262,6 +265,40 @@ public sealed class ProviderNetworkController : ControllerBase
         }));
     }
 
+    /// <summary>Saves only the controls on the Production Companies and Countries Settings tab.</summary>
+    [HttpPost("settings/production")]
+    public IActionResult SaveProductionSettings([FromBody] ProductionSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.AddProductionCompanies = submitted.AddProductionCompanies;
+            configuration.SaveProductionCompanyLogos = submitted.SaveProductionCompanyLogos;
+            configuration.AddProductionCountries = submitted.AddProductionCountries;
+            if (submitted.UpdateProductionCountrySelection)
+            {
+                configuration.SelectedProductionCountryCodes = (submitted.SelectedProductionCountryCodes ?? [])
+                    .Where(static code => !string.IsNullOrWhiteSpace(code) && code.Trim().Length == 2)
+                    .Select(code => code.Trim().ToUpperInvariant())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(static code => code, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
+        }));
+    }
+
+    /// <summary>Saves accessible addition and removal colors for native production metadata review.</summary>
+    [HttpPost("settings/production-colors")]
+    public IActionResult SaveProductionColors([FromBody] ProductionColorSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.ProductionAddedColor = NormalizeCssColor(submitted.AddedColor, "#4CAF50");
+            configuration.ProductionRemovedColor = NormalizeCssColor(submitted.RemovedColor, "#F44336");
+        }));
+    }
+
     /// <summary>Saves only Scheduled Tasks controls shared between the two tabs.</summary>
     [HttpPost("settings/scheduled-tasks")]
     public IActionResult SaveScheduledTasks([FromBody] ScheduledTasksSettingsRequest submitted)
@@ -371,6 +408,39 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("more-like-this/overview")]
     public async Task<ActionResult<IReadOnlyCollection<MoreLikeThisOverviewItemDto>>> GetMoreLikeThisOverview([FromQuery] Guid? libraryId, CancellationToken cancellationToken) =>
         Ok(await _moreLikeThis.GetOverviewAsync(libraryId, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Gets TMDb's production-country choices for the dedicated native metadata picker.</summary>
+    [HttpGet("production/countries")]
+    public async Task<ActionResult<IReadOnlyCollection<AvailabilityRegionDto>>> GetProductionCountries(CancellationToken cancellationToken) =>
+        Ok(await _tmdb.GetProductionCountriesAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Returns current native Jellyfin production metadata and latest operation changes for selected-library media.</summary>
+    [HttpGet("production/overview")]
+    public ActionResult<IEnumerable<ProductionOverviewItemDto>> GetProductionOverview([FromQuery] Guid? libraryId) =>
+        Ok(_production.GetOverview(libraryId));
+
+    /// <summary>Loads known source-supplied production-company logos into the existing bounded plugin cache.</summary>
+    [HttpPost("production/logos/load")]
+    public async Task<ActionResult<object>> LoadProductionCompanyLogos(CancellationToken cancellationToken) =>
+        Ok(new { CompaniesProcessed = await _production.LoadCompanyLogosAsync(cancellationToken).ConfigureAwait(false) });
+
+    /// <summary>Removes only plugin-recorded native production-company metadata from selected libraries.</summary>
+    [HttpPost("production/remove-companies")]
+    public async Task<ActionResult<ProductionOperationResult>> RemoveProductionCompanies(CancellationToken cancellationToken) =>
+        Ok(await _production.RemoveOwnedAsync(companies: true, countries: false, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Removes only plugin-recorded native production-country metadata from selected libraries.</summary>
+    [HttpPost("production/remove-countries")]
+    public async Task<ActionResult<ProductionOperationResult>> RemoveProductionCountries(CancellationToken cancellationToken) =>
+        Ok(await _production.RemoveOwnedAsync(companies: false, countries: true, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Applies one administrator edit to native production metadata for a selected-library Movie or Series.</summary>
+    [HttpPut("production/items/{itemId:guid}")]
+    public async Task<IActionResult> UpdateProductionItem(Guid itemId, [FromBody] ProductionItemUpdateRequest submitted, CancellationToken cancellationToken)
+    {
+        await _production.UpdateItemAsync(itemId, submitted.Companies ?? [], submitted.Countries ?? [], cancellationToken).ConfigureAwait(false);
+        return NoContent();
+    }
 
     /// <summary>Serves one optional plugin-cached TMDb poster without exposing the plugin data folder.</summary>
     [HttpGet("more-like-this/images/{tmdbId:int}")]
@@ -551,12 +621,12 @@ public sealed class ProviderNetworkController : ControllerBase
         return started ? Accepted() : Conflict("A Network catalog load is already running.");
     }
 
-    /// <summary>Serves a previously cached source-supplied provider or network logo for dashboard reuse.</summary>
+    /// <summary>Serves a previously cached source-supplied provider, network, or production-company logo for dashboard reuse.</summary>
     [HttpGet("logos/{kind}/{name}")]
     public async Task<IActionResult> GetLogo(string kind, string name, CancellationToken cancellationToken)
     {
         if (!Enum.TryParse<TagKind>(kind, true, out var tagKind)
-            || tagKind is not TagKind.Provider and not TagKind.Network)
+            || tagKind is not TagKind.Provider and not TagKind.Network and not TagKind.ProductionCompany)
         {
             return NotFound();
         }

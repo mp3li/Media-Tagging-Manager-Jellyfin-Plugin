@@ -71,6 +71,12 @@ Acceptance criteria:
     TMDb Recommendation and Similar Title records without running the full tag
     scan, with Jellyfin-managed progress and a conservative record-only remove
     action.
+[x] Add a Production Companies and Countries Settings secondary Main Settings
+    tab that fills only missing native Jellyfin Studio and production-country
+    metadata from direct TMDb title details, preserves existing values, keeps
+    conservative plugin ownership records for cleanup, supports a searchable
+    TMDb country allow-list, company-logo caching, direct editing, and a
+    collapsible colored additions/removals overview.
 [x] Read existing Jellyfin people metadata for selected Movies and Series,
     preserve existing credits, and optionally append only missing TMDb cast or
     selected-job crew credits plus missing person primary images.
