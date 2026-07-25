@@ -297,6 +297,10 @@ and Similar Titles** rechecks every saved selected-library record and removes
 relationships TMDb no longer returns. A normal full or incoming-media scan
 also refreshes enabled relationship data.
 
+Load also repairs relationship records from older test builds that were saved
+under an incorrect item-parent scope, placing them back under the exact
+selected library so they appear in this overview.
+
 **Remove Recommendations and Similar Titles** removes only this plugin’s
 stored relationship records for the selected libraries. It never changes
 Jellyfin tags, NFO files, media, Jellyfin posters, or the optional poster cache.
@@ -335,6 +339,14 @@ metadata only for the ISO countries selected in this tab. This is intentionally
 separate from Availability Region Settings: availability means where a title
 can be watched now; production country means where it was made. The searchable
 picker uses TMDb's country configuration list.
+
+#### Load Production Companies and Countries
+
+Use **Load Production Companies and Countries** after saving this tab to fetch
+only enabled production metadata for selected-library Movies and Series. It has
+its own Jellyfin-managed progress and completion summary, refreshes the colored
+production overview, and caches direct TMDb company logos when that option is
+enabled. A full tag scan also performs this work when enabled.
 
 #### Cleanup Settings
 

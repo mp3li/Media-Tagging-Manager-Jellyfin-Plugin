@@ -4,6 +4,24 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.61-test] - 2026-07-25
+
+### Fixed
+
+- Fixed the dedicated **Load Recommendations and Similar Titles** action using
+  an item hierarchy parent rather than the exact selected library identifier.
+  That could save valid relationship records outside the overview's selected
+  library scope. Load now repairs those older misplaced records automatically
+  as well as loading genuinely missing records.
+
+### Added
+
+- Added a dedicated Jellyfin-managed **Load Production Companies and Countries**
+  action with progress and completion feedback. It fetches only this tab's
+  enabled metadata for selected libraries, updates the production overview and
+  colors, and caches source-supplied company logos when enabled—without running
+  the complete tag scan.
+
 ## [0.1.0.60-test] - 2026-07-25
 
 ### Added

@@ -150,7 +150,13 @@ public sealed class MoreLikeThisManager
         }
 
         var configuration = Plugin.Instance!.Configuration;
-        var candidates = configuration.LibraryIds.SelectMany(GetLibraryItems).Select(item => (Item: item, LibraryId: item.GetTopParent().Id)).ToArray();
+        // Preserve the exact configured library identifier. GetTopParent() is
+        // not a library identity contract for all Jellyfin item hierarchies;
+        // using it here stored records outside the selected-library scope and
+        // caused the overview to hide otherwise valid relationship records.
+        var candidates = configuration.LibraryIds
+            .SelectMany(libraryId => GetLibraryItems(libraryId).Select(item => (Item: item, LibraryId: libraryId)))
+            .ToArray();
         if (onlyMissing)
         {
             candidates = await FilterMissingRecordsAsync(candidates, cancellationToken).ConfigureAwait(false);
@@ -314,6 +320,7 @@ public sealed class MoreLikeThisManager
             var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
             var existing = (await ReadAsync(cancellationToken).ConfigureAwait(false)).Items.ToDictionary(value => value.ItemId);
             return candidates.Where(value => !existing.TryGetValue(value.Item.Id, out var record)
+                || record.LibraryId != value.LibraryId
                 || (configuration.AddRecommendations && !record.RecommendationsLoaded)
                 || (configuration.AddSimilarTitles && !record.SimilarTitlesLoaded)).ToArray();
         }

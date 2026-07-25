@@ -337,6 +337,25 @@ public sealed record ProductionOverviewItemDto(
 /// <summary>Result from a production metadata update or cleanup.</summary>
 public sealed record ProductionOperationResult(int CompaniesAdded, int CountriesAdded, int CompaniesRemoved, int CountriesRemoved, int ItemsChanged);
 
+/// <summary>Progress and result details for the dedicated selected-library production-metadata action.</summary>
+public sealed class ProductionScanProgress
+{
+    /// <summary>Gets or sets whether the action is currently running.</summary>
+    public bool IsRunning { get; set; }
+    /// <summary>Gets or sets the number of selected-library Movies and Series to inspect.</summary>
+    public int TotalItems { get; set; }
+    /// <summary>Gets or sets the number of inspected media items.</summary>
+    public int CompletedItems { get; set; }
+    /// <summary>Gets or sets the number of production companies added.</summary>
+    public int CompaniesAdded { get; set; }
+    /// <summary>Gets or sets the number of production countries added.</summary>
+    public int CountriesAdded { get; set; }
+    /// <summary>Gets or sets the number of changed media items.</summary>
+    public int ItemsChanged { get; set; }
+    /// <summary>Gets or sets the administrator-facing progress or completion message.</summary>
+    public string? Message { get; set; }
+}
+
 /// <summary>Progress and result details for the dedicated More Like This selected-library action.</summary>
 public sealed class MoreLikeThisScanProgress
 {

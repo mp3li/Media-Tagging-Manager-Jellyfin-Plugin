@@ -34,6 +34,8 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly MoreLikeThisStateStore _moreLikeThisState;
     private readonly MoreLikeThisScanRequestQueue _moreLikeThisRequests;
     private readonly ProductionManager _production;
+    private readonly ProductionStateStore _productionState;
+    private readonly ProductionScanRequestQueue _productionRequests;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -54,7 +56,9 @@ public sealed class ProviderNetworkController : ControllerBase
         MoreLikeThisManager moreLikeThis,
         MoreLikeThisStateStore moreLikeThisState,
         MoreLikeThisScanRequestQueue moreLikeThisRequests,
-        ProductionManager production)
+        ProductionManager production,
+        ProductionStateStore productionState,
+        ProductionScanRequestQueue productionRequests)
     {
         _scanner = scanner;
         _state = state;
@@ -74,6 +78,8 @@ public sealed class ProviderNetworkController : ControllerBase
         _moreLikeThisState = moreLikeThisState;
         _moreLikeThisRequests = moreLikeThisRequests;
         _production = production;
+        _productionState = productionState;
+        _productionRequests = productionRequests;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -418,6 +424,26 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpGet("production/overview")]
     public ActionResult<IEnumerable<ProductionOverviewItemDto>> GetProductionOverview([FromQuery] Guid? libraryId) =>
         Ok(_production.GetOverview(libraryId));
+
+    /// <summary>Returns dedicated production action status for dashboard polling.</summary>
+    [HttpGet("production/status")]
+    public ActionResult<ProductionScanProgress> GetProductionStatus() => Ok(_productionState.GetProgress());
+
+    /// <summary>Queues a selected-library production metadata action through Jellyfin's task manager.</summary>
+    [HttpPost("production/load")]
+    public IActionResult LoadProduction()
+    {
+        var validationError = _production.GetScanValidationError();
+        if (validationError is not null)
+        {
+            return BadRequest(validationError);
+        }
+
+        _productionRequests.Enqueue();
+        _productionState.Queue();
+        _taskManager.QueueScheduledTask<ProductionScanTask>();
+        return Accepted();
+    }
 
     /// <summary>Loads known source-supplied production-company logos into the existing bounded plugin cache.</summary>
     [HttpPost("production/logos/load")]

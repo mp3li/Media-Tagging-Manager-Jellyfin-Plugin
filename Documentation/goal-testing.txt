@@ -206,8 +206,20 @@ More Like This Settings
 [ ] Run Load Recommendations and Similar Titles and verify its completion text
     explicitly reports saved relationship records, items without TMDb IDs,
     TMDb lookup failures, and valid empty TMDb responses. If the overview is
-    empty, use those counts to determine the cause before treating it as a
-    display failure.
+    empty after a prior Load, run Load again after the 0.1.0.61-test repair and
+    confirm records are reassociated with their exact saved library and appear
+    under that library in the overview. If the overview remains empty, use
+    those counts to determine the cause before treating it as a display failure.
+[ ] Save Production Companies and Countries Settings with production companies
+    and selected production countries enabled, then use Load Production
+    Companies and Countries. Confirm it queues a dedicated Jellyfin task limited
+    to selected-library Movies and Series, shows progress and a completion
+    summary, adds only enabled TMDb values, refreshes the colored production
+    overview, and does not run other tag or metadata features.
+[ ] With Save Production Company Logos enabled, run the dedicated production
+    action and confirm source-supplied company logos enter the bounded cache,
+    including when the matching Jellyfin Studio value already existed before
+    this plugin.
 [ ] Save Production Companies and Countries Settings with production companies
     and selected production countries enabled. Run a normal selected-library
     scan and confirm TMDb production companies appear in Jellyfin Studio

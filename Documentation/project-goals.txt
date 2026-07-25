@@ -76,7 +76,9 @@ Acceptance criteria:
     metadata from direct TMDb title details, preserves existing values, keeps
     conservative plugin ownership records for cleanup, supports a searchable
     TMDb country allow-list, company-logo caching, direct editing, and a
-    collapsible colored additions/removals overview.
+    collapsible colored additions/removals overview. Include a dedicated
+    Jellyfin-managed selected-library load action with progress and completion
+    feedback, so this metadata can be added without a full tag scan.
 [x] Read existing Jellyfin people metadata for selected Movies and Series,
     preserve existing credits, and optionally append only missing TMDb cast or
     selected-job crew credits plus missing person primary images.

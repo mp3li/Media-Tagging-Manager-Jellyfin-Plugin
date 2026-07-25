@@ -16,17 +16,19 @@ public sealed class ProductionManager
     private readonly TagDestinationWriter _writer;
     private readonly ProviderNetworkLogoCache _logos;
     private readonly ProductionOwnershipStore _ownership;
+    private readonly ProductionStateStore _state;
     private readonly SemaphoreSlim _operationLock = new(1, 1);
     private readonly ConcurrentDictionary<Guid, ProductionChange> _changes = new();
 
     /// <summary>Initializes the production metadata manager.</summary>
-    public ProductionManager(ILibraryManager libraryManager, TmdbAvailabilitySource tmdb, TagDestinationWriter writer, ProviderNetworkLogoCache logos, ProductionOwnershipStore ownership)
+    public ProductionManager(ILibraryManager libraryManager, TmdbAvailabilitySource tmdb, TagDestinationWriter writer, ProviderNetworkLogoCache logos, ProductionOwnershipStore ownership, ProductionStateStore state)
     {
         _libraryManager = libraryManager;
         _tmdb = tmdb;
         _writer = writer;
         _logos = logos;
         _ownership = ownership;
+        _state = state;
     }
 
     /// <summary>Gets whether a normal scan has production metadata work enabled.</summary>
@@ -34,6 +36,63 @@ public sealed class ProductionManager
 
     /// <summary>Starts a new latest-operation review without altering current Jellyfin metadata.</summary>
     public void StartChangeReview() => _changes.Clear();
+
+    /// <summary>Returns a clear administrator-facing prerequisite error for the dedicated production action.</summary>
+    public string? GetScanValidationError()
+    {
+        var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("The plugin configuration is unavailable.");
+        if (!IsConfigured(configuration))
+        {
+            return "Enable Add Production Companies and/or Add Production Countries, then save Production Companies and Countries Settings before loading.";
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration.TmdbApiKey))
+        {
+            return "Save a TMDb API Read Access Token in Main Settings before loading production companies and countries.";
+        }
+
+        return configuration.LibraryIds.Length == 0
+            ? "Select and save one or more libraries in Main Settings before loading production companies and countries."
+            : null;
+    }
+
+    /// <summary>Loads configured production metadata for all selected-library Movies and Series without running other scan features.</summary>
+    public async Task ScanConfiguredLibrariesAsync(IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        var validationError = GetScanValidationError();
+        if (validationError is not null)
+        {
+            throw new InvalidOperationException(validationError);
+        }
+
+        var configuration = Plugin.Instance!.Configuration;
+        var candidates = configuration.LibraryIds
+            .SelectMany(libraryId => GetLibraryItems(libraryId).Select(item => (Item: item, LibraryId: libraryId)))
+            .ToArray();
+        StartChangeReview();
+        _state.Start(candidates.Length);
+        try
+        {
+            for (var index = 0; index < candidates.Length; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _state.Record(await ApplyConfiguredAsync(candidates[index].Item, candidates[index].LibraryId, cancellationToken).ConfigureAwait(false));
+                progress?.Report(candidates.Length == 0 ? 100 : (index + 1) * 100d / candidates.Length);
+            }
+
+            _state.Complete();
+        }
+        catch (OperationCanceledException)
+        {
+            _state.Complete("Production companies and countries action was cancelled. Metadata already added remains available.");
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _state.Complete($"Production companies and countries action stopped: {exception.Message}");
+            throw;
+        }
+    }
 
     /// <summary>Fills missing native production metadata for one Movie or Series.</summary>
     public async Task<ProductionOperationResult> ApplyConfiguredAsync(BaseItem item, Guid libraryId, CancellationToken cancellationToken)
@@ -82,6 +141,16 @@ public sealed class ProductionManager
                 ? source.Countries.Where(country => allowedCountries.Contains(country.Code) && !Contains(existingCountries, country.Name)).ToArray()
                 : [];
 
+            // A source-supplied company logo is useful even when the native
+            // Studio value already existed before this plugin. The bounded
+            // cache keeps one logo per company and avoids a second metadata
+            // write just to make the logo available.
+            if (configuration.SaveProductionCompanyLogos)
+            {
+                await _logos.CacheAsync(source.Companies.Where(company => !string.IsNullOrWhiteSpace(company.LogoUrl))
+                    .Select(company => new SourceTag(TagKind.ProductionCompany, company.Name, "TMDb", false, company.LogoUrl)), cancellationToken).ConfigureAwait(false);
+            }
+
             if (companies.Length == 0 && countries.Length == 0)
             {
                 return new ProductionOperationResult(0, 0, 0, 0, 0);
@@ -95,12 +164,6 @@ public sealed class ProductionManager
                 companies.Select(company => new ProductionOwnedValue { ItemId = item.Id, LibraryId = libraryId, Kind = "Company", Name = company.Name.Trim(), LogoUrl = company.LogoUrl })
                     .Concat(countries.Select(country => new ProductionOwnedValue { ItemId = item.Id, LibraryId = libraryId, Kind = "Country", Name = country.Name.Trim(), CountryCode = country.Code })),
                 cancellationToken).ConfigureAwait(false);
-
-            if (configuration.SaveProductionCompanyLogos)
-            {
-                await _logos.CacheAsync(companies.Where(company => !string.IsNullOrWhiteSpace(company.LogoUrl))
-                    .Select(company => new SourceTag(TagKind.ProductionCompany, company.Name, "TMDb", false, company.LogoUrl)), cancellationToken).ConfigureAwait(false);
-            }
 
             RecordChange(item, libraryId, companies.Select(company => company.Name), [], countries.Select(country => country.Name), []);
             return new ProductionOperationResult(companies.Length, countries.Length, 0, 0, 1);
