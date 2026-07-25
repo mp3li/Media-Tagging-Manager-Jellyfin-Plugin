@@ -244,6 +244,55 @@ public sealed class MoreLikeThisManager
         }
     }
 
+    /// <summary>Returns a bounded page of saved relationships for one selected library.</summary>
+    public async Task<MoreLikeThisOverviewPageDto> GetOverviewPageAsync(Guid libraryId, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        page = Math.Clamp(page, 1, 1_000_000);
+        pageSize = Math.Clamp(pageSize, 1, 25);
+        await _storeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var document = await ReadAsync(cancellationToken).ConfigureAwait(false);
+            var selected = (Plugin.Instance?.Configuration.LibraryIds ?? []).ToHashSet();
+            if (!selected.Contains(libraryId))
+            {
+                throw new InvalidOperationException("Choose and save this library in Main Settings before viewing its relationships.");
+            }
+
+            var items = document.Items
+                .Where(value => value.LibraryId == libraryId && _libraryManager.GetItemById(value.ItemId) is Movie or Series)
+                .OrderBy(value => value.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            var pageItems = items.Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(value => ToOverviewItem(value, document.LastChanges.FirstOrDefault(candidate => candidate.ItemId == value.ItemId)))
+                .ToArray();
+            return new MoreLikeThisOverviewPageDto(pageItems, items.Length, page, pageSize);
+        }
+        finally
+        {
+            _storeLock.Release();
+        }
+    }
+
+    /// <summary>Returns lightweight saved-relationship counts for currently selected libraries.</summary>
+    public async Task<IReadOnlyCollection<MoreLikeThisOverviewCountDto>> GetOverviewCountsAsync(CancellationToken cancellationToken)
+    {
+        await _storeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var selected = Plugin.Instance?.Configuration.LibraryIds ?? [];
+            var document = await ReadAsync(cancellationToken).ConfigureAwait(false);
+            return selected.Select(libraryId => new MoreLikeThisOverviewCountDto(
+                libraryId,
+                document.Items.Count(value => value.LibraryId == libraryId && _libraryManager.GetItemById(value.ItemId) is Movie or Series))).ToArray();
+        }
+        finally
+        {
+            _storeLock.Release();
+        }
+    }
+
     /// <summary>Opens one plugin-cached poster, if it is currently available.</summary>
     public async Task<(Stream Stream, string ContentType)?> OpenPosterAsync(int tmdbId, CancellationToken cancellationToken)
     {
@@ -413,6 +462,19 @@ public sealed class MoreLikeThisManager
     private static IReadOnlyCollection<RelatedTitleDto> RemovedTitles(IEnumerable<RelatedTitleDto> before, IEnumerable<RelatedTitleDto> after) => before.Where(value => !after.Any(candidate => candidate.TmdbId == value.TmdbId)).ToArray();
 
     private static string? GetProviderId(BaseItem item, string name) => item.ProviderIds.TryGetValue(name, out var value) ? value : null;
+    private static MoreLikeThisOverviewItemDto ToOverviewItem(MoreLikeThisStoredItem value, MoreLikeThisStoredChange? change) => new(
+        value.ItemId,
+        value.Name,
+        value.ItemType,
+        value.LibraryId,
+        value.Recommendations,
+        value.SimilarTitles,
+        change?.RemovedRecommendations ?? [],
+        change?.RemovedSimilarTitles ?? [],
+        change?.AddedRecommendationIds ?? [],
+        change?.RemovedRecommendationIds ?? [],
+        change?.AddedSimilarTitleIds ?? [],
+        change?.RemovedSimilarTitleIds ?? []);
     private static string StorePath => Path.Combine(Plugin.Instance?.DataFolderPath ?? throw new InvalidOperationException("Plugin data folder is unavailable."), "more-like-this.json");
     private static string PosterDirectory => Path.Combine(Plugin.Instance?.DataFolderPath ?? throw new InvalidOperationException("Plugin data folder is unavailable."), "more-like-this-posters");
     private static string PosterIndexPath => Path.Combine(PosterDirectory, "index.json");

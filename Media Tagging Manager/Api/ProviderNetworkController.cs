@@ -415,6 +415,16 @@ public sealed class ProviderNetworkController : ControllerBase
     public async Task<ActionResult<IReadOnlyCollection<MoreLikeThisOverviewItemDto>>> GetMoreLikeThisOverview([FromQuery] Guid? libraryId, CancellationToken cancellationToken) =>
         Ok(await _moreLikeThis.GetOverviewAsync(libraryId, cancellationToken).ConfigureAwait(false));
 
+    /// <summary>Returns a small page of saved More Like This relationships for responsive dashboard rendering.</summary>
+    [HttpGet("more-like-this/overview-page")]
+    public async Task<ActionResult<MoreLikeThisOverviewPageDto>> GetMoreLikeThisOverviewPage([FromQuery] Guid libraryId, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken) =>
+        Ok(await _moreLikeThis.GetOverviewPageAsync(libraryId, page, pageSize, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Returns lightweight saved More Like This counts for selected libraries.</summary>
+    [HttpGet("more-like-this/overview-counts")]
+    public async Task<ActionResult<IReadOnlyCollection<MoreLikeThisOverviewCountDto>>> GetMoreLikeThisOverviewCounts(CancellationToken cancellationToken) =>
+        Ok(await _moreLikeThis.GetOverviewCountsAsync(cancellationToken).ConfigureAwait(false));
+
     /// <summary>Gets TMDb's production-country choices for the dedicated native metadata picker.</summary>
     [HttpGet("production/countries")]
     public async Task<ActionResult<IReadOnlyCollection<AvailabilityRegionDto>>> GetProductionCountries(CancellationToken cancellationToken) =>

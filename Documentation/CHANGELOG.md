@@ -4,6 +4,16 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.62-test] - 2026-07-25
+
+### Fixed
+
+- Reworked the **Recommendations and Similar Titles Additions and Removals**
+  overview for large libraries. It now loads lightweight selected-library
+  counts first, fetches details only when an individual library is expanded,
+  and displays ten source media items per page instead of rendering every
+  relationship card at once.
+
 ## [0.1.0.61-test] - 2026-07-25
 
 ### Fixed

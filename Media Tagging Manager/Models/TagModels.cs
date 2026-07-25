@@ -318,6 +318,12 @@ public sealed record MoreLikeThisOverviewItemDto(
     IReadOnlyCollection<int> AddedSimilarTitleIds,
     IReadOnlyCollection<int> RemovedSimilarTitleIds);
 
+/// <summary>One small page of selected-library More Like This records for responsive dashboard rendering.</summary>
+public sealed record MoreLikeThisOverviewPageDto(IReadOnlyCollection<MoreLikeThisOverviewItemDto> Items, int TotalItems, int Page, int PageSize);
+
+/// <summary>Lightweight saved-relationship count for one selected library.</summary>
+public sealed record MoreLikeThisOverviewCountDto(Guid LibraryId, int TotalItems);
+
 /// <summary>Current More Like This poster-cache usage.</summary>
 public sealed record MoreLikeThisImageCacheStatus(int Count, long Bytes, int LimitMegabytes);
 

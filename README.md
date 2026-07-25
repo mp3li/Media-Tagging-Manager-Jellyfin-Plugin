@@ -315,7 +315,9 @@ This collapsed overview groups current saved relationships by library. It shows
 recommendation and similar-title posters at their proper portrait aspect ratio,
 with each library independently collapsible. Newest-scan additions use the
 saved green color and newest-scan removals use the saved red color; both colors
-are configurable in the tab.
+are configurable in the tab. To keep large libraries responsive, it retrieves
+details only after you expand a library and displays ten source media items per
+page.
 
 ### Production Companies and Countries Settings
 

@@ -202,7 +202,9 @@ More Like This Settings
     and after a scan. Confirm libraries can be independently collapsed, poster
     aspect ratios remain portrait, new titles use the saved addition color, and
     removed titles use the saved removal color without recoloring unrelated
-    titles.
+    titles. With a large relationship result, confirm each library loads only
+    after expansion and pagination shows ten source media items at a time
+    without blank, lagging, or unresponsive dashboard areas.
 [ ] Run Load Recommendations and Similar Titles and verify its completion text
     explicitly reports saved relationship records, items without TMDb IDs,
     TMDb lookup failures, and valid empty TMDb responses. If the overview is
@@ -753,3 +755,14 @@ available TMDb photos, and saved all 258 to Jellyfin metadata (3.2 MB). The
 Cast and Crew Additions and Removals overview loaded correctly, showed current
 selected-library metadata without requiring another scan, and displayed real
 Jellyfin person thumbnails beside cast, crew, and people-with-photo names.
+2026-07-25 | More Like This selected-library load and production load | Pass;
+large-overview rendering follow-up issued | Jellyfin 10.11.11, plugin
+0.1.0.61-test | The repaired Recommendations and Similar Titles action checked
+730 selected-library items and saved 14,032 recommendations plus 13,415 similar
+titles across 702 media records. It reported 26 items without TMDb IDs and two
+TMDb lookup failures. The overview ultimately displayed correctly, but creating
+all relationship cards at once caused visible dashboard lag and blank areas;
+0.1.0.62-test replaces that rendering with per-library, ten-item pagination.
+The dedicated Production Companies and Countries action also checked 730 items,
+added 509 production companies and 239 production countries across 219 changed
+media items, and completed successfully.
