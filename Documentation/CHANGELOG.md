@@ -4,6 +4,13 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.56-test] - 2026-07-25
+
+### Fixed
+
+- The Cast and Crew overview now displays each available Jellyfin person image
+  as a small thumbnail beside the related cast/crew or photo-list name.
+
 ## [0.1.0.55-test] - 2026-07-24
 
 ### Added

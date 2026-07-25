@@ -416,8 +416,9 @@ public sealed class CastCrewManager
         var photos = people.Where(person => !string.IsNullOrWhiteSpace(person.Name))
             .Select(person => _libraryManager.GetPerson(person.Name))
             .Where(person => person is not null && person.HasImage(ImageType.Primary, 0))
-            .Select(person => person!.Name)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(person => new CastCrewPersonPhotoDto(person!.Id, person.Name))
+            .GroupBy(person => person.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
             .ToArray();
         var change = _changes.GetItem(item.Id);
         return new CastCrewOverviewItemDto(

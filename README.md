@@ -243,7 +243,9 @@ missing photo.
 
 This collapsed-by-default overview is available before any Cast and Crew scan.
 It groups every current selected-library Movie and Series by library and shows
-its current cast, crew, and people with saved Jellyfin photos. The newest full
+its current cast, crew, and people with saved Jellyfin photos. Each available
+Jellyfin person primary image appears as a small thumbnail beside that person’s
+name. The newest full
 scan, photo-only scan, or cleanup action overlays exact additions in the saved
 green color and removals in the saved red color. A later full or photo-only
 scan starts a fresh change overlay without hiding the current people metadata.

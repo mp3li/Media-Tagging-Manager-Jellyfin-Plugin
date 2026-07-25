@@ -268,13 +268,16 @@ public sealed record CastCrewOverviewItemDto(
     Guid LibraryId,
     IReadOnlyCollection<string> Cast,
     IReadOnlyCollection<string> Crew,
-    IReadOnlyCollection<string> PeoplePhotos,
+    IReadOnlyCollection<CastCrewPersonPhotoDto> PeoplePhotos,
     IReadOnlyCollection<string> AddedCast,
     IReadOnlyCollection<string> RemovedCast,
     IReadOnlyCollection<string> AddedCrew,
     IReadOnlyCollection<string> RemovedCrew,
     IReadOnlyCollection<string> AddedPeoplePhotos,
     IReadOnlyCollection<string> RemovedPeoplePhotos);
+
+/// <summary>One current Jellyfin person primary image available to display in the Cast and Crew overview.</summary>
+public sealed record CastCrewPersonPhotoDto(Guid PersonId, string Name);
 
 /// <summary>A dashboard-facing summary of one library item.</summary>
 public sealed record TaggedItemDto(
