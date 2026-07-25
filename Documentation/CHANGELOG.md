@@ -4,6 +4,28 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.50-test] - 2026-07-24
+
+### Added
+
+- Added per-library expand/collapse controls to both Library Overview and
+  Additions and Removals in the Last Scan.
+- Added **Remove Genres Added by This Plugin**. It makes a safety backup,
+  removes only plugin-created `Genre:` tags, and turns off future genre tagging
+  until genres are selected and saved again.
+- Provider, Network, and Genre selection sync actions now replace the latest
+  scan-change review with their local no-source tag removals; the next full
+  scan replaces that history again.
+
+### Fixed
+
+- Made the last-scan color controls compact square color pickers and made the
+  collapsed state explicit so it cannot be overridden by dashboard styling.
+- Renamed **Save Last Scan Colors** to **Save Colors**.
+- Replaced the one-field-at-a-time browser prompt editor with one accessible
+  tag-edit window containing separate Provider, Network, Genre, Keyword, and
+  Collection fields. The same window is used from both tag-overview views.
+
 ## [0.1.0.49-test] - 2026-07-24
 
 ### Added

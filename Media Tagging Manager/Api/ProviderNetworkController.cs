@@ -528,6 +528,20 @@ public sealed class ProviderNetworkController : ControllerBase
     public Task<ActionResult<TagSyncResult>> RemoveKeywords(CancellationToken cancellationToken) =>
         SyncAsync(TagKind.Keyword, [], cancellationToken);
 
+    /// <summary>Removes every plugin-created genre tag without contacting a source.</summary>
+    [HttpPost("remove/genres")]
+    public async Task<ActionResult<TagSyncResult>> RemoveGenres(CancellationToken cancellationToken)
+    {
+        var result = await _scanner.SyncWithOnlySelectedAsync(TagKind.Genre, [], cancellationToken).ConfigureAwait(false);
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.TagGenres = false;
+            configuration.SelectedGenreNames = [];
+        });
+        return Ok(result);
+    }
+
     /// <summary>Scans selected libraries for direct TMDb movie-collection matches without changing tags.</summary>
     [HttpPost("collections/scan")]
     public async Task<ActionResult<IReadOnlyCollection<CollectionMatchDto>>> ScanCollections(CancellationToken cancellationToken) =>

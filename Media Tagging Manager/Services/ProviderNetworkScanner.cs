@@ -364,18 +364,26 @@ public sealed class ProviderNetworkScanner
 
             await _backups.CreateAsync($"Before {kind.ToString().ToLowerInvariant()} selection sync", configuration.LibraryIds, cancellationToken).ConfigureAwait(false);
 
-            var tagsRemoved = 0;
-            var mediaItemsChanged = 0;
-            foreach (var libraryId in configuration.LibraryIds)
-            {
-                var query = new InternalItemsQuery
+            var selectedLibraryItems = configuration.LibraryIds
+                .SelectMany(libraryId => _libraryManager.GetItemList(new InternalItemsQuery
                 {
                     ParentId = libraryId,
                     Recursive = true,
                     IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series]
-                };
+                }).Select(item => (LibraryId: libraryId, Item: item)))
+                .ToArray();
 
-                foreach (var item in _libraryManager.GetItemList(query))
+            // A selection sync is a local, no-source scan. Give it the same
+            // newest-operation history as a full scan so administrators can
+            // inspect exactly which plugin-owned tags it removed. A later full
+            // scan or selection sync starts a fresh history as expected.
+            _state.Start(selectedLibraryItems.Length);
+            var tagsRemoved = 0;
+            var mediaItemsChanged = 0;
+            var completed = 0;
+            try
+            {
+                foreach (var (libraryId, item) in selectedLibraryItems)
                 {
                     var existing = item.Tags ?? [];
                     var retained = existing
@@ -388,6 +396,7 @@ public sealed class ProviderNetworkScanner
                     var removed = existing.Length - retained.Length;
                     if (existing.SequenceEqual(retained, StringComparer.OrdinalIgnoreCase))
                     {
+                        _state.Report(++completed, item.Name);
                         continue;
                     }
 
@@ -395,10 +404,23 @@ public sealed class ProviderNetworkScanner
                     await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
                     tagsRemoved += removed;
                     mediaItemsChanged++;
+                    var dashboardItem = ToDto(item, libraryId, DateTimeOffset.UtcNow, []);
+                    _state.Save(dashboardItem);
+                    _state.RecordLastScanChange(
+                        dashboardItem,
+                        [],
+                        existing.Except(retained, StringComparer.OrdinalIgnoreCase).Where(tag => IsTagKind(tag, kind)));
+                    _state.Report(++completed, item.Name);
                 }
-            }
 
-            return new TagSyncResult(tagsRemoved, mediaItemsChanged);
+                _state.Complete();
+                return new TagSyncResult(tagsRemoved, mediaItemsChanged);
+            }
+            catch (Exception exception)
+            {
+                _state.Complete($"{kind} selection sync failed: {exception.Message}");
+                throw;
+            }
         }
         finally
         {

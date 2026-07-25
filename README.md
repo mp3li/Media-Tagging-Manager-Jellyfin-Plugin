@@ -290,6 +290,11 @@ All** and **Select None**, and saves the chosen allow-list for future scans.
 plugin-owned `Genre:` tags in selected libraries. It does not contact an API or
 change Provider, Network, Keyword, Collection, or unrelated Jellyfin tags.
 
+**Remove Genres Added by This Plugin** creates a backup, removes every
+plugin-owned `Genre:` tag in the selected libraries, and turns off future genre
+tagging until you choose genres and save the tab again. It does not contact an
+API or remove unrelated Jellyfin tags.
+
 #### Keywords Settings
 
 Enable **Add keywords during scans** to add TMDb title keywords as separate tags
@@ -336,6 +341,13 @@ Series. It keeps **Providers**, **Networks**, **Genres**, **Keywords**, and
 those plugin-owned tag types for one title, then use **Save Tag Changes** to
 apply the edits. A backup is created before tag changes are written.
 
+Selecting **Edit** opens one tag-edit window with separate Provider, Network,
+Genre, Keyword, and Collection fields, rather than requiring separate browser
+prompts.
+
+Each library group in Library Overview has its own expand/collapse control, so
+large multi-library views can be navigated one library at a time.
+
 #### Unknown Providers and Networks
 
 This section lists only `Provider:` and `Network:` tags found in selected
@@ -371,6 +383,10 @@ scheduled-task controls there.
   Newly added tags use green and newly removed tags use red by default; both
   colors can be changed for accessibility. Editing a row preserves that row’s
   existing added/removed visual classification without changing any other row.
+- Each library group in this view can also be expanded or collapsed separately.
+  A Provider, Network, or Genre **Sync with Only Selected** operation is a
+  local no-source scan for this view: it replaces the prior last-scan review
+  with the tags it removed. The next full scan replaces it again.
 - The Backup Settings section provides the same create, undo, restore, and delete controls as Main Settings, so you can create a safety backup immediately before scanning.
 
 Only Movies and Series are automatically queried. Episodes inherit their series-level availability context rather than triggering a duplicate scan for every episode.

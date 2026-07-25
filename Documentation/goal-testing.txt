@@ -279,13 +279,13 @@ Acceptance criteria:
 [ ] Select None for Networks, save, and run a scan; confirm no new Network
     tags are added and existing Network tags remain unchanged unless the
     explicit Sync with Only Selected Networks action is used.
-[ ] Select a subset of providers, run Sync with Only Selected Providers, and
+[x] Select a subset of providers, run Sync with Only Selected Providers, and
     confirm a backup is created, only unselected `Provider:` tags are removed,
     no source request is made, and `Network:`/unrelated tags remain unchanged.
 [ ] If a provider or network selection sync cannot run, confirm the dashboard
     displays its specific safe server explanation rather than an unknown-error
     message, and confirm no tags are changed before a preflight failure.
-[ ] Select a subset of networks, run Sync with Only Selected Networks, and
+[x] Select a subset of networks, run Sync with Only Selected Networks, and
     confirm a backup is created, only unselected `Network:` tags are removed,
     no source request is made, and `Provider:`/unrelated tags remain unchanged.
 [ ] After each selection sync, scan again and confirm only the selected kind's
@@ -311,6 +311,9 @@ Acceptance criteria:
 [ ] Use Sync with Only Selected Genres and confirm it creates a backup, removes
     only unselected plugin `Genre:` tags, makes no source request, and leaves
     Provider, Network, Keyword, Collection, and unrelated tags untouched.
+[ ] Use Remove Genres Added by This Plugin and confirm it creates a backup,
+    makes no API request, removes only plugin `Genre:` tags, turns off future
+    genre tagging, and preserves every other tag.
 [ ] Enable Add keywords during scans before scanning a title with known TMDb
     keywords; confirm `Keyword: <name>` tags are added.
 [ ] Disable Add keywords during scans before a scan and confirm no new Keyword
@@ -424,6 +427,9 @@ Acceptance criteria:
     returns to the collapsed state with the correct control label.
 [ ] Edit a title manually to add a provider and network.
 [ ] Edit a title manually to remove a provider and network.
+[ ] Open Edit from both Library Overview and Additions and Removals in the
+    Last Scan. Confirm one tag-edit window shows editable Provider, Network,
+    Genre, Keyword, and Collection fields and saves only the intended changes.
 [ ] Confirm the manual edit creates a pre-change backup.
 [ ] Confirm manual editing preserves unrelated existing Jellyfin tags.
 [ ] Confirm the edited title refreshes correctly in the overview.
@@ -622,3 +628,8 @@ library before a new scan. A 221-item full scan completed and added 1,945 tags
 across 194 changed media items; the larger count was expected because Genre and
 Keyword tagging were enabled in addition to one selected Provider and one
 selected Network.
+2026-07-24 | Provider/Network selection sync and two-library full scan | Pass |
+Jellyfin 10.11.11, plugin 0.1.0.49-test | Sync with Only Selected Providers
+and Sync with Only Selected Networks both completed successfully. A subsequent
+full scan of two selected libraries completed successfully and the resulting
+tagging workflow behaved as expected.

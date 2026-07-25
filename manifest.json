@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.49",
-        "changelog": "0.1.0.49-test adds a collapsed last-scan additions/removals review with editable accessible colors. Test only; not a stable release.",
+        "version": "0.1.0.50",
+        "changelog": "0.1.0.50-test adds per-library overview controls, a full tag editor, sync history, and genre removal. Test only; not a stable release.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.49-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.49-test.zip",
-        "checksum": "13c8cf7ab44cd1e8fb17242aecc32482",
-        "timestamp": "2026-07-24T22:19:00Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.50-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.50-test.zip",
+        "checksum": "bfc57491e03a37a1dd10cf0aee61e086",
+        "timestamp": "2026-07-24T22:32:00Z"
       }
     ]
   }

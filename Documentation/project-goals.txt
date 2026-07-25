@@ -154,6 +154,9 @@ Acceptance criteria:
     library media with plugin-owned tag additions or removals from the newest
     scan, uses independently configurable accessible colors, and preserves a
     changed row's visual classification through its manual tag edit.
+[x] Treat Provider, Network, and Genre selection-sync operations as the newest
+    local no-source scan for the last-scan review; a later sync or full scan
+    replaces that review with its own additions and removals.
 [x] Use a conservative internal title-check concurrency while preserving the
     configured Watchmode 30-day quota ceiling.
 [x] Document that Jellyfin must be restarted after changing the default
@@ -302,6 +305,24 @@ Acceptance criteria:
   available person images without changing media files or unrelated tags.
 - The feature reports incomplete or unavailable source data honestly rather
   than inventing people, roles, or images.
+
+10. Post-first-release iteration: expanded overview scope and per-scan library selection
+-----------------------------------------------------------------------------------------
+
+[ ] Expand Library Overview beyond plugin-created tags so it can also display
+    relevant provider, network, genre, keyword, and collection tags that were
+    not created by this plugin, while clearly distinguishing their origin and
+    preserving the existing plugin-managed editing safeguards.
+[ ] Let an administrator choose a subset of already selected libraries for one
+    full scan directly on the Scan tab, without changing the plugin's saved
+    allowed-library configuration or affecting libraries not chosen for that
+    one scan.
+
+Acceptance criteria:
+- The broader overview remains clear about which tags are plugin-managed and
+  does not treat unrelated Jellyfin tags as plugin-owned.
+- A one-time scan can safely target one or more chosen saved libraries while
+  leaving the normal selected-library scope unchanged.
 
 Primary files
 -------------
