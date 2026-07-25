@@ -587,9 +587,14 @@ public sealed class ProviderNetworkScanner
         if (item is Series && configuration.TagNetworks)
         {
             var tmdbNetworks = tmdbTags.Where(tag => tag.Kind == TagKind.Network).ToArray();
-            var watchmodeNetworks = (watchmodeAvailability?.Tags ?? []).Where(tag => tag.Kind == TagKind.Network).ToArray();
-            var filtered = tmdbNetworks.Count(tag => !IsSelectedForScan(tag, configuration))
-                + watchmodeNetworks.Count(tag => !IsSelectedForScan(tag, configuration));
+            // Watchmode can be called solely because TMDb lacked a Provider.
+            // In that case its Network values are deliberately not candidates,
+            // so do not present them as Network results that were filtered out.
+            var watchmodeNetworks = needsNetworkFallback
+                ? (watchmodeAvailability?.Tags ?? []).Where(tag => tag.Kind == TagKind.Network).ToArray()
+                : [];
+            var filtered = tags.Where(tag => tag.Kind == TagKind.Network)
+                .Count(tag => !IsSelectedForScan(tag, configuration));
             var tmdbNetworkFailure = tmdbAvailability?.Note?.Contains("TV-network", StringComparison.OrdinalIgnoreCase) == true
                 || tmdbAvailability?.Note?.Contains("no TMDb ID", StringComparison.OrdinalIgnoreCase) == true;
             _state.RecordNetworkOutcome(
@@ -760,6 +765,21 @@ public sealed class ProviderNetworkScanner
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
             .ToArray();
         var existing = item.Tags ?? [];
+        var eligibleNetworkTags = selectedValues
+            .Where(value => value.Kind == TagKind.Network)
+            .Select(value => TagNaming.Format(value.Kind, value.Name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var networkCandidatesBeforeStreamingAppMode = normalized
+            .Where(value => value.Kind == TagKind.Network && configuration.TagNetworks)
+            .Where(value => !configuration.RestrictNetworksToSelected || selectedNetworkNames.Contains(value.Name))
+            .Where(value => !string.IsNullOrWhiteSpace(value.Name))
+            .Select(value => TagNaming.Format(value.Kind, value.Name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var networkSuppressedByStreamingAppSetting = string.Equals(configuration.TvNetworkAppTaggingMode, "StreamingAppOnly", StringComparison.Ordinal) && hasTvNetworkApp
+            ? networkCandidatesBeforeStreamingAppMode.Length
+            : 0;
         var tagsAdded = selected.Count(tag => !existing.Contains(tag, StringComparer.OrdinalIgnoreCase));
         // A failed source must never erase previously known availability. A later healthy scan reconciles it.
         // Scheduled replacement reconciles current availability only. Genre and
@@ -800,6 +820,11 @@ public sealed class ProviderNetworkScanner
             await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
         }
         _state.RecordTagAdditions(tagsAdded);
+        _state.RecordNetworkApplication(
+            eligibleNetworkTags.Length,
+            eligibleNetworkTags.Count(tag => existing.Contains(tag, StringComparer.OrdinalIgnoreCase)),
+            networkSuppressedByStreamingAppSetting,
+            addedTags.Count(tag => TagNaming.TryGetKind(tag, out var kind) && kind == TagKind.Network));
         var dashboardItem = ToDto(item, libraryId, DateTimeOffset.UtcNow, sources);
         _state.Save(dashboardItem);
         _state.RecordLastScanChange(dashboardItem, addedTags, removedTags);

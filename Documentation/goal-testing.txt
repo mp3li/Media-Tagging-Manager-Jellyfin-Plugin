@@ -229,7 +229,9 @@ Acceptance criteria:
     fallback can still apply a source-returned selected Network. With an
     unselected TMDb Network, confirm it does not suppress that fallback.
 [ ] After a scan, confirm the Scan status reports TMDb/Watchmode Network
-    returns, Network values filtered by selection, and lookup failures.
+    returns, Network values filtered by selection, final selected candidates,
+    already-present Network tags, Streaming app only exclusions, actual Network
+    tags added, and lookup failures.
 [ ] Confirm the plugin never creates a Network tag from a TV network streaming
     app name when neither API supplies a title-level network name.
 [ ] With TV Network Streaming Apps set to Network only, confirm a Watchmode

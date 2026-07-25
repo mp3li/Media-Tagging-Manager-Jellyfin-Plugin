@@ -4,6 +4,19 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.53-test] - 2026-07-24
+
+### Fixed
+
+- Corrected Network scan accounting so Watchmode Network names returned during
+  a Provider-only fallback are no longer presented as Network candidates.
+- Added final-stage Network counts for selected candidates, already-present
+  tags, values intentionally withheld by Streaming app only, and Network tags
+  actually added. This makes a Network source result distinguishable from a
+  final Jellyfin tag write.
+- Network-catalog status now records and displays its separate TMDb and
+  Watchmode source counts alongside its unique cached Network total.
+
 ## [0.1.0.52-test] - 2026-07-24
 
 ### Added

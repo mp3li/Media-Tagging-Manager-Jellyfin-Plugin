@@ -30,6 +30,10 @@ public sealed class ScanStateStore
                 TmdbNetworkTagsReturned = _progress.TmdbNetworkTagsReturned,
                 WatchmodeNetworkTagsReturned = _progress.WatchmodeNetworkTagsReturned,
                 NetworkTagsFilteredBySelection = _progress.NetworkTagsFilteredBySelection,
+                NetworkTagsEligibleForApplication = _progress.NetworkTagsEligibleForApplication,
+                NetworkTagsAlreadyPresent = _progress.NetworkTagsAlreadyPresent,
+                NetworkTagsSuppressedByStreamingAppSetting = _progress.NetworkTagsSuppressedByStreamingAppSetting,
+                NetworkTagsAdded = _progress.NetworkTagsAdded,
                 TmdbNetworkLookupFailures = _progress.TmdbNetworkLookupFailures,
                 WatchmodeNetworkFallbackAttempts = _progress.WatchmodeNetworkFallbackAttempts,
                 WatchmodeNetworkLookupFailures = _progress.WatchmodeNetworkLookupFailures
@@ -127,6 +131,23 @@ public sealed class ScanStateStore
             {
                 _progress.WatchmodeNetworkLookupFailures++;
             }
+        }
+    }
+
+    /// <summary>Records final Network-candidate handling after the same filters and de-duplication used for a Jellyfin tag write.</summary>
+    public void RecordNetworkApplication(int eligible, int alreadyPresent, int suppressedByStreamingAppSetting, int added)
+    {
+        lock (_progressLock)
+        {
+            if (!_progress.IsRunning)
+            {
+                return;
+            }
+
+            _progress.NetworkTagsEligibleForApplication += Math.Max(0, eligible);
+            _progress.NetworkTagsAlreadyPresent += Math.Max(0, alreadyPresent);
+            _progress.NetworkTagsSuppressedByStreamingAppSetting += Math.Max(0, suppressedByStreamingAppSetting);
+            _progress.NetworkTagsAdded += Math.Max(0, added);
         }
     }
 

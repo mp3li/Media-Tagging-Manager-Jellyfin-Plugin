@@ -80,7 +80,9 @@ public sealed record NetworkCatalogStatus(
     IReadOnlyCollection<string> Networks,
     NetworkCatalogLoadProgress LoadProgress,
     DateTimeOffset? CachedUtc,
-    IReadOnlyDictionary<string, int>? NetworkTmdbIds = null);
+    IReadOnlyDictionary<string, int>? NetworkTmdbIds = null,
+    int TmdbNetworkCount = 0,
+    int WatchmodeNetworkCount = 0);
 
 /// <summary>Result of removing one kind of plugin-owned tag without contacting any source.</summary>
 public sealed record TagSyncResult(int TagsRemoved, int MediaItemsChanged);
@@ -154,6 +156,18 @@ public sealed class ScanProgress
 
     /// <summary>Gets or sets the number of returned Network values excluded by the saved Network selection.</summary>
     public int NetworkTagsFilteredBySelection { get; set; }
+
+    /// <summary>Gets or sets the number of unique selected Network tags that reached the final application stage.</summary>
+    public int NetworkTagsEligibleForApplication { get; set; }
+
+    /// <summary>Gets or sets the number of final Network candidates already present on their media item.</summary>
+    public int NetworkTagsAlreadyPresent { get; set; }
+
+    /// <summary>Gets or sets the number of Network candidates withheld by the explicit streaming-app-only setting.</summary>
+    public int NetworkTagsSuppressedByStreamingAppSetting { get; set; }
+
+    /// <summary>Gets or sets the number of Network tags actually added by the current or latest scan.</summary>
+    public int NetworkTagsAdded { get; set; }
 
     /// <summary>Gets or sets the number of Series for which TMDb's Network lookup did not succeed.</summary>
     public int TmdbNetworkLookupFailures { get; set; }

@@ -32,7 +32,10 @@ public sealed class NetworkCatalogCache
         var message = progress.Message;
         if (!progress.IsRunning && valid)
         {
-            message = $"{document!.Networks.Length} Networks are cached for the saved availability regions.";
+            var sourceBreakdown = document!.TmdbNetworkCount + document.WatchmodeNetworkCount > 0
+                ? $" TMDb: {document.TmdbNetworkCount}; Watchmode: {document.WatchmodeNetworkCount}."
+                : string.Empty;
+            message = $"{document.Networks.Length} unique Networks are cached for the saved availability regions.{sourceBreakdown}";
         }
         else if (!progress.IsRunning && document is not null && !string.Equals(document.RegionsKey, regionsKey, StringComparison.Ordinal))
         {
@@ -45,7 +48,9 @@ public sealed class NetworkCatalogCache
             valid ? document!.Networks : [],
             progress,
             valid ? document!.CachedUtc : null,
-            valid ? document!.NetworkTmdbIds : null);
+            valid ? document!.NetworkTmdbIds : null,
+            valid ? document!.TmdbNetworkCount : 0,
+            valid ? document!.WatchmodeNetworkCount : 0);
     }
 
     /// <summary>Begins an explicit background catalog load for the current saved regions.</summary>
@@ -115,10 +120,12 @@ public sealed class NetworkCatalogCache
                     RegionsKey = string.Join(",", regionsSnapshot.OrderBy(value => value, StringComparer.OrdinalIgnoreCase)),
                     CachedUtc = DateTimeOffset.UtcNow,
                     Networks = networks,
-                    NetworkTmdbIds = networkTmdbIds
+                    NetworkTmdbIds = networkTmdbIds,
+                    TmdbNetworkCount = tmdbNetworks.Count,
+                    WatchmodeNetworkCount = watchmodeNetworks.Count
                 }, CancellationToken.None).ConfigureAwait(false);
                 var sourceNote = tmdbFailure is null ? string.Empty : " TMDb's catalog was unavailable; loaded the available Watchmode Network catalog instead.";
-                Complete($"Loaded {networks.Length} Networks for the saved availability regions.{sourceNote}");
+                Complete($"Loaded {networks.Length} unique Networks for the saved availability regions. TMDb: {tmdbNetworks.Count}; Watchmode: {watchmodeNetworks.Count}.{sourceNote}");
             }
             catch (Exception exception)
             {
@@ -231,5 +238,9 @@ public sealed class NetworkCatalogCache
         public string[] Networks { get; set; } = [];
 
         public Dictionary<string, int> NetworkTmdbIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public int TmdbNetworkCount { get; set; }
+
+        public int WatchmodeNetworkCount { get; set; }
     }
 }
