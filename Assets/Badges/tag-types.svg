@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="20" role="img" aria-label="Tag types: 5">
-  <title>Tag types: 5</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="154" height="20" role="img" aria-label="Metadata types: 25">
+  <title>Metadata types: 25</title>
   <defs><linearGradient id="jellyfin" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#AA5CC3"/><stop offset="1" stop-color="#00A4DC"/></linearGradient></defs>
-  <rect width="128" height="20" rx="3" fill="url(#jellyfin)"/>
-  <text x="64" y="14" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="11" text-anchor="middle">Tag types · 5</text>
+  <rect width="154" height="20" rx="3" fill="url(#jellyfin)"/>
+  <text x="77" y="14" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="11" text-anchor="middle">Metadata types · 25</text>
 </svg>

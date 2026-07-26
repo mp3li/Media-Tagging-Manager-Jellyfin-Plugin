@@ -9,14 +9,14 @@
 </p>
 
 <p align="center">
-  A Jellyfin metadata companion for organizing the media you already own with current streaming providers, television networks, genres, keywords, collections, cast and crew, production information, ratings, languages, and reusable TMDb relationship data.
+  A Jellyfin metadata companion for organizing the media you already own with current streaming providers, television networks, provider and network logos, genres, keywords, collections, cast, crew, people photos, recommendations, similar titles, More Like This image links and posters, production companies, production countries, production-company logos, community ratings, vote counts, age ratings, country-specific classifications, adult-content flags, original language, spoken languages, and translations.
 </p>
 
 <p align="center">
   <img alt="Status: Active testing" src="Assets/Badges/status.svg" />
   <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
-  <img alt="Tag types: 5" src="Assets/Badges/tag-types.svg" />
+  <img alt="Metadata types: 25" src="Assets/Badges/tag-types.svg" />
   <img alt="Sources: TMDb and Watchmode" src="Assets/Badges/sources.svg" />
   <img alt="Refresh: Manual or scheduled" src="Assets/Badges/refresh.svg" />
 </p>
@@ -37,19 +37,40 @@ It is designed for a library owner who wants answers to questions like:
 The plugin does not download media, rename files, alter video/audio streams,
 or bypass any streaming service’s access controls.
 
-## Jellyfin tag types
+## Metadata types
 
-These are the five prefixed Jellyfin tag types the plugin can add. They remain
-distinct so that one title can have more than one kind of information without
-mixing their meanings.
+Media Tagging Manager handles 25 distinct metadata types. Five are normal,
+prefixed Jellyfin tags; the other types are native Jellyfin metadata,
+people/image metadata, or plugin-owned relationship records and image cache
+data for future compatible plugins.
 
-| Tag type | Example | Meaning |
+| Metadata type | Example | Meaning |
 | --- | --- | --- |
-| Provider | `Provider: Netflix` | A current streaming provider, rental service, purchase service, or free viewing service where the title is available in one of your selected regions. |
-| Network | `Network: BBC One` | A title-level television network or original distributor returned by TMDb or Watchmode. The plugin never invents this from a streaming-app name. |
-| Genre | `Genre: Drama` | A broad TMDb category selected in Genres and Keywords Settings. |
-| Keyword | `Keyword: Time Travel` | A specific TMDb descriptive term selected through the Keywords setting. |
-| Collection | `Collection: The Hunger Games Collection` | A direct TMDb movie-collection membership that you reviewed and chose to add. |
+| Provider tag | `Provider: Netflix` | A current streaming provider, rental service, purchase service, or free viewing service where the title is available in one of your selected regions. |
+| Network tag | `Network: BBC One` | A title-level television network or original distributor returned by TMDb or Watchmode. The plugin never invents this from a streaming-app name. |
+| Provider logo | Netflix logo | One cached source or manually supplied logo for a Provider tag. |
+| Network logo | BBC One logo | One cached source or manually supplied logo for a Network tag. |
+| Genre tag | `Genre: Drama` | A broad TMDb category selected in Genres and Keywords Settings. |
+| Keyword tag | `Keyword: Time Travel` | A specific TMDb descriptive term selected through the Keywords setting. |
+| Collection tag | `Collection: The Hunger Games Collection` | A direct TMDb movie-collection membership that you reviewed and chose to add. |
+| Cast member | `Tilda Swinton` | A missing TMDb cast person, added without replacing existing cast or character order. |
+| Crew member | `Director: Greta Gerwig` | A missing TMDb crew credit from the jobs you selected. |
+| Cast/crew photo | Person primary image | A missing people image saved as shared Jellyfin person metadata. |
+| Recommendation | TMDb recommended title | A direct TMDb recommendation for a selected-library movie or series. |
+| Similar title | TMDb similar title | A direct TMDb similar-title relationship for a selected-library movie or series. |
+| More Like This image link | TMDb poster URL | A lightweight stored poster link for a recommendation or similar title. |
+| More Like This poster | Cached TMDb poster | An optional bounded on-disk poster image for a recommendation or similar title. |
+| Production company | `A24` | A TMDb production company added to supported native Jellyfin metadata. |
+| Production-company logo | A24 logo | An optional cached TMDb logo for a production company. |
+| Production country | `United Kingdom` | A TMDb production country added to supported native Jellyfin metadata. |
+| Community rating | `8.2 / 10` | TMDb’s community-average rating, written to Jellyfin’s Community Rating field. |
+| Vote count | `12,345 votes` | The number of TMDb users contributing to the community rating. |
+| Age rating | `PG-13` | The selected primary country’s certification, written to Jellyfin’s Official Rating field. |
+| Country classification | `US: PG-13` | A country-specific certification retained in plugin data for each selected country. |
+| Adult-content flag | `Adult: false` | TMDb’s adult-content result; it does not alter Jellyfin parental controls. |
+| Original language | `English` | The language in which TMDb reports the title was originally produced. |
+| Spoken language | `English, French` | Every spoken language TMDb returns for the title. |
+| Translation | `es-US: Spanish title/overview` | A TMDb localized title or overview with its language and region. |
 
 ## Current testing status
 
