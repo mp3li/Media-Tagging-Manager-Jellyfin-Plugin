@@ -4,6 +4,22 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.63-test] - 2026-07-25
+
+### Added
+
+- Added **Ratings Settings** with TMDb community ratings, vote counts,
+  country-specific certifications, a deliberately blank-by-default primary
+  Jellyfin classification country, adult-content flags, dedicated
+  Jellyfin-managed loading, and a collapsible color-coded overview.
+- Added **Spoken Languages and Translations Settings** with TMDb original
+  language, spoken-language, and complete available-translation storage,
+  dedicated Jellyfin-managed loading, and a collapsible color-coded overview.
+- Normal full scans now apply enabled Ratings and Language options alongside
+  the existing selected-library workflows. Native Community Rating and primary
+  Official Rating use Jellyfin's normal metadata update path; richer values
+  remain safely in plugin-owned records for future plugins.
+
 ## [0.1.0.62-test] - 2026-07-25
 
 ### Fixed

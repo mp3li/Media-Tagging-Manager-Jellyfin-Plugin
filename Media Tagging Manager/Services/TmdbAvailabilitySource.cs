@@ -259,6 +259,76 @@ public sealed class TmdbAvailabilitySource : IAvailabilitySource
             : [];
     }
 
+    /// <summary>Gets TMDb title ratings, country classifications, spoken languages, and available translations.</summary>
+    public async Task<TmdbSupplementalMetadataResult> GetSupplementalMetadataAsync(ExternalIds ids, CancellationToken cancellationToken)
+    {
+        var token = Plugin.Instance?.Configuration.TmdbApiKey;
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(ids.Tmdb))
+        {
+            return new TmdbSupplementalMetadataResult(null, null, null, null, [], [], [], "The item has no configured TMDb credential or TMDb ID.");
+        }
+
+        var type = ids.MediaType == "Series" ? "tv" : "movie";
+        var id = Uri.EscapeDataString(ids.Tmdb);
+        using var detailsResponse = await SendAsync($"https://api.themoviedb.org/3/{type}/{id}?language=en-US", token, cancellationToken).ConfigureAwait(false);
+        if (!detailsResponse.IsSuccessStatusCode)
+        {
+            return new TmdbSupplementalMetadataResult(null, null, null, null, [], [], [], $"TMDb title lookup returned HTTP {(int)detailsResponse.StatusCode}.");
+        }
+
+        using var detailsDocument = JsonDocument.Parse(await detailsResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+        var root = detailsDocument.RootElement;
+        double? voteAverage = root.TryGetProperty("vote_average", out var voteAverageValue) && voteAverageValue.TryGetDouble(out var voteAverageNumber) ? voteAverageNumber : null;
+        int? voteCount = root.TryGetProperty("vote_count", out var voteCountValue) && voteCountValue.TryGetInt32(out var voteCountNumber) ? voteCountNumber : null;
+        bool? adult = root.TryGetProperty("adult", out var adultValue) && (adultValue.ValueKind is JsonValueKind.True or JsonValueKind.False) ? adultValue.GetBoolean() : null;
+        var originalLanguage = root.TryGetProperty("original_language", out var originalLanguageValue) ? originalLanguageValue.GetString()?.Trim() : null;
+        var spokenLanguages = root.TryGetProperty("spoken_languages", out var spokenValues) && spokenValues.ValueKind == JsonValueKind.Array
+            ? spokenValues.EnumerateArray().Select(value => value.TryGetProperty("english_name", out var name) ? name.GetString() : value.TryGetProperty("iso_639_1", out var code) ? code.GetString() : null).Where(static value => !string.IsNullOrWhiteSpace(value)).Select(static value => value!.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(static value => value, StringComparer.OrdinalIgnoreCase).ToArray()
+            : [];
+
+        var classifications = new List<TmdbClassification>();
+        var classificationPath = type == "tv" ? "content_ratings" : "release_dates";
+        using (var classificationResponse = await SendAsync($"https://api.themoviedb.org/3/{type}/{id}/{classificationPath}", token, cancellationToken).ConfigureAwait(false))
+        {
+            if (classificationResponse.IsSuccessStatusCode)
+            {
+                using var classificationDocument = JsonDocument.Parse(await classificationResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+                if (classificationDocument.RootElement.TryGetProperty("results", out var results) && results.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var country in results.EnumerateArray())
+                    {
+                        var code = country.TryGetProperty("iso_3166_1", out var codeValue) ? codeValue.GetString()?.Trim().ToUpperInvariant() : null;
+                        if (string.IsNullOrWhiteSpace(code)) continue;
+                        var certification = type == "tv"
+                            ? (country.TryGetProperty("rating", out var rating) ? rating.GetString() : null)
+                            : (country.TryGetProperty("release_dates", out var releases) && releases.ValueKind == JsonValueKind.Array ? releases.EnumerateArray().Select(release => release.TryGetProperty("certification", out var value) ? value.GetString() : null).FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) : null);
+                        if (!string.IsNullOrWhiteSpace(certification)) classifications.Add(new TmdbClassification(code, certification.Trim()));
+                    }
+                }
+            }
+        }
+
+        var translations = new List<TmdbTranslation>();
+        using (var translationResponse = await SendAsync($"https://api.themoviedb.org/3/{type}/{id}/translations", token, cancellationToken).ConfigureAwait(false))
+        {
+            if (translationResponse.IsSuccessStatusCode)
+            {
+                using var translationDocument = JsonDocument.Parse(await translationResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false));
+                if (translationDocument.RootElement.TryGetProperty("translations", out var values) && values.ValueKind == JsonValueKind.Array)
+                {
+                    translations.AddRange(values.EnumerateArray().Select(value => new TmdbTranslation(
+                        value.TryGetProperty("iso_639_1", out var language) ? language.GetString()?.Trim() ?? string.Empty : string.Empty,
+                        value.TryGetProperty("iso_3166_1", out var country) ? country.GetString()?.Trim() : null,
+                        value.TryGetProperty("data", out var data) && data.TryGetProperty("title", out var title) ? title.GetString()?.Trim() : null,
+                        value.TryGetProperty("data", out var overviewData) && overviewData.TryGetProperty("overview", out var overview) ? overview.GetString()?.Trim() : null))
+                        .Where(static value => !string.IsNullOrWhiteSpace(value.LanguageCode)));
+                }
+            }
+        }
+
+        return new TmdbSupplementalMetadataResult(voteAverage, voteCount, adult, originalLanguage, spokenLanguages, classifications.DistinctBy(value => value.CountryCode, StringComparer.OrdinalIgnoreCase).ToArray(), translations.DistinctBy(value => value.LanguageCode + ":" + value.CountryCode, StringComparer.OrdinalIgnoreCase).OrderBy(value => value.LanguageCode, StringComparer.OrdinalIgnoreCase).ToArray());
+    }
+
     /// <summary>Gets TMDb's first page of direct recommendations and similar titles for one Movie or Series.</summary>
     public async Task<TmdbRelatedTitlesResult> GetRelatedTitlesAsync(ExternalIds ids, bool includeRecommendations, bool includeSimilarTitles, CancellationToken cancellationToken)
     {

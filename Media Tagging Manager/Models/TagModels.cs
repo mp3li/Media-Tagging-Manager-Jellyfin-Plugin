@@ -1,3 +1,4 @@
+#pragma warning disable CS1591
 namespace Jellyfin.Plugin.MediaTaggingManager.Models;
 
 /// <summary>The distinct tag classifications managed by this plugin.</summary>
@@ -55,6 +56,23 @@ public sealed record TmdbProductionCountry(string Code, string Name);
 
 /// <summary>Production companies and countries returned from one TMDb movie or TV detail record.</summary>
 public sealed record TmdbProductionResult(IReadOnlyCollection<TmdbProductionCompany> Companies, IReadOnlyCollection<TmdbProductionCountry> Countries, string? Note = null);
+
+/// <summary>TMDb ratings, certifications, languages, and translations for one title.</summary>
+public sealed record TmdbSupplementalMetadataResult(
+    double? VoteAverage,
+    int? VoteCount,
+    bool? Adult,
+    string? OriginalLanguage,
+    IReadOnlyCollection<string> SpokenLanguages,
+    IReadOnlyCollection<TmdbClassification> Classifications,
+    IReadOnlyCollection<TmdbTranslation> Translations,
+    string? Note = null);
+
+/// <summary>One country-specific TMDb certification for a title.</summary>
+public sealed record TmdbClassification(string CountryCode, string Certification);
+
+/// <summary>One available TMDb translation, preserving its language and optional region.</summary>
+public sealed record TmdbTranslation(string LanguageCode, string? CountryCode, string? Title, string? Overview);
 
 /// <summary>The data returned from a single source adapter.</summary>
 public sealed record SourceLookupResult(string Source, IReadOnlyCollection<SourceTag> Tags, string? Note = null);
@@ -395,6 +413,24 @@ public sealed class MoreLikeThisScanProgress
     /// <summary>Gets or sets the current administrator-facing action status.</summary>
     public string Message { get; set; } = "No Recommendation or Similar Title action is currently running.";
 }
+
+/// <summary>Progress for either dedicated Ratings or Languages selected-library action.</summary>
+public sealed class SupplementalScanProgress
+{
+    public bool IsRunning { get; set; }
+    public int TotalItems { get; set; }
+    public int CompletedItems { get; set; }
+    public int RecordsUpdated { get; set; }
+    public int MissingTmdbIds { get; set; }
+    public int LookupFailures { get; set; }
+    public string Message { get; set; } = "No action is currently running.";
+}
+
+/// <summary>Saved rating and classification data for one selected-library Movie or Series.</summary>
+public sealed record RatingsOverviewItemDto(Guid ItemId, string Name, string ItemType, Guid LibraryId, double? CommunityRating, int? VoteCount, string? OfficialRating, bool? Adult, IReadOnlyCollection<TmdbClassification> Classifications, bool ChangedInLatestAction);
+
+/// <summary>Saved original/spoken language and translation data for one selected-library Movie or Series.</summary>
+public sealed record LanguagesOverviewItemDto(Guid ItemId, string Name, string ItemType, Guid LibraryId, string? OriginalLanguage, IReadOnlyCollection<string> SpokenLanguages, IReadOnlyCollection<TmdbTranslation> Translations, bool ChangedInLatestAction);
 
 /// <summary>A dashboard-facing summary of one library item.</summary>
 public sealed record TaggedItemDto(

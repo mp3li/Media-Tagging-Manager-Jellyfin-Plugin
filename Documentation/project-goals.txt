@@ -79,6 +79,12 @@ Acceptance criteria:
     collapsible colored additions/removals overview. Include a dedicated
     Jellyfin-managed selected-library load action with progress and completion
     feedback, so this metadata can be added without a full tag scan.
+[x] Add a Ratings Settings secondary tab with TMDb community rating, vote count,
+    country classification, primary Jellyfin classification-country, adult-flag,
+    dedicated load, and collapsible additions/removals overview controls.
+[x] Add a Spoken Languages and Translations Settings secondary tab with original
+    language, spoken languages, all TMDb available translations, dedicated load,
+    and collapsible overview controls for selected libraries.
 [x] Read existing Jellyfin people metadata for selected Movies and Series,
     preserve existing credits, and optionally append only missing TMDb cast or
     selected-job crew credits plus missing person primary images.

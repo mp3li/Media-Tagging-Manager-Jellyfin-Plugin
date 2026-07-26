@@ -160,6 +160,45 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets the accessible color used for production metadata removed by cleanup.</summary>
     public string ProductionRemovedColor { get; set; } = "#F44336";
+
+    /// <summary>Gets or sets whether normal scans update TMDb community ratings.</summary>
+    public bool AddCommunityRatings { get; set; }
+
+    /// <summary>Gets or sets whether normal scans retain TMDb vote counts for dashboard reuse.</summary>
+    public bool SaveVoteCounts { get; set; }
+
+    /// <summary>Gets or sets whether normal scans update the selected primary country's official classification.</summary>
+    public bool AddAgeRatings { get; set; }
+
+    /// <summary>Gets or sets countries whose TMDb classifications are retained for dashboard reuse.</summary>
+    public string[] SelectedClassificationCountryCodes { get; set; } = [];
+
+    /// <summary>Gets or sets the country used for Jellyfin's single native Official Rating field.</summary>
+    public string PrimaryClassificationCountryCode { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets whether TMDb adult-content flags are retained for dashboard reuse.</summary>
+    public bool SaveAdultFlags { get; set; }
+
+    /// <summary>Gets or sets the dashboard color used for newly saved ratings and classifications.</summary>
+    public string RatingsAddedColor { get; set; } = "#4CAF50";
+
+    /// <summary>Gets or sets the dashboard color used for removed plugin-owned ratings and classifications.</summary>
+    public string RatingsRemovedColor { get; set; } = "#F44336";
+
+    /// <summary>Gets or sets whether TMDb original-language values are retained for selected-library media.</summary>
+    public bool SaveOriginalLanguages { get; set; }
+
+    /// <summary>Gets or sets whether TMDb spoken-language values are retained for selected-library media.</summary>
+    public bool SaveSpokenLanguages { get; set; }
+
+    /// <summary>Gets or sets whether TMDb available translations are retained for selected-library media.</summary>
+    public bool SaveAvailableTranslations { get; set; }
+
+    /// <summary>Gets or sets the dashboard color used for newly saved language and translation data.</summary>
+    public string LanguagesAddedColor { get; set; } = "#4CAF50";
+
+    /// <summary>Gets or sets the dashboard color used for removed plugin-owned language and translation data.</summary>
+    public string LanguagesRemovedColor { get; set; } = "#F44336";
 }
 
 /// <summary>An administrator-defined canonical name for an external Provider or Network tag.</summary>

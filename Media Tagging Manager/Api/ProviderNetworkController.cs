@@ -36,6 +36,9 @@ public sealed class ProviderNetworkController : ControllerBase
     private readonly ProductionManager _production;
     private readonly ProductionStateStore _productionState;
     private readonly ProductionScanRequestQueue _productionRequests;
+    private readonly SupplementalMetadataManager _supplemental;
+    private readonly SupplementalMetadataStateStore _supplementalState;
+    private readonly SupplementalMetadataRequestQueue _supplementalRequests;
 
     /// <summary>Initializes a new instance of the <see cref="ProviderNetworkController"/> class.</summary>
     public ProviderNetworkController(
@@ -58,7 +61,10 @@ public sealed class ProviderNetworkController : ControllerBase
         MoreLikeThisScanRequestQueue moreLikeThisRequests,
         ProductionManager production,
         ProductionStateStore productionState,
-        ProductionScanRequestQueue productionRequests)
+        ProductionScanRequestQueue productionRequests,
+        SupplementalMetadataManager supplemental,
+        SupplementalMetadataStateStore supplementalState,
+        SupplementalMetadataRequestQueue supplementalRequests)
     {
         _scanner = scanner;
         _state = state;
@@ -80,6 +86,9 @@ public sealed class ProviderNetworkController : ControllerBase
         _production = production;
         _productionState = productionState;
         _productionRequests = productionRequests;
+        _supplemental = supplemental;
+        _supplementalState = supplementalState;
+        _supplementalRequests = supplementalRequests;
     }
 
     /// <summary>Returns plugin settings and selectable libraries without relying on dashboard-internal endpoints.</summary>
@@ -305,6 +314,47 @@ public sealed class ProviderNetworkController : ControllerBase
         }));
     }
 
+    /// <summary>Saves only the controls on the Ratings Settings tab.</summary>
+    [HttpPost("settings/ratings")]
+    public IActionResult SaveRatingsSettings([FromBody] RatingsSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration =>
+        {
+            configuration.AddCommunityRatings = submitted.AddCommunityRatings;
+            configuration.SaveVoteCounts = submitted.SaveVoteCounts;
+            configuration.AddAgeRatings = submitted.AddAgeRatings;
+            configuration.SelectedClassificationCountryCodes = (submitted.SelectedClassificationCountryCodes ?? []).Where(code => !string.IsNullOrWhiteSpace(code) && code.Trim().Length == 2).Select(code => code.Trim().ToUpperInvariant()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(code => code, StringComparer.OrdinalIgnoreCase).ToArray();
+            var primary = submitted.PrimaryClassificationCountryCode?.Trim().ToUpperInvariant() ?? string.Empty;
+            configuration.PrimaryClassificationCountryCode = configuration.SelectedClassificationCountryCodes.Contains(primary, StringComparer.OrdinalIgnoreCase) ? primary : string.Empty;
+            configuration.SaveAdultFlags = submitted.SaveAdultFlags;
+        }));
+    }
+
+    /// <summary>Saves accessible rating/classification review colors.</summary>
+    [HttpPost("settings/ratings-colors")]
+    public IActionResult SaveRatingsColors([FromBody] RatingsColorSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration => { configuration.RatingsAddedColor = NormalizeCssColor(submitted.AddedColor, "#4CAF50"); configuration.RatingsRemovedColor = NormalizeCssColor(submitted.RemovedColor, "#F44336"); }));
+    }
+
+    /// <summary>Saves only the controls on the Spoken Languages and Translations Settings tab.</summary>
+    [HttpPost("settings/languages")]
+    public IActionResult SaveLanguagesSettings([FromBody] LanguagesSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration => { configuration.SaveOriginalLanguages = submitted.SaveOriginalLanguages; configuration.SaveSpokenLanguages = submitted.SaveSpokenLanguages; configuration.SaveAvailableTranslations = submitted.SaveAvailableTranslations; }));
+    }
+
+    /// <summary>Saves accessible spoken-language/translation review colors.</summary>
+    [HttpPost("settings/languages-colors")]
+    public IActionResult SaveLanguagesColors([FromBody] LanguagesColorSettingsRequest submitted)
+    {
+        var plugin = Plugin.Instance ?? throw new InvalidOperationException("The plugin has not finished initializing.");
+        return Ok(plugin.UpdateConfiguration(configuration => { configuration.LanguagesAddedColor = NormalizeCssColor(submitted.AddedColor, "#4CAF50"); configuration.LanguagesRemovedColor = NormalizeCssColor(submitted.RemovedColor, "#F44336"); }));
+    }
+
     /// <summary>Saves only Scheduled Tasks controls shared between the two tabs.</summary>
     [HttpPost("settings/scheduled-tasks")]
     public IActionResult SaveScheduledTasks([FromBody] ScheduledTasksSettingsRequest submitted)
@@ -477,6 +527,50 @@ public sealed class ProviderNetworkController : ControllerBase
         await _production.UpdateItemAsync(itemId, submitted.Companies ?? [], submitted.Countries ?? [], cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
+
+    /// <summary>Returns the current selected-library rating and classification data.</summary>
+    [HttpGet("ratings/overview")]
+    public async Task<ActionResult<IReadOnlyCollection<RatingsOverviewItemDto>>> GetRatingsOverview(CancellationToken cancellationToken) => Ok(await _supplemental.GetRatingsOverviewAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Returns dedicated ratings action status.</summary>
+    [HttpGet("ratings/status")]
+    public ActionResult<SupplementalScanProgress> GetRatingsStatus() => Ok(_supplementalState.Get(true));
+
+    /// <summary>Queues a selected-library ratings and classifications action.</summary>
+    [HttpPost("ratings/load")]
+    public IActionResult LoadRatings()
+    {
+        var error = _supplemental.GetValidationError(true);
+        if (error is not null) return BadRequest(error);
+        _supplementalRequests.Enqueue(true); _supplementalState.Queue(true); _taskManager.QueueScheduledTask<RatingsScanTask>();
+        return Accepted();
+    }
+
+    /// <summary>Removes plugin-retained rating and classification records for selected libraries.</summary>
+    [HttpDelete("ratings")]
+    public async Task<ActionResult<object>> RemoveRatings(CancellationToken cancellationToken) => Ok(new { RecordsRemoved = await _supplemental.RemoveRecordsAsync(true, cancellationToken).ConfigureAwait(false) });
+
+    /// <summary>Returns the current selected-library language and translation data.</summary>
+    [HttpGet("languages/overview")]
+    public async Task<ActionResult<IReadOnlyCollection<LanguagesOverviewItemDto>>> GetLanguagesOverview(CancellationToken cancellationToken) => Ok(await _supplemental.GetLanguagesOverviewAsync(cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Returns dedicated spoken-language and translation action status.</summary>
+    [HttpGet("languages/status")]
+    public ActionResult<SupplementalScanProgress> GetLanguagesStatus() => Ok(_supplementalState.Get(false));
+
+    /// <summary>Queues a selected-library spoken-language and translation action.</summary>
+    [HttpPost("languages/load")]
+    public IActionResult LoadLanguages()
+    {
+        var error = _supplemental.GetValidationError(false);
+        if (error is not null) return BadRequest(error);
+        _supplementalRequests.Enqueue(false); _supplementalState.Queue(false); _taskManager.QueueScheduledTask<LanguagesScanTask>();
+        return Accepted();
+    }
+
+    /// <summary>Removes plugin-retained language and translation records for selected libraries.</summary>
+    [HttpDelete("languages")]
+    public async Task<ActionResult<object>> RemoveLanguages(CancellationToken cancellationToken) => Ok(new { RecordsRemoved = await _supplemental.RemoveRecordsAsync(false, cancellationToken).ConfigureAwait(false) });
 
     /// <summary>Serves one optional plugin-cached TMDb poster without exposing the plugin data folder.</summary>
     [HttpGet("more-like-this/images/{tmdbId:int}")]

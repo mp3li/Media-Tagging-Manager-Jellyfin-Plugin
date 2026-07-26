@@ -365,6 +365,26 @@ expanded or collapsed. The latest additions use the saved green color and
 plugin-owned cleanup removals use the saved red color. Use **Edit** to change
 one item's company and country values directly.
 
+### Ratings Settings
+
+For selected-library Movies and Series, this tab can update TMDb **Community
+Rating** through Jellyfin's native metadata workflow, retain TMDb **Vote Count**
+and **Adult** data for future plugins, and retain country-specific TMDb
+classifications. Because Jellyfin has a single native Official Rating field,
+the optional **Primary Jellyfin Classification Country** starts blank and lets
+you choose which selected country's certification is written there. The
+dedicated load action and collapsed, color-coded per-library overview work
+without a full tag scan.
+
+### Spoken Languages and Translations Settings
+
+For selected-library Movies and Series, this tab can retain TMDb's **Original
+Language**, every returned **Spoken Language**, and every available title
+translation. It deliberately has no language filter: when enabled, it saves all
+returned values for the selected libraries. Its dedicated load action and
+collapsed, color-coded overview let you review the stored data without running
+the complete tag scan.
+
 ### Network and Provider Settings
 
 #### Availability Region Settings

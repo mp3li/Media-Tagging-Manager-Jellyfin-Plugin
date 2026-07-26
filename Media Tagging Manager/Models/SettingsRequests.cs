@@ -1,3 +1,4 @@
+#pragma warning disable CS1591
 namespace Jellyfin.Plugin.MediaTaggingManager.Models;
 
 /// <summary>Only the controls on the Main Settings tab that are saved together.</summary>
@@ -239,4 +240,37 @@ public sealed class ProductionItemUpdateRequest
 
     /// <summary>Gets or sets the complete current production-country list for the item.</summary>
     public string[]? Countries { get; set; }
+}
+
+/// <summary>Only the controls on the Ratings Settings tab.</summary>
+public sealed class RatingsSettingsRequest
+{
+    public bool AddCommunityRatings { get; set; }
+    public bool SaveVoteCounts { get; set; }
+    public bool AddAgeRatings { get; set; }
+    public string[]? SelectedClassificationCountryCodes { get; set; }
+    public string? PrimaryClassificationCountryCode { get; set; }
+    public bool SaveAdultFlags { get; set; }
+}
+
+/// <summary>Accessible colors for the ratings and classifications review.</summary>
+public sealed class RatingsColorSettingsRequest
+{
+    public string? AddedColor { get; set; }
+    public string? RemovedColor { get; set; }
+}
+
+/// <summary>Only the controls on the Spoken Languages and Translations tab.</summary>
+public sealed class LanguagesSettingsRequest
+{
+    public bool SaveOriginalLanguages { get; set; }
+    public bool SaveSpokenLanguages { get; set; }
+    public bool SaveAvailableTranslations { get; set; }
+}
+
+/// <summary>Accessible colors for the spoken languages and translations review.</summary>
+public sealed class LanguagesColorSettingsRequest
+{
+    public string? AddedColor { get; set; }
+    public string? RemovedColor { get; set; }
 }

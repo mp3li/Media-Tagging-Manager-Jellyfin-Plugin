@@ -21,6 +21,7 @@ public sealed class ProviderNetworkScanner
     private readonly CastCrewManager _castCrew;
     private readonly MoreLikeThisManager _moreLikeThis;
     private readonly ProductionManager _production;
+    private readonly SupplementalMetadataManager _supplemental;
     private readonly SemaphoreSlim _scanLock = new(1, 1);
     private readonly object _knownTagLock = new();
 
@@ -34,7 +35,8 @@ public sealed class ProviderNetworkScanner
         ProviderNetworkLogoCache logos,
         CastCrewManager castCrew,
         MoreLikeThisManager moreLikeThis,
-        ProductionManager production)
+        ProductionManager production,
+        SupplementalMetadataManager supplemental)
     {
         _libraryManager = libraryManager;
         _sources = sources.ToArray();
@@ -45,6 +47,7 @@ public sealed class ProviderNetworkScanner
         _castCrew = castCrew;
         _moreLikeThis = moreLikeThis;
         _production = production;
+        _supplemental = supplemental;
     }
 
     /// <summary>Scans a configured library. Only movies and series receive tags; episodes inherit their series context.</summary>
@@ -694,6 +697,7 @@ public sealed class ProviderNetworkScanner
             var castCrewResult = await _castCrew.ApplyConfiguredAsync(entry.Item, token).ConfigureAwait(false);
             await _production.ApplyConfiguredAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
             await _moreLikeThis.ApplyConfiguredAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
+            await _supplemental.ApplyConfiguredAsync(entry.Item, entry.LibraryId, token).ConfigureAwait(false);
             _state.RecordCastCrewOutcome(
                 castCrewResult.CastAdded,
                 castCrewResult.CrewAdded,

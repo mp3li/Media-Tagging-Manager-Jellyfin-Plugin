@@ -105,7 +105,20 @@ public sealed class Plugin : BasePlugin<Configuration.PluginConfiguration>, IHas
         AddProductionCountries = source.AddProductionCountries,
         SelectedProductionCountryCodes = (source.SelectedProductionCountryCodes ?? []).ToArray(),
         ProductionAddedColor = source.ProductionAddedColor,
-        ProductionRemovedColor = source.ProductionRemovedColor
+        ProductionRemovedColor = source.ProductionRemovedColor,
+        AddCommunityRatings = source.AddCommunityRatings,
+        SaveVoteCounts = source.SaveVoteCounts,
+        AddAgeRatings = source.AddAgeRatings,
+        SelectedClassificationCountryCodes = (source.SelectedClassificationCountryCodes ?? []).ToArray(),
+        PrimaryClassificationCountryCode = source.PrimaryClassificationCountryCode,
+        SaveAdultFlags = source.SaveAdultFlags,
+        RatingsAddedColor = source.RatingsAddedColor,
+        RatingsRemovedColor = source.RatingsRemovedColor,
+        SaveOriginalLanguages = source.SaveOriginalLanguages,
+        SaveSpokenLanguages = source.SaveSpokenLanguages,
+        SaveAvailableTranslations = source.SaveAvailableTranslations,
+        LanguagesAddedColor = source.LanguagesAddedColor,
+        LanguagesRemovedColor = source.LanguagesRemovedColor
     };
 
     /// <inheritdoc />

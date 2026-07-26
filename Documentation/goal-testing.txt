@@ -766,3 +766,18 @@ all relationship cards at once caused visible dashboard lag and blank areas;
 The dedicated Production Companies and Countries action also checked 730 items,
 added 509 production companies and 239 production countries across 219 changed
 media items, and completed successfully.
+
+Ratings Settings and Spoken Languages and Translations Settings
+---------------------------------------------------------------
+
+[ ] Save Ratings Settings with Community Rating, Vote Count, classifications,
+    and adult flags enabled; verify the primary classification country remains
+    blank until intentionally selected and that only this tab's settings change.
+[ ] Use Load Ratings and Classifications; verify progress, completion feedback,
+    native Jellyfin Community Rating/Official Rating where available, and the
+    collapsed, per-library Ratings overview with saved color controls.
+[ ] Save Spoken Languages and Translations Settings with each individual option
+    enabled; verify scoped persistence through navigation and reload.
+[ ] Use Load Spoken Languages and Translations; verify progress, completion
+    feedback, and original language, spoken languages, and translation rows in
+    the collapsed, per-library overview.
