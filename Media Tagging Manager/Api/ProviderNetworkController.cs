@@ -324,9 +324,16 @@ public sealed class ProviderNetworkController : ControllerBase
             configuration.AddCommunityRatings = submitted.AddCommunityRatings;
             configuration.SaveVoteCounts = submitted.SaveVoteCounts;
             configuration.AddAgeRatings = submitted.AddAgeRatings;
-            configuration.SelectedClassificationCountryCodes = (submitted.SelectedClassificationCountryCodes ?? []).Where(code => !string.IsNullOrWhiteSpace(code) && code.Trim().Length == 2).Select(code => code.Trim().ToUpperInvariant()).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(code => code, StringComparer.OrdinalIgnoreCase).ToArray();
             var primary = submitted.PrimaryClassificationCountryCode?.Trim().ToUpperInvariant() ?? string.Empty;
-            configuration.PrimaryClassificationCountryCode = configuration.SelectedClassificationCountryCodes.Contains(primary, StringComparer.OrdinalIgnoreCase) ? primary : string.Empty;
+            configuration.SelectedClassificationCountryCodes = (submitted.SelectedClassificationCountryCodes ?? [])
+                .Where(code => !string.IsNullOrWhiteSpace(code) && code.Trim().Length == 2)
+                .Select(code => code.Trim().ToUpperInvariant())
+                .Append(primary.Length == 2 ? primary : null)
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(code => code, StringComparer.OrdinalIgnoreCase)
+                .ToArray()!;
+            configuration.PrimaryClassificationCountryCode = primary.Length == 2 ? primary : string.Empty;
             configuration.SaveAdultFlags = submitted.SaveAdultFlags;
         }));
     }
@@ -550,6 +557,10 @@ public sealed class ProviderNetworkController : ControllerBase
     [HttpDelete("ratings")]
     public async Task<ActionResult<object>> RemoveRatings(CancellationToken cancellationToken) => Ok(new { RecordsRemoved = await _supplemental.RemoveRecordsAsync(true, cancellationToken).ConfigureAwait(false) });
 
+    /// <summary>Removes only saved classifications outside the current saved country selection.</summary>
+    [HttpPost("ratings/sync-selected")]
+    public async Task<ActionResult<object>> SyncSelectedClassifications(CancellationToken cancellationToken) => Ok(new { RecordsUpdated = await _supplemental.SyncClassificationsToSelectionAsync(cancellationToken).ConfigureAwait(false) });
+
     /// <summary>Returns the current selected-library language and translation data.</summary>
     [HttpGet("languages/overview")]
     public async Task<ActionResult<IReadOnlyCollection<LanguagesOverviewItemDto>>> GetLanguagesOverview(CancellationToken cancellationToken) => Ok(await _supplemental.GetLanguagesOverviewAsync(cancellationToken).ConfigureAwait(false));
@@ -571,6 +582,14 @@ public sealed class ProviderNetworkController : ControllerBase
     /// <summary>Removes plugin-retained language and translation records for selected libraries.</summary>
     [HttpDelete("languages")]
     public async Task<ActionResult<object>> RemoveLanguages(CancellationToken cancellationToken) => Ok(new { RecordsRemoved = await _supplemental.RemoveRecordsAsync(false, cancellationToken).ConfigureAwait(false) });
+
+    /// <summary>Removes only plugin-retained spoken-language values for selected libraries.</summary>
+    [HttpDelete("languages/spoken")]
+    public async Task<ActionResult<object>> RemoveSpokenLanguages(CancellationToken cancellationToken) => Ok(new { RecordsRemoved = await _supplemental.RemoveLanguageRecordsAsync(true, false, cancellationToken).ConfigureAwait(false) });
+
+    /// <summary>Removes only plugin-retained translation values for selected libraries.</summary>
+    [HttpDelete("languages/translations")]
+    public async Task<ActionResult<object>> RemoveTranslations(CancellationToken cancellationToken) => Ok(new { RecordsRemoved = await _supplemental.RemoveLanguageRecordsAsync(false, true, cancellationToken).ConfigureAwait(false) });
 
     /// <summary>Serves one optional plugin-cached TMDb poster without exposing the plugin data folder.</summary>
     [HttpGet("more-like-this/images/{tmdbId:int}")]

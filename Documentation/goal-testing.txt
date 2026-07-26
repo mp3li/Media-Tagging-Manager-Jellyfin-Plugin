@@ -781,3 +781,11 @@ Ratings Settings and Spoken Languages and Translations Settings
 [ ] Use Load Spoken Languages and Translations; verify progress, completion
     feedback, and original language, spoken languages, and translation rows in
     the collapsed, per-library overview.
+[ ] Confirm Ratings Settings retains every checked classification after using
+    its bottom Save button, navigation, and reload; confirm the Primary
+    Jellyfin Classification Country list is available before choosing checkbox
+    countries and that it retains its chosen country automatically.
+[ ] Confirm Sync with Only Selected Age Ratings and Classifications removes only
+    plugin-retained unselected classifications and leaves other rating data.
+[ ] Confirm Spoken Languages and Translations cleanup buttons independently
+    remove only their named data category.

@@ -4,6 +4,25 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.64-test] - 2026-07-25
+
+### Fixed
+
+- Fixed Ratings Settings save redraws discarding all classification checkbox
+  selections in the dashboard client. The client now retains every Ratings and
+  Languages configuration property returned by scoped save routes.
+- Primary Jellyfin Classification Country now lists all available TMDb countries
+  before a classification checkbox is selected; choosing one automatically
+  retains it in the saved classification selection.
+
+### Added
+
+- Added **Sync with Only Selected Age Ratings and Classifications**, which
+  removes only plugin-retained classifications outside the saved selection.
+- Split the language cleanup into separate Spoken Languages and Translations
+  actions, and made all dashboard tab labels non-wrapping with horizontal
+  scrolling when necessary.
+
 ## [0.1.0.63-test] - 2026-07-25
 
 ### Added

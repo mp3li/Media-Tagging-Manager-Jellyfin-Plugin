@@ -130,6 +130,50 @@ public sealed class SupplementalMetadataManager
         finally { _lock.Release(); }
     }
 
+    /// <summary>Removes only the requested plugin-retained spoken-language or translation values for selected libraries.</summary>
+    public async Task<int> RemoveLanguageRecordsAsync(bool spokenLanguages, bool translations, CancellationToken cancellationToken)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var document = await ReadUnsafeAsync(cancellationToken).ConfigureAwait(false);
+            var selected = (Plugin.Instance?.Configuration.LibraryIds ?? []).ToHashSet();
+            var count = 0;
+            foreach (var item in document.Items.Where(item => selected.Contains(item.LibraryId)))
+            {
+                var changed = false;
+                if (spokenLanguages && item.SpokenLanguages.Count > 0) { item.SpokenLanguages = []; changed = true; }
+                if (translations && item.Translations.Count > 0) { item.Translations = []; changed = true; }
+                if (changed) { _languagesLatestChanges.Add(item.ItemId); count++; }
+            }
+            await WriteUnsafeAsync(document, cancellationToken).ConfigureAwait(false);
+            return count;
+        }
+        finally { _lock.Release(); }
+    }
+
+    /// <summary>Removes only saved country classifications not present in the current saved selection.</summary>
+    public async Task<int> SyncClassificationsToSelectionAsync(CancellationToken cancellationToken)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var document = await ReadUnsafeAsync(cancellationToken).ConfigureAwait(false);
+            var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("Plugin configuration is unavailable.");
+            var selectedLibraries = (configuration.LibraryIds ?? []).ToHashSet();
+            var allowed = (configuration.SelectedClassificationCountryCodes ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var count = 0;
+            foreach (var item in document.Items.Where(item => selectedLibraries.Contains(item.LibraryId)))
+            {
+                var retained = item.Classifications.Where(value => allowed.Contains(value.CountryCode)).ToList();
+                if (!SameClassifications(item.Classifications, retained)) { item.Classifications = retained; _ratingsLatestChanges.Add(item.ItemId); count++; }
+            }
+            await WriteUnsafeAsync(document, cancellationToken).ConfigureAwait(false);
+            return count;
+        }
+        finally { _lock.Release(); }
+    }
+
     private async Task<SupplementalOutcome> ApplyAsync(BaseItem item, Guid libraryId, bool ratings, CancellationToken cancellationToken)
     {
         var configuration = Plugin.Instance!.Configuration;
