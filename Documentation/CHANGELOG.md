@@ -4,6 +4,22 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [0.1.0.65-test] - 2026-07-25
+
+### Changed
+
+- Moved the Provider and Network Library Overview, filters, manual edits, and
+  Unknown Providers and Networks section to the bottom of **Network and
+  Provider Settings**. The separate **View and Edit Tags** tab is retired.
+- Narrowed that moved overview to Provider and Network tags, and preserved all
+  other plugin-managed tag types during those focused edits.
+- Added a separate, collapsible **Genres and Keywords Library Overview** with
+  filters, per-library expand/collapse, and focused Genre/Keyword edits.
+- Moved **Scan** to the final position of the secondary tab row.
+- Replaced the old tag badge with a five-tag-types badge, simplified the source
+  badge to TMDb and Watchmode, and refreshed the README and planning documents
+  for the new dashboard organization.
+
 ## [0.1.0.64-test] - 2026-07-25
 
 ### Fixed
@@ -871,7 +887,7 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 - Reordered and redesigned backup controls, selected-library configuration, API
   settings, three-country availability selection, tag settings, incoming-media
   settings, scheduled tasks, grouped tag review, and scan controls.
-- Removed administrator-configured JSON sources and the configurable parallel
+- Removed administrator-configured third-party source configuration and the configurable parallel
   lookup setting from the product and configuration.
 - Shortened the main Dashboard menu label to **Media Tagging Manager** while
   retaining the full catalog title.
@@ -1025,7 +1041,7 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 - Jellyfin plugin foundation targeting Jellyfin 10.11.3.
 - Administrator dashboard for library selection, tag behavior, region, source configuration, scans, filtering, and manual corrections.
 - Explicit overlap-safe Jellyfin tags: `Provider: <name>` and `Network: <name>`.
-- TMDb availability/network adapter, Watchmode availability adapter, and configurable custom JSON source adapter.
+- TMDb availability/network adapter, Watchmode availability adapter, and a configurable third-party source adapter.
 - Per-library and all-selected-library manual scans.
 - Scan status with active title, completed count, progress percentage, and estimated remaining time.
 - Native scheduled full-refresh task with an administrator-configurable interval.
@@ -1033,7 +1049,7 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 - Complete selected-library tag backups before tag-changing scans, incoming-media updates, and manual tag edits.
 - Named backup creation, backup list, per-backup restore, and Undo last tag operation in plugin settings.
 - Safeguards that preserve existing plugin-managed tags when no source is configured or all enabled sources fail.
-- Documentation/API_KEYS.md with per-server credential setup, safe rotation guidance, and a non-secret custom JSON example.
+- Documentation/API_KEYS.md with per-server credential setup, safe rotation guidance, and a non-secret source-configuration example.
 - Documentation/project-goals.txt for product-scope and delivery tracking.
 - Initial license and package metadata for the public source repository.
 - A compact README TMDb credential walkthrough, truthful application-form wording, and visible TMDb attribution in the plugin settings.

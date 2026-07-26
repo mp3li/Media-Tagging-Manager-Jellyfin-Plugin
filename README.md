@@ -5,623 +5,365 @@
 <h1 align="center">Media Tagging Manager Jellyfin Plugin</h1>
 
 <p align="center">
-  <strong>⚠️ Testing build:</strong> This plugin is still under active testing and is not yet a stable release.
+  <strong>⚠️ Testing build:</strong> actively tested on Jellyfin 10.11.11; not yet a stable v1 release.
 </p>
 
 <p align="center">
-  A Jellyfin server plugin that checks selected libraries against enabled sources, then adds clear, separate provider, network, genre, keyword, and collection tags directly to the titles you already own.
+  A Jellyfin metadata companion for organizing the media you already own with current streaming providers, television networks, genres, keywords, collections, cast and crew, production information, ratings, languages, and reusable TMDb relationship data.
 </p>
 
 <p align="center">
-  <img alt="Status: In Active Development" src="Assets/Badges/status.svg" />
+  <img alt="Status: Active testing" src="Assets/Badges/status.svg" />
   <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
-  <img alt="Tags: Providers and Networks" src="Assets/Badges/tags.svg" />
+  <img alt="Tag types: 5" src="Assets/Badges/tag-types.svg" />
   <img alt="Sources: TMDb and Watchmode" src="Assets/Badges/sources.svg" />
-  <img alt="Refresh: Manual or Scheduled" src="Assets/Badges/refresh.svg" />
+  <img alt="Refresh: Manual or scheduled" src="Assets/Badges/refresh.svg" />
 </p>
 
-## Table of Contents
+## What it does
 
-<details>
-<summary>Open Table of Contents</summary>
+Media Tagging Manager reads only the Jellyfin libraries you explicitly select.
+For supported Movies and Series, it can enrich or organize metadata from TMDb
+and, where appropriate, Watchmode. Episodes inherit their series context.
 
-<br />
+It is designed for a library owner who wants answers to questions like:
 
-- [About the Project](#about-the-project)
-- [How Tags Work](#how-tags-work)
-- [Source Coverage](#source-coverage)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Plugin Settings](#plugin-settings)
-- [Project Structure](#project-structure)
-- [Known Limitations](#known-limitations)
-- [Responsible Use and Availability Disclaimer](#responsible-use-and-availability-disclaimer)
-- [License](#license)
+- “Where can I stream this title in my country right now?”
+- “Which television network is this series associated with?”
+- “Which titles in my library share a genre, keyword, collection, cast member,
+  production company, language, or TMDb relationship?”
 
-</details>
+The plugin does not download media, rename files, alter video/audio streams,
+or bypass any streaming service’s access controls.
 
-## About the Project
+## Jellyfin tag types
 
-Media Tagging Manager Jellyfin Plugin is for media-library owners who want their local collection tagged with the online streaming providers a title is currently available to watch on, and with the television network it belongs to.
+These are the five prefixed Jellyfin tag types the plugin can add. They remain
+distinct so that one title can have more than one kind of information without
+mixing their meanings.
 
-It works with the existing Jellyfin library. It does not download media, alter filenames, replace ordinary Jellyfin tags, or assume that a title has only one provider or network.
+| Tag type | Example | Meaning |
+| --- | --- | --- |
+| Provider | `Provider: Netflix` | A current streaming provider, rental service, purchase service, or free viewing service where the title is available in one of your selected regions. |
+| Network | `Network: BBC One` | A title-level television network or original distributor returned by TMDb or Watchmode. The plugin never invents this from a streaming-app name. |
+| Genre | `Genre: Drama` | A broad TMDb category selected in Genres and Keywords Settings. |
+| Keyword | `Keyword: Time Travel` | A specific TMDb descriptive term selected through the Keywords setting. |
+| Collection | `Collection: The Hunger Games Collection` | A direct TMDb movie-collection membership that you reviewed and chose to add. |
 
-## How Tags Work
+## Current testing status
 
-The plugin writes normal Jellyfin tags with explicit prefixes:
+The current catalog build is **0.1.0.65-test**. The core provider/network,
+genre/keyword, collection, cast/crew, people-photo, More Like This, production,
+ratings, and language workflows have been exercised on a real Jellyfin 10.11.11
+server. Remaining release checks and their recorded results live in
+[Documentation/goal-testing.txt](Documentation/goal-testing.txt).
 
-```text
-Provider: Netflix
-Provider: Prime Video
-Network: BBC One
-Genre: Drama
-Keyword: Time Travel
-Collection: The Hunger Games Collection
-```
+This is still a test release. Create a tag backup before a broad scan and keep
+your usual server backups.
 
-A service where a title can currently be watched is not necessarily the network that originally aired or carries it. A title may have any number of provider tags and network tags at once.
+## Install
 
-When the setting to remove outdated plugin-assigned tags is enabled, the plugin replaces only tags beginning with `Provider: ` or `Network: `. Genre, Keyword, Collection, studio, and unrelated custom Jellyfin tags remain untouched. If every enabled source is unavailable for a title, existing provider and network tags are preserved rather than erased.
-
-## Source Coverage
-
-| Source | What it contributes | Credentials | Status |
-| --- | --- | --- | --- |
-| TMDb | Regional streaming providers and TV-network metadata | TMDb API Read Access Token | Built in; checked first |
-| Watchmode | Quota-tracked fallback for a requested Provider or series Network result TMDb did not return | Watchmode API key | Built in |
-| Streaming Availability API | Additional streaming-availability coverage | Streaming Availability API key | Planned source |
-
-Availability can be selected for up to three countries. A provider available in one country may be unavailable in another.
-
-TMDb requests share a plugin-wide 35-requests-per-second gate. If TMDb returns
-HTTP 429, the plugin temporarily pauses every TMDb path and retries the affected
-read request up to two times, using the response's `Retry-After` value when one
-is supplied.
-
-## Requirements
-
-- **Jellyfin 10.11.11** — the current plugin build targets this Jellyfin version.
-- **Jellyfin administrator access** — required for plugin settings, scans, backups, and manual tag edits.
-- **Internet access from the Jellyfin server** — only for the sources you enable.
-- **At least one credential from the two built-in sources** — a TMDb API Read Access Token or a Watchmode API Key.
-
-## Installation
-
-1. In Jellyfin, open **Dashboard → Plugins → Repositories**.
-2. Add the repository URL below, then refresh the plugin catalog:
+1. Open **Dashboard → Plugins → Repositories** in Jellyfin.
+2. Add this repository manifest URL:
 
    ```text
    https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/manifest.json
    ```
 
-3. Find **Media Tagging Manager Jellyfin Plugin** in the catalog and select **Install**.
-4. Restart Jellyfin when prompted.
-5. Open **Dashboard → Media Tagging Manager** to configure the plugin.
+3. Refresh the catalog, open **Media Tagging Manager Jellyfin Plugin**, and
+   install the newest test version.
+4. Restart Jellyfin if it asks you to.
+5. Open **Dashboard → Media Tagging Manager** from the Dashboard sidebar.
 
-The repository manifest contains plugin-release information only. It never contains API keys, Jellyfin configuration, backups, logs, or media data. Each server administrator adds their own source credentials in the plugin settings after installation.
+The manifest and release ZIP contain no API keys, server configuration,
+backups, logs, cached source data, NFO files, or media.
 
-## Plugin Settings
+## Quick start
 
-The plugin is configured from **Dashboard → Media Tagging Manager**. Each settings tab has its own Save button; save that tab before relying on its changes.
+1. In **Main Settings**, select one small test library and save.
+2. Add your TMDb API Read Access Token in **API Settings** and save it.
+3. Optionally add your Watchmode API key in **API Settings**, set its request
+   limit and quota-reset date, and save. It is used only as the quota-tracked
+   fallback when TMDb does not return the needed result.
+4. In **Network and Provider Settings**, choose availability regions, load
+   Networks if needed, choose the Providers and Networks you want, and save.
+5. Optionally configure the other metadata tabs described below.
+6. Create a tag backup in **Main Settings** or **Scan**.
+7. Use **Scan All Selected Libraries**.
+8. Review **Additions and Removals in the Last Scan**, then review Provider and
+   Network tags at the bottom of **Network and Provider Settings**.
 
-### Main Settings
+Each tab’s Save button saves only that tab’s settings. Save a tab before using
+one of its load, sync, or scan actions.
 
-#### Backup Settings
+## Sources and credentials
 
-Create a complete tag backup for every item in the selected libraries before making changes. A backup captures the entire current tag list for each item, including tags that were not created by this plugin.
+| Source | Used for | Credential |
+| --- | --- | --- |
+| [TMDb](https://www.themoviedb.org/) | Regional availability, title-level TV networks, genres, keywords, direct TMDb collections, cast/crew, people photos, recommendations, similar titles, production data, ratings, certifications, languages, and translations | API **Read Access Token** |
+| [Watchmode](https://www.watchmode.com/) | Quota-tracked fallback availability/network lookup when TMDb does not return the requested result | API key |
 
-- **Create Tag Backup** creates a named snapshot.
-- **Undo Last Tag Action** restores the newest available backup.
-- **Available Backups** lists saved backups with their date, time, and item count.
-- **Restore from Backup** restores the selected snapshot and overwrites the current tags for its saved items.
-- **Delete Backup** permanently removes the selected backup without changing current Jellyfin tags.
+TMDb is checked first. Watchmode is not used as a second copy of every match;
+it is the fallback path for the applicable missing result and respects the
+configured 30-day request limit. Availability is region-dependent; choose up
+to three availability countries.
 
-Backups remain in Jellyfin’s plugin data directory through normal server restarts. Restore is intentionally powerful: it also restores unrelated custom tags to their state at the time of the backup.
+More documented, authorized sources may be added in a future iteration after
+their matching quality, terms, coverage, and limits are reviewed.
 
-#### Native Jellyfin Metadata Saving
-
-Every tag change uses Jellyfin's normal metadata-update workflow. The plugin
-does not write metadata directly into media files and does not separately write
-NFO files.
-
-If a selected library is configured in Jellyfin to save local NFO metadata,
-Jellyfin itself decides whether that normal metadata update is also written to
-the NFO. Configure that behavior in the library's own Jellyfin metadata
-settings; Media Tagging Manager does not override or duplicate it.
-
-#### Select Libraries
-
-Choose the Jellyfin libraries the plugin may access. Only selected libraries are read or changed, regardless of what you named them. Within those libraries, the plugin tags Movies and Series; episodes inherit their series context.
-
-#### API Settings
-
-Enter API credentials for the sources you want to use. Credentials are stored in that Jellyfin server’s plugin configuration; never share them or include them in GitHub, screenshots, releases, or backups. Use **Save API Settings** directly below these fields before loading source catalogs or logos; **Save Main Settings** at the bottom of the tab saves the same API values too.
-
-- **TMDb API Read Access Token** is the primary source for regional streaming providers and television networks.
-- **Watchmode API Key** is an optional fallback for a requested Provider or series Network result TMDb does not return. It requires an IMDb ID.
-- **Watchmode request limit per 30-day cycle** is a safety cap. Enter the date
-  shown as **Quota Resets On** in your Watchmode account; the plugin uses that
-  date to identify the active 30-day cycle, track its own usage, and stop
-  sending Watchmode requests when the selected cap is reached.
-- **Current API Usage** lets you enter or correct the current usage shown in
-  your Watchmode account for that active cycle. The plugin adds its future
-  tracked requests to that starting value; Watchmode's quota headers take
-  precedence when the service returns them.
-
-The dashboard sends built-in-source credentials in request headers, not in source URLs. Jellyfin’s plugin configuration should still be treated as sensitive server data; protect access to the Jellyfin dashboard, its data directory, backups, and logs. The plugin does not claim to encrypt API keys at rest.
-
-For detailed setup and key rotation, read [API_KEYS.md](Documentation/API_KEYS.md).
+### Get your keys
 
 <details>
 <summary><strong>Get a TMDb API Read Access Token and Watchmode API Key — usually only takes a few minutes</strong></summary>
 
 <br />
 
-TMDb is the easiest built-in source to begin with because it provides both regional watch-provider information and TV-network metadata. Create or sign in to a TMDb account, then open **Account settings → API** and create an application.
+For TMDb, create an application from **Account settings → API**. If the form
+asks for application details for a genuinely personal Jellyfin server, these
+values are suitable:
 
-For a self-hosted Jellyfin server used only for your own library, choose the **personal** or **non-commercial** option if that truthfully describes your use. Do not select a personal option for a commercial project; review TMDb's terms or contact TMDb instead.
-
-If the form asks for application information, these truthful values are appropriate for a personal server:
-
-| Form field | Suggested value |
+| Field | Suggested value |
 | --- | --- |
 | Application name | `Media Tagging Manager Jellyfin Plugin` |
 | Application URL | `https://github.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin` |
-| Application summary / description | `A self-hosted Jellyfin plugin for my personal media library. It uses the TMDb API to identify regional watch providers and television networks for titles already in my library. Each server administrator supplies and stores their own private TMDb API Read Access Token in that server's plugin settings. The plugin does not distribute, share, or expose TMDb API credentials.` |
+| Description | `A self-hosted Jellyfin plugin for my personal media library. It uses the TMDb API to organize metadata for titles already in my library. Each administrator supplies their own private TMDb API Read Access Token in their Jellyfin plugin settings.` |
 
-After TMDb approves the application, copy the **API Read Access Token**—not the older API-key value—and paste it only into **Dashboard → Media Tagging Manager → Main Settings → API Settings**. Never put the token in a GitHub issue, screenshot, README, release archive, or this repository.
+Copy the **API Read Access Token**, not TMDb’s older API-key value. Paste it
+only into **Dashboard → Media Tagging Manager → Main Settings → API Settings**.
 
-For Watchmode, create an account and generate an API key through its account dashboard. Paste it only into the Watchmode field in the same API Settings section. You may use either TMDb or Watchmode, but using both gives the plugin its configured fallback path.
+For Watchmode, create an account and obtain a key from its account dashboard.
+Enter its request allowance, **Quota Resets On** date, and, if necessary, the
+current usage already shown in your Watchmode account. The plugin adds its
+future tracked requests to that starting number.
 
 </details>
 
-#### Logo Settings
+Never place credentials in GitHub, screenshots, shared settings exports, or
+release archives. See [API key setup and rotation](Documentation/API_KEYS.md)
+for the full server-administrator guide.
 
-This plugin uses provider and network logos by default. Logos appear in the
-provider and network pickers and in the Library Overview. Compatible future
-plugins by the same developer can reuse the locally cached logos for detail
-pages and collection making.
+## Data and safety model
 
-Uncheck **Save and use provider and network logos**, then select **Save Main
-Settings**, to stop this plugin from downloading, saving, or displaying logos.
-Each source logo is capped at 2 MB, and the total cache limit is configurable
-from 10 MB to 1 GB (100 MB by default). Logo Settings displays the current
-file count, storage use, configured limit, a live processed/total count, and a
-progress bar while a load is active. When a load completes, the dashboard
-refreshes its pickers and Library Overview so newly cached logos appear
-without a manual page reload.
+### Jellyfin tags
 
-Use **Load All Logos** to explicitly cache every source-catalog Provider logo
-and preload Network logos before any media scan whenever the Network catalog
-supplies a TMDb network ID. Use **Load Logos for Selected Providers** to cache
-only the saved Provider selection. A network remains without a logo only when
-the source has no matching TMDb ID or TMDb has no logo for it. Neither load
-action scans media or changes tags. Use **Delete Specific Logos** to choose
-individual cache entries to remove, or **Delete Cached Logos** to explicitly
-remove every cached and manually uploaded logo. These actions do not modify
-media tags.
+The plugin writes clearly prefixed normal Jellyfin tags:
 
-### Cast and Crew Settings
+```text
+Provider: Netflix
+Network: BBC One
+Genre: Drama
+Keyword: Time Travel
+Collection: The Hunger Games Collection
+```
 
-This secondary Main Settings tab completes missing people metadata without
-replacing the cast or crew Jellyfin already has. It reads the current Jellyfin
-people entries for each selected Movie or Series, so data originally imported
-from NFO files and later Jellyfin edits are preserved.
+Provider means current viewing availability. Network means actual title-level
+television network/distributor metadata returned by a source; the plugin does
+not invent a Network tag from an app name. Both may apply to the same title.
 
-#### Cast Settings
+Your unrelated Jellyfin tags are never removed. The provider/network replacement
+option removes only the plugin’s own outdated Provider and Network tags; genre,
+keyword, collection, and unrelated tags have their own controls and are not
+silently cleared by that setting.
 
-Enable **Add more cast if more are found than you currently have** to append
-only TMDb cast members missing from the current item. Existing cast names,
-character names, and ordering remain untouched. Choose the maximum cast count
-only when that option is on; it never removes an existing cast member merely to
-meet the selected maximum. **Fill missing cast photos** saves a TMDb profile
-image only when the current Jellyfin person has no primary image.
+### Native Jellyfin metadata
 
-#### Crew Settings
+Where Jellyfin has a supported field, the plugin uses Jellyfin’s normal
+metadata-update path:
 
-Enable **Add more crew if more are found than you currently have**, select the
-crew jobs you want, and the plugin appends only missing TMDb people for those
-jobs. Existing crew credits remain unchanged. **Fill missing crew photos**
-uses the same missing-primary-image rule for the selected crew jobs.
+- Cast, crew, and shared people images
+- Studios / production companies
+- Production countries
+- Community Rating
+- One Official Rating, chosen through **Primary Jellyfin Classification Country**
 
-#### Cast and Crew Photo Settings
+If the library itself is configured in Jellyfin to save NFO metadata, Jellyfin
+decides whether these ordinary metadata updates are written to NFO files. This
+plugin does not write NFO files separately or write into media files.
 
-People photos become Jellyfin server metadata shared across titles. Jellyfin
-stores one image for a person and can reuse it wherever that person appears;
-the plugin does not create one image copy per title. **Scan for Cast and Crew
-Photos** runs a selected-library, photo-only task through Jellyfin’s task
-system. Its progress reports the missing-photo count, how many profiles TMDb
-had available, saved-photo count, and downloaded storage total.
+### Plugin-owned supplemental data
 
-The photo-only task never adds people. It considers only people already
-attached to selected-library media. A normal full scan may first append an
-opted-in missing cast or crew credit and then save that newly attached person’s
-missing photo.
+Some TMDb data has no equivalent multi-value Jellyfin field. The plugin keeps
+these values in its own server-side data for its dashboard and future compatible
+plugins:
 
-#### Cast and Crew Additions and Removals
+- Recommendations and Similar Titles
+- Vote counts, all selected-country classifications, and adult flags
+- Original language, spoken languages, and available translations
+- Latest-operation addition/removal overlays
+- Source-logo and optional poster caches
 
-This collapsed-by-default overview is available before any Cast and Crew scan.
-It groups every current selected-library Movie and Series by library and shows
-its current cast, crew, and people with saved Jellyfin photos. Each available
-Jellyfin person primary image appears as a small thumbnail beside that person’s
-name. The newest full
-scan, photo-only scan, or cleanup action overlays exact additions in the saved
-green color and removals in the saved red color. A later full or photo-only
-scan starts a fresh change overlay without hiding the current people metadata.
+Removing these records does not alter media files. Cleanup buttons say exactly
+which category they remove.
 
-#### Cleanup Settings
+### Backups, undo, and scoped access
 
-**Remove Cast and Crew Added by This Plugin** and **Remove Cast and Crew Images
-Added by This Plugin** use a private plugin provenance record, not visible
-Jellyfin tags. They remove only exact entries or image paths the plugin
-recorded as creating. A person credit, image, or user edit Jellyfin did not get
-from this plugin is left alone. The image cleanup is limited to people still
-represented in the currently selected libraries.
+Backups capture the **complete current tag list** for every item in selected
+libraries. Restore intentionally overwrites the current tags on the saved
+items, including unrelated tags that existed when the backup was made. Use it
+carefully.
 
-### More Like This Settings
+Empty library selection means **no libraries**, never every library. All scans,
+loads, manual edits, and cleanup actions are restricted to the saved selection.
 
-This secondary Main Settings tab stores TMDb’s direct title-to-title
-relationships for selected-library Movies and Series. It is deliberately not a
-Jellyfin tag, NFO field, watch-history record, or personalized “Because You
-Watched” result. Compatible future plugins can reuse this locally stored data
-for detail pages, recommendation shelves, and similar-title areas.
+## Dashboard guide
 
-#### Recommendation Settings
+The dashboard uses a primary tab row plus a horizontally scrollable secondary
+row. Tab labels intentionally stay on one line.
 
-**Add recommendations** saves the first paginated TMDb recommendation page for
-each selected-library Movie or Series during a normal full or incoming-media
-scan. Each result retains its TMDb ID, title, year, overview, genre IDs,
-popularity, TMDb rating, vote count, and optional poster reference.
+### Main Settings
 
-#### Similar Titles Settings
-
-**Add similar titles** uses TMDb’s separate similar-title endpoint and saves
-the same compact title data for selected-library Movies and Series during
-normal scans. Enable either setting, both settings, or neither one.
-
-#### Image Settings
-
-**Save image links to save space** preserves the TMDb poster URL in the stored
-relationship data. **Save poster images to disk** optionally downloads posters
-into a separate plugin-owned cache. The image cache is capped at 5 MB per
-poster and at the configurable total limit (100 MB by default); it does not
-alter Jellyfin posters or media files. You may enable one or both options.
-
-#### Load Recommendations and Similar Titles
-
-Use **Load Recommendations and Similar Titles** to fetch relationship data for
-selected-library Movies and Series that do not already have a saved record,
-without running the full tag scan. Save this tab first. **Update Recommendations
-and Similar Titles** rechecks every saved selected-library record and removes
-relationships TMDb no longer returns. A normal full or incoming-media scan
-also refreshes enabled relationship data.
-
-Load also repairs relationship records from older test builds that were saved
-under an incorrect item-parent scope, placing them back under the exact
-selected library so they appear in this overview.
-
-**Remove Recommendations and Similar Titles** removes only this plugin’s
-stored relationship records for the selected libraries. It never changes
-Jellyfin tags, NFO files, media, Jellyfin posters, or the optional poster cache.
-The dedicated load/update task shows Jellyfin-managed progress and a completion
-summary. Its completion feedback also reports items without TMDb IDs, TMDb
-lookup failures, and valid-but-empty TMDb relationship responses, so an empty
-overview is never unexplained.
-
-#### Recommendations and Similar Titles Additions and Removals
-
-This collapsed overview groups current saved relationships by library. It shows
-recommendation and similar-title posters at their proper portrait aspect ratio,
-with each library independently collapsible. Newest-scan additions use the
-saved green color and newest-scan removals use the saved red color; both colors
-are configurable in the tab. To keep large libraries responsive, it retrieves
-details only after you expand a library and displays ten source media items per
-page.
-
-### Production Companies and Countries Settings
-
-This secondary Main Settings tab adds direct TMDb production metadata to
-selected-library Movies and Series while preserving production information that
-was already present in Jellyfin.
-
-#### Production Company Settings
-
-**Add Production Companies** fills missing native Jellyfin **Studio** metadata
-from the production companies TMDb returns for a title. It never replaces
-existing Studio values. **Save Production Company Logos** stores one
-source-supplied TMDb logo per company in the existing bounded logo cache. Use
-**Load Production Company Logos** after scans to cache any known company-logo
-sources without scanning media again.
-
-#### Production Country Settings
-
-**Add Production Countries** fills missing native Jellyfin production-country
-metadata only for the ISO countries selected in this tab. This is intentionally
-separate from Availability Region Settings: availability means where a title
-can be watched now; production country means where it was made. The searchable
-picker uses TMDb's country configuration list.
-
-#### Load Production Companies and Countries
-
-Use **Load Production Companies and Countries** after saving this tab to fetch
-only enabled production metadata for selected-library Movies and Series. It has
-its own Jellyfin-managed progress and completion summary, refreshes the colored
-production overview, and caches direct TMDb company logos when that option is
-enabled. A full tag scan also performs this work when enabled.
-
-#### Cleanup Settings
-
-**Remove Production Companies Added by This Plugin** and **Remove Production
-Countries Added by This Plugin** remove only exact native metadata values the
-plugin recorded as adding. Existing Jellyfin Studio and production-country data
-is preserved.
-
-#### Production Companies and Countries Additions and Removals
-
-The collapsed overview lists current native Studio/company and production-
-country metadata by selected library. Each library can be independently
-expanded or collapsed. The latest additions use the saved green color and
-plugin-owned cleanup removals use the saved red color. Use **Edit** to change
-one item's company and country values directly.
-
-### Ratings Settings
-
-For selected-library Movies and Series, this tab can update TMDb **Community
-Rating** through Jellyfin's native metadata workflow, retain TMDb **Vote Count**
-and **Adult** data for future plugins, and retain country-specific TMDb
-classifications. Because Jellyfin has a single native Official Rating field,
-the optional **Primary Jellyfin Classification Country** starts blank and lets
-you choose which selected country's certification is written there. The
-dedicated load action and collapsed, color-coded per-library overview work
-without a full tag scan.
-
-### Spoken Languages and Translations Settings
-
-For selected-library Movies and Series, this tab can retain TMDb's **Original
-Language**, every returned **Spoken Language**, and every available title
-translation. It deliberately has no language filter: when enabled, it saves all
-returned values for the selected libraries. Its dedicated load action and
-collapsed, color-coded overview let you review the stored data without running
-the complete tag scan.
+- **Backup Settings** — create, restore, delete, and undo complete tag
+  snapshots.
+- **Select Libraries** — choose the only libraries the plugin can read or
+  change.
+- **API Settings** — TMDb/Watchmode credentials, Watchmode cycle limit/reset
+  date/current usage, and safe credential saving.
+- **Logo Settings** — enable or disable logo use, set a bounded cache limit,
+  load all/selected logos, selectively delete logos, or clear the cache.
+- **Newly Added Media Settings** — optionally check new supported media after
+  ordinary Jellyfin library scans.
+- **Scheduled Tasks** — enable a full refresh interval and optionally remove
+  stale plugin-created Provider/Network tags.
 
 ### Network and Provider Settings
 
-#### Availability Region Settings
+- **Availability Region Settings** — choose up to three countries for current
+  streaming availability.
+- **Tag Settings** — enable Provider tags, Network tags, or both.
+- **TV Network Streaming Apps Settings** — choose whether an API-returned
+  network app result becomes the network, the provider, or both.
+- **Select Providers / Select Networks** — independent searchable pickers with
+  Select All/None, individual saves, logos, and sync actions. Network lists are
+  loaded on demand and filtered by saved availability regions.
+- **Library Overview** — filter, review, and manually edit Provider and Network
+  tags. Its library groups are collapsible.
+- **Unknown Providers and Networks** — review prefixed Provider/Network tags in
+  selected libraries that the plugin did not create and its enabled sources do
+  not recognize. You can inspect matching items, assign an official name, and
+  upload one logo without rewriting the existing tags.
 
-Choose up to three countries used for streaming-availability results. The country choices come from TMDb’s watch-provider regions. Save a valid TMDb API Read Access Token, then reload the page if the complete country list does not appear.
-
-#### Tag Settings
-
-Choose whether to create **Provider tags**, **Network tags**, or both.
-
-- Provider tags identify streaming, rental, purchase, ad-supported, or free services where a title is currently available.
-- Network tags identify a television series’ network.
-
-Your existing Jellyfin tags added without this plugin are never removed. The plugin only adds new tags and, if you enable removal of outdated tags, only removes tags that it added.
-
-#### TV Network Streaming Apps Settings
-
-Some television networks have their own streaming apps, such as BBC iPlayer.
-Choose whether those results create the API-returned **Network** tag, the
-streaming-app **Provider** tag, or both. TMDb and Watchmode can each return
-Network tags from actual title-level network metadata; the plugin never creates
-a Network tag from an app name alone. To use **Both** fully, select the
-streaming app in **Select Providers** and its network in **Select Networks**.
-
-#### Select Providers
-
-This independent settings section loads the complete movie and TV
-watch-provider catalogs from TMDb for the selected countries, plus Watchmode's
-provider catalog when its key is configured. That means providers can be chosen
-before the first media scan. Previously discovered provider values remain
-listed too. Exact spelling aliases for the same provider are combined—for
-example, `Disney Plus` and `Disney +` become `Disney+`, and `Discovery +`
-becomes `Discovery+`. Other provider variants remain separate choices.
-
-Provider and network names show a source-supplied logo when one is available.
-The server stores at most one cached logo for each normalized `Provider:` name
-and one for each normalized `Network:` name, rather than saving a copy per
-media item. The dashboard reuses that cache, and a future compatible plugin can
-request the same cached image through Media Tagging Manager's local logo API.
-
-Use **Sync with Only Selected Providers** when your selected libraries already
-have more provider tags than you want. It creates a backup, deletes provider
-tags for unselected providers, does not remove tags for your chosen providers,
-and saves the choice for future scans. It does not contact any source and never
-changes network or unrelated Jellyfin tags.
-
-Use **Save Provider Selections** to save the Provider allow-list for future
-scans without scanning media or changing any existing tags. **Select None**
-means no new Provider tags will be added by later scans; it does not remove
-existing Provider tags. Use the clearly labeled Sync action if removal is
-actually wanted.
-
-#### Select Networks
-
-Networks load separately from Providers. Use **Load Networks** to explicitly
-build the Network picker for the currently saved availability regions. The
-plugin reads TMDb's official Network export and verifies each included
-Network's origin country with TMDb, then merges Watchmode's own
-country-filtered Network catalog when Watchmode is configured. The resulting
-list is cached locally for the saved regions; changing regions requires loading
-Networks again. This background catalog action never scans media or changes
-tags.
-
-The initial TMDb build can take several minutes because TMDb publishes Network
-names/IDs in one export but supplies each Network's origin country through its
-own detail record. Later use of the matching cache is immediate. On a
-Watchmode fallback lookup, title-level network names are written only as
-`Network:` tags and current availability is written only as `Provider:` tags.
-
-Use **Sync with Only Selected Networks** when your selected libraries already
-have more network tags than you want. It creates a backup, deletes network tags
-for unselected networks, does not remove tags for your chosen networks, and
-saves the choice for future scans. It does not contact any source and never
-changes provider or unrelated Jellyfin tags.
-
-Use **Save Network Selections** to save the Network allow-list for future scans
-without scanning media or changing any existing tags. **Select None** means no
-new Network tags will be added by later scans; it does not remove existing
-Network tags. Use the clearly labeled Sync action if removal is actually wanted.
-
-Use **Save Network and Provider Settings** to save the regions, tag behavior,
-TV-network streaming-app preference, and both current selection lists together.
+Use the sync actions only when you want to remove plugin-created Provider or
+Network tags outside the saved picker selection. They do not contact sources.
 
 ### Genres and Keywords Settings
 
-#### Genre Settings
-
-Choose which TMDb genres may be added as separate `Genre: <name>` tags. The
-scrollable, searchable picker loads before a media scan, supports **Select
-All** and **Select None**, and saves the chosen allow-list for future scans.
-
-**Sync with Only Selected Genres** creates a backup and removes only unselected
-plugin-owned `Genre:` tags in selected libraries. It does not contact an API or
-change Provider, Network, Keyword, Collection, or unrelated Jellyfin tags.
-
-**Remove Genres Added by This Plugin** creates a backup, removes every
-plugin-owned `Genre:` tag in the selected libraries, and turns off future genre
-tagging until you choose genres and save the tab again. It does not contact an
-API or remove unrelated Jellyfin tags.
-
-#### Keywords Settings
-
-Enable **Add keywords during scans** to add TMDb title keywords as separate tags
-such as `Keyword: Time Travel`, `Keyword: Broadway`, or `Keyword: Based on
-Novel`. Keywords are added only when this setting was enabled before the scan.
-
-To remove them later, turn off the checkbox and use **Remove Keywords Added by
-This Plugin**. It creates a backup, makes no API request, removes only
-plugin-owned `Keyword:` tags, and leaves every other tag unchanged.
+- Choose the TMDb genres allowed during future scans.
+- Enable or disable TMDb keyword tags.
+- Save genre choices independently, sync existing genre tags to the selection,
+  or remove keywords created by this plugin.
+- Review and manually edit Genre and Keyword tags in the dedicated collapsible
+  **Genres and Keywords Library Overview**.
 
 ### Collections Tags Settings
 
-Use **Scan Selected Libraries for Collections** to look up direct TMDb movie
-collection membership for movies in the selected libraries. The results are
-grouped by library and can be selected individually or with **Select All** /
-**Select None**. **Add Collection Tags** creates a backup and adds only the
-selected `Collection: <TMDb collection name>` tags after rechecking the direct
-TMDb membership server-side. It is additive and does not infer collection
-membership.
-
-### Main Settings: Automation
-
-#### Newly Added Media Settings
-
-Turn on **Scan newly added media in my libraries using this plugin** to check newly added Movies and Series after a normal Jellyfin library scan. Turn it off to prevent automatic API checks for incoming media; manual and scheduled full scans remain available.
-
-The first time this feature is enabled, the plugin records a starting point instead of rechecking the entire existing library. Use a manual full scan for existing titles.
-
-#### Scheduled Tasks
-
-Turn on the scheduled task and choose a refresh interval in hours to keep provider and network information current. The task also appears as **Refresh provider and network tags** under **Dashboard → Scheduled Tasks**.
-
-Enable the setting to remove outdated plugin-assigned tags if you want a later scan to remove a tag when a provider or network no longer hosts a title. Leaving it off preserves old plugin-created tags. Other Jellyfin tags remain untouched.
-
-### View and Edit Tags
-
-Use **Filters** at the top of the tab to narrow the selected-library results by provider, network, tagged state, or a provider-and-network combination.
-Use **Clear Filters** to reset all three filters at once.
-
-The **Library Overview** is collapsed by default to keep this tab manageable for
-large libraries. Select its expand control to view grouped matching Movies and
-Series. It keeps **Providers**, **Networks**, **Genres**, **Keywords**, and
-**Collections** visibly separate. Use **Edit** to manually replace any of
-those plugin-owned tag types for one title, then use **Save Tag Changes** to
-apply the edits. A backup is created before tag changes are written.
-
-Selecting **Edit** opens one tag-edit window with separate Provider, Network,
-Genre, Keyword, and Collection fields, rather than requiring separate browser
-prompts.
-
-Each library group in Library Overview has its own expand/collapse control, so
-large multi-library views can be navigated one library at a time.
-
-#### Unknown Providers and Networks
-
-This section lists only `Provider:` and `Network:` tags found in selected
-libraries that the plugin did not previously discover and that are not
-recognized by either enabled API source catalog. It never lists ordinary,
-unrelated Jellyfin tags. Assign an official name to keep variants such as
-`Opera Vision` associated with `OperaVision`, and optionally upload one PNG,
-JPEG, or SVG logo for that official name. The mapping itself does not rename or
-otherwise modify the existing media tags.
-
-Use **See Items** beside each result to open the exact selected-library Movies
-or Series carrying that unknown Provider or Network tag.
+Scan selected libraries for direct TMDb movie collection membership, review the
+matches grouped by library, select the ones you want, and add only those
+`Collection:` tags. The plugin does not guess franchises or collections.
 
 ### Scan
 
-The Scan tab lists the libraries currently selected in Main Settings and lets
-you initiate a full tag scan for every selected library and every selected tag
-option on all tabs.
+Create a backup, start a full selected-library scan, watch progress and ETA,
+request a stop, or undo the last tag action. **Additions and Removals in the
+Last Scan** is a collapsible, editable, per-library review that colors new
+values and removals; both colors are configurable.
 
-For safe archive handling, Backup Settings and Scheduled Tasks Settings are
-available both here and in Main Settings. Their controls remain synchronized.
-Use **Save Scheduled Tasks Settings** on Scan when changing the duplicated
-scheduled-task controls there.
+The **Scan** tab is the last tab on the secondary row. It repeats Backup
+Settings and Scheduled Tasks Settings intentionally so they are available
+immediately before a broad scan.
 
-- **Scan All Selected Libraries** checks every selected library after at least
-  one saved tag backup exists; otherwise the dashboard instructs you to create
-  a backup and does not start the scan.
-- **Stop Scan** requests cancellation of the current dashboard-initiated scan.
-- The status area shows the active title, completed and total counts, progress percentage, and an estimated remaining time. When it finishes, it retains a summary of checked items, new tags, and tagged media items.
-- **Additions and Removals in the Last Scan** is collapsed by default. It shows
-  only the selected-library media changed by the newest full scan, grouped by
-  library with the same filters and manual tag editor as Library Overview.
-  Newly added tags use green and newly removed tags use red by default; both
-  colors can be changed for accessibility. Editing a row preserves that row’s
-  existing added/removed visual classification without changing any other row.
-- Each library group in this view can also be expanded or collapsed separately.
-  A Provider, Network, or Genre **Sync with Only Selected** operation is a
-  local no-source scan for this view: it replaces the prior last-scan review
-  with the tags it removed. The next full scan replaces it again.
-- The Backup Settings section provides the same create, undo, restore, and delete controls as Main Settings, so you can create a safety backup immediately before scanning.
+### Cast and Crew Settings
 
-Only Movies and Series are automatically queried. Episodes inherit their series-level availability context rather than triggering a duplicate scan for every episode.
+Use this tab to preserve and fill people metadata rather than overwrite it.
 
-## Project Structure
+- Add missing cast with an optional maximum total count.
+- Add missing selected-job crew.
+- Fill missing cast and crew photos.
+- Run a dedicated photo-only scan for people already attached to selected
+  media.
+- Review current cast, crew, and people photos in a collapsible overview with
+  latest-operation colors.
+- Remove only cast, crew, or images that the plugin’s private ownership record
+  says it created.
 
-```text
-Media Tagging Manager/
-├── Api/                    protected dashboard endpoints
-├── Configuration/          per-server plugin settings
-├── Models/                 tag and scan dashboard models
-├── ScheduledTasks/         Jellyfin refresh task
-├── Services/               source adapters, scanner, tag rules, and progress state
-├── Web/                    embedded Jellyfin dashboard page
-├── Plugin.cs               plugin identity and dashboard registration
-└── ServiceRegistrator.cs   Jellyfin dependency-injection registration
-Documentation/              project documentation and trackers
-├── API_KEYS.md             administrator credential setup guide
-├── CHANGELOG.md            release notes
-├── goal-testing.txt        live-server testing checklist and results log
-└── project-goals.txt       product goals and acceptance behavior
-README.md                   project overview and setup guide
-```
+People photos are Jellyfin server metadata shared across titles, not one new
+copy per title.
 
-## Known Limitations
+### More Like This Settings
 
-- Current automatic provider/network/genre/keyword querying is limited to
-  **Movies and Series**; direct TMDb collection matching is limited to
-  **Movies**. Music, books, episodes, and other Jellyfin item kinds are not
-  source adapters in this version.
-- Availability depends on region, external IDs, API coverage, source plans, and source uptime. Missing data is not proof that a title is unavailable.
-- TMDb TV networks describe TV-network metadata; they are not a universal network authority for every media type.
-- This plugin does not ship third-party API credentials and does not bypass provider logins, DRM, access restrictions, source rate limits, or terms of use.
+Enable TMDb **Recommendations** and/or **Similar Titles** for selected-library
+Movies and Series. These are title-to-title TMDb relationships, not
+personalized “Because You Watched” results.
 
-## Responsible Use and Availability Disclaimer
+Choose whether to store poster links, optional poster files in a bounded cache,
+or both. Use **Load** for missing records and **Update** to recheck saved
+records. The collapsed per-library review paginates source media items so large
+libraries stay responsive.
 
-This plugin organizes availability and network information for media already in a Jellyfin library. It does not provide media, unlock services, scrape account-only content, or guarantee that a provider listing is current, complete, or available to every user.
+### Production Companies and Countries Settings
 
-Use only your own API accounts and sources you are allowed to query. Review each source's terms, attribution requirements, rate limits, regional restrictions, and data-retention rules. Streaming catalog data changes often; treat a tag as a helpful library classification and verify important availability decisions with the provider itself.
+Add missing native Jellyfin Studio and production-country data returned by TMDb
+without replacing existing values. Choose production countries independently of
+availability regions, optionally cache company logos, use the dedicated load,
+review collapsible additions/removals, edit an item’s production data, or remove
+only values this plugin recorded as adding.
+
+### Ratings Settings
+
+Enable any combination of:
+
+- TMDb Community Rating
+- TMDb Vote Count
+- TMDb country-specific Age Ratings and Classifications
+- TMDb adult-content flag
+
+**Primary Jellyfin Classification Country** starts blank and lists every
+available country. Choosing it sets the one country whose certification is
+written to Jellyfin’s native Official Rating field and automatically retains
+that country in the saved classification selection.
+
+Use **Load Ratings and Classifications** for this category alone. **Sync with
+Only Selected Age Ratings and Classifications** removes plugin-retained country
+classifications outside the saved selection; it does not fetch TMDb or remove
+unrelated Jellyfin metadata. The overview is collapsed by default, grouped by
+library, and has configurable addition/removal colors.
+
+### Spoken Languages and Translations Settings
+
+Save any combination of TMDb original language, spoken languages, and available
+translations for selected-library Movies and Series. There is no language
+filter: each enabled setting retains every value TMDb returns.
+
+Use the dedicated load action or enable the options for full scans. The
+collapsible overview shows original language, spoken languages, and translations
+per selected library. Cleanup is deliberately separate: one button removes only
+spoken languages and another removes only translations added by this plugin.
+
+## Compatibility and limits
+
+- Target server version: **Jellyfin 10.11.11**.
+- Current supported scan item kinds: **Movies and Series**. Selecting another
+  library type does not make unsupported media kinds taggable.
+- TMDb/Watchmode coverage, identifiers, regional availability, logos, and
+  response content are source-dependent.
+- A title without the identifier a source needs is skipped for that source;
+  the plugin does not invent results.
+- Ratings, classifications, languages, and translations require TMDb.
+- The dashboard is administrator-only. Treat your Jellyfin server, plugin data
+  directory, and credentials as sensitive.
+
+Read the detailed [Jellyfin 10.11.11 compatibility audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md) and the [testing tracker](Documentation/goal-testing.txt) before calling a release stable.
+
+## Documentation
+
+- [API keys and source setup](Documentation/API_KEYS.md)
+- [Changelog](Documentation/CHANGELOG.md)
+- [Jellyfin 10.11.11 compatibility audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md)
+- [Project goals and acceptance tracker](Documentation/project-goals.txt)
+- [Testing and validation tracker](Documentation/goal-testing.txt)
 
 ## License
 
-Media Tagging Manager Jellyfin Plugin by mp3li is source-available under the
-[Media Tagging Manager Noncommercial License 1.0](LICENSE). Personal and other
-noncommercial use, modification, and redistribution are permitted when the
-credit and repository link are retained. Commercial use, paid redistribution,
-paid hosting, paid installation, paid support, and commercial bundling require
-prior written permission from mp3li.
+This repository is currently distributed under the license in
+[LICENSE](LICENSE). Read it before redistributing, modifying, or using the
+project outside your own server.

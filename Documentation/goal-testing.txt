@@ -47,9 +47,12 @@ Date testing began:
 [ ] Install the DLL manually in a dedicated Jellyfin plugin directory.
 [ ] Restart Jellyfin and confirm the plugin loads without server startup errors.
 [ ] Confirm the Dashboard -> Plugins entry displays "Media Tagging Manager".
-[ ] Open the plugin dashboard page and confirm all six areas are available:
+[ ] Open the plugin dashboard page and confirm all primary and secondary areas are available:
     Main Settings, Network and Provider Settings, Genres and Keywords Settings,
-    Collections Tags Settings, View and Edit Tags, and Scan.
+    Collections Tags Settings; Cast and Crew Settings; More Like This Settings;
+    Production Companies and Countries Settings; Ratings Settings; Spoken
+    Languages and Translations Settings; and Scan as the final secondary-row
+    tab.
 [ ] Confirm the plugin's existing stable GUID retains settings after replacing
     an older local build with a newer local build.
 [ ] Confirm a catalog update retains API credentials, library selections,
@@ -345,7 +348,8 @@ Acceptance criteria:
     written when the APIs return both values, the streaming app is selected in
     Select Providers, and the network is selected in Select Networks.
 [ ] Confirm provider and network pickers show the cached source-supplied logo
-    when one exists, and View and Edit Tags reuses the same cached image.
+    when one exists, and the Provider and Network Library Overview reuses the
+    same cached image.
 [ ] Confirm the plugin data folder contains no more than one logo file for a
     normalized Provider name and one for a normalized Network name, regardless
     of how many media items use those tags.
@@ -445,8 +449,12 @@ Acceptance criteria:
     `Collection: <TMDb collection name>` tags are added.
 [ ] Confirm the collection action does not change Provider, Network, Genre,
     Keyword, or unrelated tags.
-[ ] In View and Edit Tags, confirm Providers, Networks, Genres, Keywords, and
-    Collections appear in separate columns and each can be manually edited.
+[ ] In Network and Provider Settings, confirm the Provider and Network Library
+    Overview has separate Provider and Network columns and each can be manually
+    edited without changing other plugin-managed tag types.
+[ ] In Genres and Keywords Settings, confirm the dedicated Library Overview
+    has separate Genre and Keyword columns and each can be manually edited
+    without changing other plugin-managed tag types.
 
 5. Manual scans, scan status, and performance
 ---------------------------------------------
@@ -770,22 +778,29 @@ media items, and completed successfully.
 Ratings Settings and Spoken Languages and Translations Settings
 ---------------------------------------------------------------
 
-[ ] Save Ratings Settings with Community Rating, Vote Count, classifications,
+[x] Save Ratings Settings with Community Rating, Vote Count, classifications,
     and adult flags enabled; verify the primary classification country remains
     blank until intentionally selected and that only this tab's settings change.
-[ ] Use Load Ratings and Classifications; verify progress, completion feedback,
+[x] Use Load Ratings and Classifications; verify progress, completion feedback,
     native Jellyfin Community Rating/Official Rating where available, and the
     collapsed, per-library Ratings overview with saved color controls.
-[ ] Save Spoken Languages and Translations Settings with each individual option
+[x] Save Spoken Languages and Translations Settings with each individual option
     enabled; verify scoped persistence through navigation and reload.
-[ ] Use Load Spoken Languages and Translations; verify progress, completion
+[x] Use Load Spoken Languages and Translations; verify progress, completion
     feedback, and original language, spoken languages, and translation rows in
     the collapsed, per-library overview.
-[ ] Confirm Ratings Settings retains every checked classification after using
+[x] Confirm Ratings Settings retains every checked classification after using
     its bottom Save button, navigation, and reload; confirm the Primary
     Jellyfin Classification Country list is available before choosing checkbox
     countries and that it retains its chosen country automatically.
-[ ] Confirm Sync with Only Selected Age Ratings and Classifications removes only
+[x] Confirm Sync with Only Selected Age Ratings and Classifications removes only
     plugin-retained unselected classifications and leaves other rating data.
-[ ] Confirm Spoken Languages and Translations cleanup buttons independently
+[x] Confirm Spoken Languages and Translations cleanup buttons independently
     remove only their named data category.
+
+2026-07-25 | Ratings and Spoken Languages/Translations final workflow | Pass |
+Jellyfin 10.11.11, plugin 0.1.0.64-test | User confirmed the complete current
+workflow works: Ratings country choices and scoped saving, selected
+classification sync, Ratings loading/overview, language loading/overview, and
+the separate Spoken Languages and Translations cleanup actions. The final tab
+layout was also accepted after non-wrapping labels were added.

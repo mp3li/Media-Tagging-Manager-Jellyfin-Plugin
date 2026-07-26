@@ -5,10 +5,11 @@ Purpose
 -------
 Media Tagging Manager Jellyfin Plugin is a Jellyfin server plugin intended to
 make a personal media library easier to browse, filter, and organize by adding
-current streaming-provider and television-network tags to the user's existing
-media. It must keep provider and network data deliberately separate, allow
-overlap, respect the selected availability region, and never treat a missing or
-temporarily unavailable source response as permission to erase known tags.
+current streaming-provider and television-network tags plus carefully scoped
+metadata enrichment to the user's existing media. It must keep provider and
+network data deliberately separate, allow overlap, respect the selected
+availability region, and never treat a missing or temporarily unavailable
+source response as permission to erase known tags.
 
 This document turns the original feature brief into the project's product and
 delivery requirements. The separate goal-testing.txt file records execution
@@ -58,8 +59,10 @@ Acceptance criteria:
     and restore risk in the dashboard rather than requiring a config-file or
     terminal workflow.
 [x] Separate Main Settings, Network and Provider Settings, Genres and Keywords
-    Settings, Collections Tags Settings, View and Edit Tags, and Scan into
-    distinct dashboard tabs with their appropriate save or action controls.
+    Settings, and Collections Tags Settings into primary dashboard tabs;
+    place the Provider and Network Library Overview at the bottom of Network
+    and Provider Settings; give Genres and Keywords its own Library Overview;
+    and place Scan as the final tab on the secondary row.
 [x] Add a Cast and Crew Settings secondary Main Settings tab with independently
     saved cast, crew-job, and people-photo choices that never overwrite other
     dashboard-tab settings.

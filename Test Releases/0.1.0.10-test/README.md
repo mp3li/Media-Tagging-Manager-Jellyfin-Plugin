@@ -7,7 +7,7 @@ keys, Jellyfin configuration, backups, logs, or media data.
 It introduces the requested **Main Settings**, **View Tags**, and **Scan**
 page-style tabs; consistent top-level sections; backup selection and restore;
 three TMDb availability-country choices; a quota-tracked Watchmode fallback;
-and scan stop/undo controls. Additional JSON sources and the parallel-lookup
+and scan stop/undo controls. Optional third-party source configuration and the parallel-lookup
 setting were removed.
 
 Record live results in [goal-testing.txt](../../Documentation/goal-testing.txt).

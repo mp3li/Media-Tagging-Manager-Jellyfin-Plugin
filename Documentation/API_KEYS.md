@@ -16,7 +16,10 @@ The plugin stores those values with the Jellyfin server's plugin configuration. 
 
 ## TMDb
 
-TMDb is the recommended first source because it supplies both regional watch-provider data and television-network information.
+TMDb is the primary source. It supplies regional watch-provider data,
+title-level television-network information, genres, keywords, collections,
+people, production metadata, ratings, certifications, languages, translations,
+and direct title-to-title relationships used by the plugin's optional tabs.
 
 1. Create or sign in to a TMDb account, then open **Account settings → API**.
 2. Create an API application. For a self-hosted server used only for your own library, select a personal or non-commercial use option **only if that is truthful**. A commercial project must use the option and licensing path TMDb requires for its actual use.
@@ -30,8 +33,11 @@ TMDb is the recommended first source because it supplies both regional watch-pro
 
 4. Copy the **API Read Access Token**, not the older API-key value.
 5. Paste the token into the plugin's **TMDb API Read Access Token** field.
-6. Select up to three availability countries and save.
-7. Run a scan of a small test library before scanning everything.
+6. Select up to three availability countries and save the applicable dashboard
+   tab. Other TMDb features use the saved selected libraries, not availability
+   country choices, unless their own setting explicitly says otherwise.
+7. Create a tag backup and run a scan of a small test library before scanning
+   everything.
 
 The plugin sends the token as a Bearer authorization header. It does not place the token in a request URL.
 
