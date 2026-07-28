@@ -4,6 +4,12 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## Unreleased
+
+### Changed
+
+- Updated every dashboard loading bar to use the Jellyfin-colored purple-to-cyan gradient, a subtle translucent track, pill-shaped corners, and a short progress transition.
+
 ## [0.1.0.65-test] - 2026-07-25
 
 ### Changed
