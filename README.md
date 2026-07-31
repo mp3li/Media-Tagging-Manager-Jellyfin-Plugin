@@ -74,7 +74,7 @@ data for future compatible plugins.
 
 ## Current testing status
 
-The current catalog build is **0.1.0.65-test**. The core provider/network,
+The current catalog build is **0.1.0.66-test**. The core provider/network,
 genre/keyword, collection, cast/crew, people-photo, More Like This, production,
 ratings, and language workflows have been exercised on a real Jellyfin 10.11.11
 server. Remaining release checks and their recorded results live in

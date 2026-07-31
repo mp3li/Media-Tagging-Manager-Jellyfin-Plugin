@@ -10,7 +10,7 @@ plugin source code.
   against the active Jellyfin server version.
 - `project-goals.txt` — product scope, implementation status, and acceptance behavior.
 - `goal-testing.txt` — live-server checklist, environment record, and results log,
-  including the current 0.1.0.64-test workflow results.
+  including the current 0.1.0.66-test workflow results.
 
 The current public guide covers the full current dashboard: Main Settings;
 Network and Provider (including the Provider and Network Library Overview);

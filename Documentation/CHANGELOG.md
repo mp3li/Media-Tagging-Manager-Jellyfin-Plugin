@@ -6,9 +6,23 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## Unreleased
 
+## [0.1.0.66-test] - 2026-07-30
+
 ### Changed
 
-- Updated every dashboard loading bar to use the Jellyfin-colored purple-to-cyan gradient, a subtle translucent track, pill-shaped corners, and a short progress transition.
+- Updated every dashboard loading bar to use the Jellyfin-colored
+  purple-to-cyan gradient, a subtle translucent track, pill-shaped corners,
+  and a short progress transition.
+- Removed the separator beneath the primary dashboard tab row.
+- Refreshed the dashboard introduction wording while retaining the repository
+  and Patreon links.
+- Renamed the working project folder to **Media Tagging Manager Jellyfin
+  Plugin** and verified the packaged plugin builds correctly from that path.
+
+### Test-release notes
+
+- This supersedes the `0.1.0.65-test` catalog build and remains a public test
+  build, not a stable release.
 
 ## [0.1.0.65-test] - 2026-07-25
 
