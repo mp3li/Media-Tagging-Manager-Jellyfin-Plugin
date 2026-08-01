@@ -6,6 +6,24 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## Unreleased
 
+## [1.0.0] - 2026-07-31
+
+### Added
+
+- First stable catalog release of **Media Tagging Manager Jellyfin Plugin** for
+  Jellyfin `10.11.11`.
+
+### Changed
+
+- Promoted the catalog metadata, public guide, and release badge from testing
+  status to stable-release status.
+- Clarified the two dashboard tab rows, labeled each public tab section as a
+  tab, standardized the public sentence casing for more like this, and tightened
+  badge widths to fit their text.
+- Replaced the test artifact with the stable `1.0.0` package and removed
+  obsolete test-release artifacts from the current branch while retaining the
+  full changelog, project goals, testing tracker, and development history.
+
 ## [0.1.0.66-test] - 2026-07-30
 
 ### Changed

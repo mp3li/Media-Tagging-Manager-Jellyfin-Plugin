@@ -604,21 +604,21 @@ Acceptance criteria:
 - A user can safely return selected-library tag state to a known prior backup.
 - Backup files survive normal server restarts and never include API credentials.
 
-10. Packaging, test manifest, and release safety
--------------------------------------------------
+10. Packaging, catalog manifest, and release safety
+---------------------------------------------------
 
 [x] Create a Release ZIP containing the required plugin assembly and release
     files.
 [x] Calculate and record the ZIP's real checksum.
-[x] Prepare a clearly labeled test manifest that points to the real ZIP,
+[x] Prepare a catalog manifest that points to the real ZIP,
     version, ABI, and checksum.
 [x] Confirm the manifest contains no API credentials, backup files, local
     Jellyfin configuration, or private test-media paths.
-[ ] Add the test manifest URL to a Jellyfin test server.
-[ ] Install the plugin from the test catalog and confirm installation
+[ ] Add the current manifest URL to a Jellyfin server.
+[ ] Install the plugin from the catalog and confirm installation
     succeeds.
 [ ] Restart Jellyfin and confirm the catalog-installed plugin loads normally.
-[ ] Test update from one packaged test version to a newer one and confirm
+[ ] Test update from one packaged version to a newer one and confirm
     plugin settings remain intact.
 [ ] Confirm a user can install from the manifest without any API key, then add
     their own source credentials only through the plugin dashboard.
@@ -629,7 +629,7 @@ Acceptance criteria:
     written permission.
 
 Acceptance criteria:
-- The public installation mechanism works before it is public.
+- The public installation mechanism works before a stable announcement.
 - The release, manifest, and repository contain no user secrets or local data.
 
 Test result log
@@ -804,3 +804,10 @@ workflow works: Ratings country choices and scoped saving, selected
 classification sync, Ratings loading/overview, language loading/overview, and
 the separate Spoken Languages and Translations cleanup actions. The final tab
 layout was also accepted after non-wrapping labels were added.
+2026-07-31 | Stable 1.0.0 release preparation | Pass — package validation |
+Jellyfin 10.11.11, plugin 1.0.0 | Release build succeeded with zero warnings
+or errors. The catalog ZIP contains only
+Jellyfin.Plugin.MediaTaggingManager.dll and LICENSE, passed ZIP integrity
+testing, and has MD5 0ae85f03836f0197e8c19bb073340ccd. The manifest points to
+that exact package. The separately listed live catalog-install checks remain
+unmarked until performed on a Jellyfin server.

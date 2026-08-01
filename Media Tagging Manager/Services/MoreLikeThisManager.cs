@@ -127,7 +127,7 @@ public sealed class MoreLikeThisManager
         var configuration = Plugin.Instance?.Configuration ?? throw new InvalidOperationException("The plugin configuration is unavailable.");
         if (!IsConfigured(configuration))
         {
-            return "Enable Add recommendations and/or Add similar titles, then save More Like This Settings before loading or updating.";
+            return "Enable Add recommendations and/or Add similar titles, then save More like this Settings before loading or updating.";
         }
 
         if (string.IsNullOrWhiteSpace(configuration.TmdbApiKey))

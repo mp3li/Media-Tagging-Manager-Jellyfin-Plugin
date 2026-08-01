@@ -66,7 +66,7 @@ Acceptance criteria:
 [x] Add a Cast and Crew Settings secondary Main Settings tab with independently
     saved cast, crew-job, and people-photo choices that never overwrite other
     dashboard-tab settings.
-[x] Add a More Like This Settings secondary Main Settings tab with separately
+[x] Add a More like this Settings secondary Main Settings tab with separately
     saved TMDb Recommendation and Similar Title choices for selected-library
     Movies and Series, plus bounded poster-image caching and lightweight image
     link storage for compatible future plugins.
@@ -302,8 +302,8 @@ Acceptance criteria:
 [x] Add an explicit source-available noncommercial license that retains project
     credit on redistributed forks and requires written permission for commercial
     use.
-[x] Package a test Release ZIP, calculate its real checksum, and publish a
-    clearly labeled repository manifest for catalog-install testing.
+[x] Package a stable Release ZIP, calculate its real checksum, and publish a
+    repository manifest for catalog installation.
 [ ] Add a release workflow that packages, checksums, and updates the manifest
     without exposing configuration secrets.
 

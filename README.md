@@ -5,15 +5,12 @@
 <h1 align="center">Media Tagging Manager Jellyfin Plugin</h1>
 
 <p align="center">
-  <strong>⚠️ Testing build:</strong> actively tested on Jellyfin 10.11.11; not yet a stable v1 release.
+  A Jellyfin metadata companion for organizing the media you already own with current streaming providers, television networks, provider and network logos, genres, keywords, collections, cast, crew, people photos, recommendations, similar titles, more like this, image links and posters, production companies, production countries, production-company logos, community ratings, vote counts, age ratings, country-specific classifications, adult-content flags, original language, spoken languages, and translations.
 </p>
 
 <p align="center">
-  A Jellyfin metadata companion for organizing the media you already own with current streaming providers, television networks, provider and network logos, genres, keywords, collections, cast, crew, people photos, recommendations, similar titles, More Like This image links and posters, production companies, production countries, production-company logos, community ratings, vote counts, age ratings, country-specific classifications, adult-content flags, original language, spoken languages, and translations.
-</p>
-
-<p align="center">
-  <img alt="Status: Active testing" src="Assets/Badges/status.svg" />
+  <img alt="Version: 1.0.0" src="Assets/Badges/version.svg" />
+  <img alt="Status: Stable release" src="Assets/Badges/status.svg" />
   <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
   <img alt="Metadata types: 25" src="Assets/Badges/tag-types.svg" />
@@ -58,8 +55,8 @@ data for future compatible plugins.
 | Cast/crew photo | Person primary image | A missing people image saved as shared Jellyfin person metadata. |
 | Recommendation | TMDb recommended title | A direct TMDb recommendation for a selected-library movie or series. |
 | Similar title | TMDb similar title | A direct TMDb similar-title relationship for a selected-library movie or series. |
-| More Like This image link | TMDb poster URL | A lightweight stored poster link for a recommendation or similar title. |
-| More Like This poster | Cached TMDb poster | An optional bounded on-disk poster image for a recommendation or similar title. |
+| more like this image link | TMDb poster URL | A lightweight stored poster link for a recommendation or similar title. |
+| more like this poster | Cached TMDb poster | An optional bounded on-disk poster image for a recommendation or similar title. |
 | Production company | `A24` | A TMDb production company added to supported native Jellyfin metadata. |
 | Production-company logo | A24 logo | An optional cached TMDb logo for a production company. |
 | Production country | `United Kingdom` | A TMDb production country added to supported native Jellyfin metadata. |
@@ -72,16 +69,15 @@ data for future compatible plugins.
 | Spoken language | `English, French` | Every spoken language TMDb returns for the title. |
 | Translation | `es-US: Spanish title/overview` | A TMDb localized title or overview with its language and region. |
 
-## Current testing status
+## Current release
 
-The current catalog build is **0.1.0.66-test**. The core provider/network,
-genre/keyword, collection, cast/crew, people-photo, More Like This, production,
+The current catalog release is **1.0.0**. The core provider/network,
+genre/keyword, collection, cast/crew, people-photo, more like this, production,
 ratings, and language workflows have been exercised on a real Jellyfin 10.11.11
 server. Remaining release checks and their recorded results live in
 [Documentation/goal-testing.txt](Documentation/goal-testing.txt).
 
-This is still a test release. Create a tag backup before a broad scan and keep
-your usual server backups.
+Create a tag backup before a broad scan and keep your usual server backups.
 
 ## Install
 
@@ -93,7 +89,7 @@ your usual server backups.
    ```
 
 3. Refresh the catalog, open **Media Tagging Manager Jellyfin Plugin**, and
-   install the newest test version.
+   install the newest version.
 4. Restart Jellyfin if it asks you to.
 5. Open **Dashboard → Media Tagging Manager** from the Dashboard sidebar.
 
@@ -102,7 +98,7 @@ backups, logs, cached source data, NFO files, or media.
 
 ## Quick start
 
-1. In **Main Settings**, select one small test library and save.
+1. In **Main Settings**, select one small library and save.
 2. Add your TMDb API Read Access Token in **API Settings** and save it.
 3. Optionally add your Watchmode API key in **API Settings**, set its request
    limit and quota-reset date, and save. It is used only as the quota-tracked
@@ -227,12 +223,16 @@ carefully.
 Empty library selection means **no libraries**, never every library. All scans,
 loads, manual edits, and cleanup actions are restricted to the saved selection.
 
-## Dashboard guide
+## How to use this plugin
 
-The dashboard uses a primary tab row plus a horizontally scrollable secondary
-row. Tab labels intentionally stay on one line.
+This plugin uses two rows of tabs. The first row is **Main Settings**,
+**Network and Provider Settings**, **Genres and Keywords Settings**, and
+**Collections Tags Settings**. The second row is **Cast and Crew Settings**,
+**More like this Settings**, **Production Companies and Countries Settings**,
+**Ratings Settings**, **Spoken Languages and Translations Settings**, and
+**Scan**. Tab labels intentionally stay on one line.
 
-### Main Settings
+### Main Settings Tab
 
 - **Backup Settings** — create, restore, delete, and undo complete tag
   snapshots.
@@ -247,7 +247,7 @@ row. Tab labels intentionally stay on one line.
 - **Scheduled Tasks** — enable a full refresh interval and optionally remove
   stale plugin-created Provider/Network tags.
 
-### Network and Provider Settings
+### Network and Provider Settings Tab
 
 - **Availability Region Settings** — choose up to three countries for current
   streaming availability.
@@ -267,7 +267,7 @@ row. Tab labels intentionally stay on one line.
 Use the sync actions only when you want to remove plugin-created Provider or
 Network tags outside the saved picker selection. They do not contact sources.
 
-### Genres and Keywords Settings
+### Genres and Keywords Settings Tab
 
 - Choose the TMDb genres allowed during future scans.
 - Enable or disable TMDb keyword tags.
@@ -276,24 +276,13 @@ Network tags outside the saved picker selection. They do not contact sources.
 - Review and manually edit Genre and Keyword tags in the dedicated collapsible
   **Genres and Keywords Library Overview**.
 
-### Collections Tags Settings
+### Collections Tags Settings Tab
 
 Scan selected libraries for direct TMDb movie collection membership, review the
 matches grouped by library, select the ones you want, and add only those
 `Collection:` tags. The plugin does not guess franchises or collections.
 
-### Scan
-
-Create a backup, start a full selected-library scan, watch progress and ETA,
-request a stop, or undo the last tag action. **Additions and Removals in the
-Last Scan** is a collapsible, editable, per-library review that colors new
-values and removals; both colors are configurable.
-
-The **Scan** tab is the last tab on the secondary row. It repeats Backup
-Settings and Scheduled Tasks Settings intentionally so they are available
-immediately before a broad scan.
-
-### Cast and Crew Settings
+### Cast and Crew Settings Tab
 
 Use this tab to preserve and fill people metadata rather than overwrite it.
 
@@ -310,7 +299,7 @@ Use this tab to preserve and fill people metadata rather than overwrite it.
 People photos are Jellyfin server metadata shared across titles, not one new
 copy per title.
 
-### More Like This Settings
+### More like this Settings Tab
 
 Enable TMDb **Recommendations** and/or **Similar Titles** for selected-library
 Movies and Series. These are title-to-title TMDb relationships, not
@@ -321,7 +310,7 @@ or both. Use **Load** for missing records and **Update** to recheck saved
 records. The collapsed per-library review paginates source media items so large
 libraries stay responsive.
 
-### Production Companies and Countries Settings
+### Production Companies and Countries Settings Tab
 
 Add missing native Jellyfin Studio and production-country data returned by TMDb
 without replacing existing values. Choose production countries independently of
@@ -329,7 +318,7 @@ availability regions, optionally cache company logos, use the dedicated load,
 review collapsible additions/removals, edit an item’s production data, or remove
 only values this plugin recorded as adding.
 
-### Ratings Settings
+### Ratings Settings Tab
 
 Enable any combination of:
 
@@ -349,7 +338,7 @@ classifications outside the saved selection; it does not fetch TMDb or remove
 unrelated Jellyfin metadata. The overview is collapsed by default, grouped by
 library, and has configurable addition/removal colors.
 
-### Spoken Languages and Translations Settings
+### Spoken Languages and Translations Settings Tab
 
 Save any combination of TMDb original language, spoken languages, and available
 translations for selected-library Movies and Series. There is no language
@@ -359,6 +348,17 @@ Use the dedicated load action or enable the options for full scans. The
 collapsible overview shows original language, spoken languages, and translations
 per selected library. Cleanup is deliberately separate: one button removes only
 spoken languages and another removes only translations added by this plugin.
+
+### Scan Tab
+
+Create a backup, start a full selected-library scan, watch progress and ETA,
+request a stop, or undo the last tag action. **Additions and Removals in the
+Last Scan** is a collapsible, editable, per-library review that colors new
+values and removals; both colors are configurable.
+
+The **Scan** tab is the last tab on the second row. It repeats Backup Settings
+and Scheduled Tasks Settings intentionally so they are available immediately
+before a broad scan.
 
 ## Compatibility and limits
 
@@ -373,7 +373,7 @@ spoken languages and another removes only translations added by this plugin.
 - The dashboard is administrator-only. Treat your Jellyfin server, plugin data
   directory, and credentials as sensitive.
 
-Read the detailed [Jellyfin 10.11.11 compatibility audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md) and the [testing tracker](Documentation/goal-testing.txt) before calling a release stable.
+Read the detailed [Jellyfin 10.11.11 compatibility audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md) and the [testing tracker](Documentation/goal-testing.txt) for supported behavior and recorded validation results.
 
 ## Documentation
 

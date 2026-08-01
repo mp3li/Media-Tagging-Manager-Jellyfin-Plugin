@@ -2,19 +2,19 @@
   {
     "guid": "c7b639bd-55c5-4694-aa8e-32c816048da8",
     "name": "Media Tagging Manager Jellyfin Plugin",
-    "description": "TEST BUILD — tags selected Jellyfin media with streaming providers and TV networks. Not a stable release.",
-    "overview": "TEST BUILD — provider and network tagging for selected Jellyfin libraries.",
+    "description": "Enriches selected Jellyfin media with provider, network, genre, people, relationship, production, ratings, and language metadata.",
+    "overview": "Stable metadata enrichment for selected Jellyfin libraries.",
     "owner": "mp3li",
     "category": "Metadata",
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "0.1.0.66",
-        "changelog": "0.1.0.66-test removes the divider below the primary dashboard tab row and refreshes the dashboard introduction wording. Test only; not a stable release.",
+        "version": "1.0.0",
+        "changelog": "First stable release of Media Tagging Manager Jellyfin Plugin, including provider and network tagging plus the full metadata-enrichment workflow documented in the project guide.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Test%20Releases/0.1.0.66-test/Jellyfin.Plugin.MediaTaggingManager_0.1.0.66-test.zip",
-        "checksum": "9a760757b7b24b56fd6a8b4238dc853e",
-        "timestamp": "2026-07-31T05:52:28Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Releases/1.0.0/Jellyfin.Plugin.MediaTaggingManager_1.0.0.zip",
+        "checksum": "0ae85f03836f0197e8c19bb073340ccd",
+        "timestamp": "2026-08-01T04:36:12Z"
       }
     ]
   }

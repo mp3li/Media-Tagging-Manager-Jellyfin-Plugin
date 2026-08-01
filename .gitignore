@@ -63,6 +63,6 @@ settings.json
 [Cc]ache/
 [Tt]emp/
 
-# Deliberately tracked Jellyfin catalog-install test artifact.
-!Test Releases/
-!Test Releases/**/*.zip
+# Deliberately tracked Jellyfin catalog-release artifact.
+!Releases/
+!Releases/**/*.zip
