@@ -832,3 +832,10 @@ Jellyfin.Plugin.MediaTaggingManager.dll and LICENSE, passed ZIP integrity
 testing, and has MD5 9bd5e14f94196e3818d7d0a1cafc1fdf. The manifest points to
 that exact package. Live server confirmation remains required after
 publication.
+2026-08-05 | Stable 1.0.0.3 primary-row Scan tab correction | Pass — package validation |
+Jellyfin 10.11.11, plugin 1.0.0.3 | Release build succeeded with zero warnings
+or errors. The Scan tab is in the primary row directly after Main Settings.
+The catalog ZIP contains only Jellyfin.Plugin.MediaTaggingManager.dll and
+LICENSE, passed ZIP integrity testing, and has MD5
+aa87004d578281cd625289eb3da58a8d. Live server confirmation remains required
+after publication.

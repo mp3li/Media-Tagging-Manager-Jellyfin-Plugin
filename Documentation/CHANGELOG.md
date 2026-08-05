@@ -6,6 +6,13 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## Unreleased
 
+## [1.0.0.3] - 2026-08-05
+
+### Fixed
+
+- Moved the **Scan** tab into the primary row directly after **Main Settings**
+  instead of placing it first in the secondary row below Main Settings.
+
 ## [1.0.0.2] - 2026-08-05
 
 ### Changed
