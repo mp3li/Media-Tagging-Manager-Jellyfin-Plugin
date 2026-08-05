@@ -6,6 +6,14 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## Unreleased
 
+## [1.0.0.0] - 2026-08-04
+
+### Fixed
+
+- Aligned the catalog package version with the plugin DLL's four-part assembly
+  version so Jellyfin does not repeatedly offer the already-installed stable
+  release as an update.
+
 ## [1.0.0] - 2026-07-31
 
 ### Added
