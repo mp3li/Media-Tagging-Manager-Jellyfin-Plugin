@@ -6,6 +6,13 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## Unreleased
 
+## [1.0.0.1] - 2026-08-04
+
+### Fixed
+
+- Published a fresh catalog package so Jellyfin creates a new local plugin
+  manifest and downloads the Media Tagging Manager plugin photo.
+
 ## [1.0.0.0] - 2026-08-04
 
 ### Fixed

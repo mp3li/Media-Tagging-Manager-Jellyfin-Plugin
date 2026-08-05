@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "1.0.0.0",
-        "changelog": "Catalog metadata correction: aligns the installed package version with the plugin assembly version to prevent Jellyfin repeatedly offering the already-installed stable release as an update.",
+        "version": "1.0.0.1",
+        "changelog": "Catalog image-cache repair: creates a fresh Jellyfin plugin manifest so the published Media Tagging Manager photo is downloaded and displayed.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Releases/1.0.0.0/Jellyfin.Plugin.MediaTaggingManager_1.0.0.0.zip",
-        "checksum": "46cce625d2b6f385b6b614b4bf633787",
-        "timestamp": "2026-08-05T01:23:12Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Releases/1.0.0.1/Jellyfin.Plugin.MediaTaggingManager_1.0.0.1.zip",
+        "checksum": "dc69712b501a6d731afc978f2a0ac5f2",
+        "timestamp": "2026-08-05T05:54:37Z"
       }
     ]
   }

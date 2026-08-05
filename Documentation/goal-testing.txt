@@ -818,3 +818,10 @@ Jellyfin.Plugin.MediaTaggingManager.dll and LICENSE, passed ZIP integrity
 testing, and has MD5 46cce625d2b6f385b6b614b4bf633787. The catalog package,
 installed manifest, and DLL now use the same four-part version. Live server
 confirmation remains required after publication.
+2026-08-04 | Stable 1.0.0.1 catalog image-cache repair | Pass — package validation |
+Jellyfin 10.11.11, plugin 1.0.0.1 | Release build succeeded with zero warnings
+or errors. The catalog ZIP contains only
+Jellyfin.Plugin.MediaTaggingManager.dll and LICENSE, passed ZIP integrity
+testing, and has MD5 dc69712b501a6d731afc978f2a0ac5f2. Installing this newer
+package creates a fresh Jellyfin version folder and local image manifest.
+Live server confirmation remains required after publication.
