@@ -6,6 +6,13 @@ The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/e
 
 ## Unreleased
 
+## [1.0.0.2] - 2026-08-05
+
+### Changed
+
+- Moved the **Scan** tab to immediately after **Main Settings** in the
+  dashboard tab order.
+
 ## [1.0.0.1] - 2026-08-04
 
 ### Fixed

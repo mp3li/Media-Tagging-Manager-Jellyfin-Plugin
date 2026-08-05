@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version: 1.0.0.1" src="Assets/Badges/version.svg" />
+  <img alt="Version: 1.0.0.2" src="Assets/Badges/version.svg" />
   <img alt="Status: Stable release" src="Assets/Badges/status.svg" />
   <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
@@ -71,9 +71,9 @@ data for future compatible plugins.
 
 ## Current release
 
-The current catalog release is **1.0.0.1**. This catalog image-cache repair
-creates a fresh Jellyfin plugin manifest so the published plugin photo is
-downloaded and displayed. The core provider/network,
+The current catalog release is **1.0.0.2**. It places the Scan tab immediately
+after Main Settings, making the full selected-library scan easier to find. The
+core provider/network,
 genre/keyword, collection, cast/crew, people-photo, more like this, production,
 ratings, and language workflows have been exercised on a real Jellyfin 10.11.11
 server. Remaining release checks and their recorded results live in
