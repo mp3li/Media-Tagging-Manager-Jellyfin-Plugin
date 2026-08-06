@@ -839,3 +839,17 @@ The catalog ZIP contains only Jellyfin.Plugin.MediaTaggingManager.dll and
 LICENSE, passed ZIP integrity testing, and has MD5
 aa87004d578281cd625289eb3da58a8d. Live server confirmation remains required
 after publication.
+2026-08-05 | Stable 1.0.0.4 exact tag-ownership preservation fix | Pass — package validation |
+Jellyfin 10.11.11, plugin 1.0.0.4 | Added a separate per-item ownership store that starts empty on
+upgrade and records only exact tags absent before a successful plugin write.
+Normal scans, manual edits, provider/network/genre selection sync, and keyword
+or genre removal now retain every prefixed tag without an ownership record,
+including NFO-imported and other-tool-created tags omitted by API results.
+Complete tag-backup restoration clears prior ownership claims for restored
+items before writing the snapshot.
+Release build succeeded with zero warnings or errors, the embedded dashboard
+script parsed successfully, and git diff checks passed. The catalog ZIP contains
+only Jellyfin.Plugin.MediaTaggingManager.dll and LICENSE, passed ZIP integrity
+testing, and has MD5 f7bc74b3e345740b016ff8196958e988. A real-server test with
+one pre-existing Provider tag and one newly plugin-added Provider tag remains
+required before treating runtime behavior as verified.

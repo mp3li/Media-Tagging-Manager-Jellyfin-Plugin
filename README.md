@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version: 1.0.0.3" src="Assets/Badges/version.svg" />
+  <img alt="Version: 1.0.0.4" src="Assets/Badges/version.svg" />
   <img alt="Status: Stable release" src="Assets/Badges/status.svg" />
   <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
@@ -71,9 +71,9 @@ data for future compatible plugins.
 
 ## Current release
 
-The current catalog release is **1.0.0.3**. It places the Scan tab in the
-primary row directly after Main Settings, making the full selected-library
-scan easier to find. The core provider/network,
+The current catalog release is **1.0.0.4**. It adds exact per-item tag ownership
+tracking so scans preserve pre-existing, NFO-imported, and other-tool-created
+tags even when an API omits them. The core provider/network,
 genre/keyword, collection, cast/crew, people-photo, more like this, production,
 ratings, and language workflows have been exercised on a real Jellyfin 10.11.11
 server. Remaining release checks and their recorded results live in
@@ -180,10 +180,13 @@ Provider means current viewing availability. Network means actual title-level
 television network/distributor metadata returned by a source; the plugin does
 not invent a Network tag from an app name. Both may apply to the same title.
 
-Your unrelated Jellyfin tags are never removed. The provider/network replacement
-option removes only the plugin’s own outdated Provider and Network tags; genre,
-keyword, collection, and unrelated tags have their own controls and are not
-silently cleared by that setting.
+Existing Jellyfin tags are never treated as plugin-owned merely because they
+use a supported prefix. The plugin records ownership only when it adds a tag
+that was previously absent. The provider/network replacement option can remove
+only those exact recorded additions; tags imported from NFO files, created by
+other tools, or already present before a scan remain untouched even when TMDb
+and Watchmode do not return them. Genre, keyword, collection, and unrelated
+tags have their own controls and are not silently cleared by that setting.
 
 ### Native Jellyfin metadata
 
@@ -266,8 +269,9 @@ This plugin uses two rows of tabs. The first row is **Main Settings**,
   not recognize. You can inspect matching items, assign an official name, and
   upload one logo without rewriting the existing tags.
 
-Use the sync actions only when you want to remove plugin-created Provider or
-Network tags outside the saved picker selection. They do not contact sources.
+Use the sync actions only when you want to remove exact, ownership-recorded
+Provider or Network tags outside the saved picker selection. They do not
+contact sources and do not remove pre-existing or NFO-created tags.
 
 ### Genres and Keywords Settings Tab
 

@@ -4,7 +4,19 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
-## Unreleased
+## [1.0.0.4] - 2026-08-05
+
+### Fixed
+
+- Added exact per-item ownership records for tags that Media Tagging Manager
+  actually adds. Provider, Network, Genre, and Keyword replacement or sync
+  actions no longer infer ownership from a tag prefix, so pre-existing tags,
+  NFO-imported tags, and tags created by other tools are preserved when API
+  results omit them.
+- Kept every tag present before this ownership store was introduced unowned by
+  default, preventing an upgrade from claiming legacy library metadata.
+- Clear ownership claims before restoring complete tag backups so restored or
+  later re-imported NFO tags cannot inherit stale plugin provenance.
 
 ## [1.0.0.3] - 2026-08-05
 

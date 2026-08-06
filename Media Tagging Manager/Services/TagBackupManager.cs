@@ -11,13 +11,15 @@ public sealed class TagBackupManager
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly ILibraryManager _libraryManager;
     private readonly TagDestinationWriter _destinations;
+    private readonly TagOwnershipStore _tagOwnership;
     private readonly SemaphoreSlim _fileLock = new(1, 1);
 
     /// <summary>Initializes a new instance of the <see cref="TagBackupManager"/> class.</summary>
-    public TagBackupManager(ILibraryManager libraryManager, TagDestinationWriter destinations)
+    public TagBackupManager(ILibraryManager libraryManager, TagDestinationWriter destinations, TagOwnershipStore tagOwnership)
     {
         _libraryManager = libraryManager;
         _destinations = destinations;
+        _tagOwnership = tagOwnership;
     }
 
     /// <summary>Creates a complete tag snapshot for every item in the supplied libraries.</summary>
@@ -97,6 +99,10 @@ public sealed class TagBackupManager
     public async Task<TagBackupSummary> RestoreAsync(Guid backupId, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         var document = await ReadAsync(BackupPath(backupId), cancellationToken).ConfigureAwait(false);
+        // A complete snapshot does not carry provenance. Clear prior claims
+        // before restoring so a restored or later NFO-imported tag is always
+        // treated as external and preserved.
+        await _tagOwnership.ClearForItemsAsync(document.Items.Select(item => item.ItemId), cancellationToken).ConfigureAwait(false);
         var completed = 0;
         foreach (var savedItem in document.Items)
         {

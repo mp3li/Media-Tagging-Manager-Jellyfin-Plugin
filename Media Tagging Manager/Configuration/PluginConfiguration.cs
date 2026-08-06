@@ -44,7 +44,7 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets the optional Watchmode API key.</summary>
     public string WatchmodeApiKey { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets whether tags previously created by this plugin are removed before every update.</summary>
+    /// <summary>Gets or sets whether exact tags recorded in the ownership store may be removed when availability changes.</summary>
     public bool ReplaceManagedTags { get; set; } = true;
 
     /// <summary>Gets or sets provider names selected for an optional future-scan allow-list.</summary>

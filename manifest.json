@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "1.0.0.3",
-        "changelog": "Moves the Scan tab into the primary row directly after Main Settings, making the full selected-library scan easier to find.",
+        "version": "1.0.0.4",
+        "changelog": "Preserves pre-existing, NFO-imported, and other-tool-created tags by removing only exact per-item tags recorded as added by this plugin.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Releases/1.0.0.3/Jellyfin.Plugin.MediaTaggingManager_1.0.0.3.zip",
-        "checksum": "aa87004d578281cd625289eb3da58a8d",
-        "timestamp": "2026-08-05T21:29:10Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Releases/1.0.0.4/Jellyfin.Plugin.MediaTaggingManager_1.0.0.4.zip",
+        "checksum": "f7bc74b3e345740b016ff8196958e988",
+        "timestamp": "2026-08-06T05:06:59Z"
       }
     ]
   }

@@ -17,6 +17,7 @@ public sealed class ProviderNetworkScanner
     private readonly ScanStateStore _state;
     private readonly TagBackupManager _backups;
     private readonly TagDestinationWriter _destinations;
+    private readonly TagOwnershipStore _tagOwnership;
     private readonly ProviderNetworkLogoCache _logos;
     private readonly CastCrewManager _castCrew;
     private readonly MoreLikeThisManager _moreLikeThis;
@@ -32,6 +33,7 @@ public sealed class ProviderNetworkScanner
         ScanStateStore state,
         TagBackupManager backups,
         TagDestinationWriter destinations,
+        TagOwnershipStore tagOwnership,
         ProviderNetworkLogoCache logos,
         CastCrewManager castCrew,
         MoreLikeThisManager moreLikeThis,
@@ -43,6 +45,7 @@ public sealed class ProviderNetworkScanner
         _state = state;
         _backups = backups;
         _destinations = destinations;
+        _tagOwnership = tagOwnership;
         _logos = logos;
         _castCrew = castCrew;
         _moreLikeThis = moreLikeThis;
@@ -336,7 +339,7 @@ public sealed class ProviderNetworkScanner
             .ToArray();
     }
 
-    /// <summary>Removes unselected tags of one kind from selected libraries without contacting any source.</summary>
+    /// <summary>Removes only plugin-owned, unselected tags of one kind from selected libraries without contacting any source.</summary>
     public async Task<TagSyncResult> SyncWithOnlySelectedAsync(TagKind kind, IEnumerable<string> selectedNames, CancellationToken cancellationToken)
     {
         await _scanLock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -398,20 +401,31 @@ public sealed class ProviderNetworkScanner
                 foreach (var (libraryId, item) in selectedLibraryItems)
                 {
                     var existing = item.Tags ?? [];
+                    var ownedValues = await _tagOwnership.GetForItemAsync(item.Id, cancellationToken).ConfigureAwait(false);
+                    var ownedTags = ownedValues.Select(value => value.Tag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var removableOwnedTags = ownedTags
+                        .Where(tag => IsTagKind(tag, kind)
+                            && !selected.Contains(TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind))))
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
                     var retained = existing
-                        .Select(tag => IsTagKind(tag, kind)
-                            ? TagNaming.Format(kind, TagNameNormalizer.Normalize(kind, RemoveTagPrefix(tag, kind)))
-                            : tag)
-                        .Where(tag => !IsTagKind(tag, kind) || selected.Contains(RemoveTagPrefix(tag, kind)))
+                        .Where(tag => !removableOwnedTags.Contains(tag))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToArray();
                     var removed = existing.Length - retained.Length;
                     if (existing.SequenceEqual(retained, StringComparer.OrdinalIgnoreCase))
                     {
+                        await _tagOwnership.RemoveAsync(
+                            item.Id,
+                            ownedTags.Where(tag => !existing.Contains(tag, StringComparer.OrdinalIgnoreCase)),
+                            cancellationToken).ConfigureAwait(false);
                         _state.Report(++completed, item.Name);
                         continue;
                     }
 
+                    await _tagOwnership.RemoveAsync(
+                        item.Id,
+                        ownedTags.Where(tag => !retained.Contains(tag, StringComparer.OrdinalIgnoreCase)),
+                        cancellationToken).ConfigureAwait(false);
                     item.Tags = retained;
                     await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
                     tagsRemoved += removed;
@@ -791,6 +805,8 @@ public sealed class ProviderNetworkScanner
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
             .ToArray();
         var existing = item.Tags ?? [];
+        var ownedValues = await _tagOwnership.GetForItemAsync(item.Id, cancellationToken).ConfigureAwait(false);
+        var ownedTags = ownedValues.Select(value => value.Tag).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var eligibleNetworkTags = selectedValues
             .Where(value => value.Kind == TagKind.Network)
             .Select(value => TagNaming.Format(value.Kind, value.Name))
@@ -808,6 +824,9 @@ public sealed class ProviderNetworkScanner
             : 0;
         var tagsAdded = selected.Count(tag => !existing.Contains(tag, StringComparer.OrdinalIgnoreCase));
         // A failed source must never erase previously known availability. A later healthy scan reconciles it.
+        // Prefixes identify supported tag kinds, never ownership. Only exact
+        // values recorded when this plugin added a previously absent tag may
+        // be removed; pre-existing Jellyfin and NFO tags remain untouched.
         // Scheduled replacement reconciles current availability only. Genre and
         // keyword tags are explicitly controlled through their own settings,
         // sync, and removal actions; collection tags are additive by design.
@@ -818,7 +837,8 @@ public sealed class ProviderNetworkScanner
             .ToHashSet();
         var retained = (configuration.ReplaceManagedTags || forceManagedReplacement) && replaceManagedTags
             ? existing.Where(tag =>
-                !TagNaming.TryGetKind(tag, out var kind)
+                !ownedTags.Contains(tag)
+                || !TagNaming.TryGetKind(tag, out var kind)
                 || !replacementKinds.Contains(kind)
                 // A saved allow-list controls future additions. It must not
                 // silently remove values outside that list; explicit Sync is
@@ -840,11 +860,24 @@ public sealed class ProviderNetworkScanner
         // Do not ask Jellyfin to write the database or local metadata for titles
         // whose tags did not actually change. Besides avoiding needless work on
         // a full scan, this prevents an unchanged title from touching its NFO.
+        var ownershipRecordsToRemove = ownedTags
+            .Where(tag => !updatedTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+        if (ownershipRecordsToRemove.Length > 0)
+        {
+            // Stop claiming ownership before the destructive write. If the
+            // Jellyfin save fails, the remaining tag is conservatively left
+            // unowned rather than risking a later removal of external data.
+            await _tagOwnership.RemoveAsync(item.Id, ownershipRecordsToRemove, cancellationToken).ConfigureAwait(false);
+        }
         if (!existing.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(updatedTags))
         {
             item.Tags = updatedTags;
             await _destinations.SaveAsync(item, cancellationToken).ConfigureAwait(false);
         }
+        await _tagOwnership.RecordAsync(
+            addedTags.Select(tag => new TagOwnedValue { ItemId = item.Id, LibraryId = libraryId, Tag = tag }),
+            cancellationToken).ConfigureAwait(false);
         _state.RecordTagAdditions(tagsAdded);
         _state.RecordNetworkApplication(
             eligibleNetworkTags.Length,

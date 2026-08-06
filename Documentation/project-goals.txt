@@ -112,6 +112,9 @@ Acceptance criteria:
 [x] Add all distinct results returned by healthy enabled sources instead of
     forcing a single provider or single network.
 [x] Replace only tags owned by this plugin when replacement is enabled.
+[x] Prove tag ownership with an exact per-item record created only when this
+    plugin adds a previously absent tag; never infer ownership from Provider,
+    Network, Genre, Keyword, or Collection prefixes.
 [x] Preserve existing plugin-owned tags when every enabled source fails, rather
     than clearing them because of a temporary outage.
 [x] Use TMDb for regional watch-provider data and television-network metadata.
