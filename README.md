@@ -18,13 +18,61 @@
   <img alt="Refresh: Manual or scheduled" src="Assets/Badges/refresh.svg" />
 </p>
 
-## What it does
+## Why This Plugin Was Created
+
+I created Media Tagging Manager after many years as a Jellyfin user, for fellow
+Jellyfin users. I wanted better discovery and organization within my
+libraries, and this plugin became the first step: give every supported media
+item the fullest available information and represent its key details as
+consistent, useful metadata.
+
+Complete metadata creates the foundation for everything that follows. Once
+media is thoroughly tagged, those tags can be used to organize titles into
+collections and then display those collections on the Jellyfin home screen.
+Used by itself, Media Tagging Manager is a powerful tagging and
+organization tool covering the 25 metadata types listed in the **Metadata
+types** section below.
+
+This approach is especially valuable for archival-minded libraries. Consistent
+metadata preserves important context around each item, makes large libraries
+easier to search and audit, and keeps their organization understandable as they
+grow and change over time.
+
+Media Tagging Manager is the metadata backbone of my other Jellyfin plugins.
+They use the tags created here to organize and display the content you request,
+while this plugin remains fully useful as a standalone metadata tool.
+
+## About Media Tagging Manager
 
 Media Tagging Manager reads only the Jellyfin libraries you explicitly select.
 For supported Movies and Series, it can enrich or organize metadata from TMDb
 and, where appropriate, Watchmode. Episodes inherit their series context.
 
-It is designed for a library owner who wants answers to questions like:
+Media Tagging Manager is a complete standalone plugin for adding and managing
+tags, enriching metadata, reviewing library information, and saving related
+visual assets and records. It can also be used with two standalone companion
+plugins: [Collection Manager Jellyfin Plugin](https://github.com/mp3li/Collection-Manager-Jellyfin-Plugin)
+and [Home Screen Manager](https://github.com/mp3li/Home-Screen-Sections-Manager-Jellyfin-Plugin).
+Each plugin can be used independently, or they can be used together as part of
+a connected Jellyfin workflow.
+
+When used together, [Collection Manager](https://github.com/mp3li/Collection-Manager-Jellyfin-Plugin)
+can use all 25 metadata types created or maintained here, along with the
+existing tags already attached to your media, to build and maintain collections
+and create their artwork. [Home Screen Manager](https://github.com/mp3li/Home-Screen-Sections-Manager-Jellyfin-Plugin)
+can then create home-screen sections from collections, tags, or entire
+libraries, opening up nearly endless possibilities for organization and
+discovery. Those sections can be ordered by title, release date, date added,
+rating, or a custom manual order, with additional control over artwork size,
+Jellyfin image type, poster, wide, square, or circle presentation shapes, and
+whether the media name and year appear beneath the artwork. Together, the
+three plugins can carry enriched metadata through organization and into a
+deeply customized home-screen experience
+without making that larger workflow mandatory.
+
+On its own, Media Tagging Manager supports metadata enrichment, automated
+tagging, visual assets, and detailed library review. A few examples of what the
+resulting metadata can reveal are:
 
 - “Where can I stream this title in my country right now?”
 - “Which television network is this series associated with?”
@@ -34,7 +82,7 @@ It is designed for a library owner who wants answers to questions like:
 The plugin does not download media, rename files, alter video/audio streams,
 or bypass any streaming service’s access controls.
 
-## Metadata types
+## Metadata Types
 
 Media Tagging Manager handles 25 distinct metadata types. Five are normal,
 prefixed Jellyfin tags; the other types are native Jellyfin metadata,
@@ -69,7 +117,7 @@ data for future compatible plugins.
 | Spoken language | `English, French` | Every spoken language TMDb returns for the title. |
 | Translation | `es-US: Spanish title/overview` | A TMDb localized title or overview with its language and region. |
 
-## Current release
+## Current Release
 
 The current catalog release is **1.0.0.4**. It adds exact per-item tag ownership
 tracking so scans preserve pre-existing, NFO-imported, and other-tool-created
@@ -98,25 +146,7 @@ Create a tag backup before a broad scan and keep your usual server backups.
 The manifest and release ZIP contain no API keys, server configuration,
 backups, logs, cached source data, NFO files, or media.
 
-## Quick start
-
-1. In **Main Settings**, select one small library and save.
-2. Add your TMDb API Read Access Token in **API Settings** and save it.
-3. Optionally add your Watchmode API key in **API Settings**, set its request
-   limit and quota-reset date, and save. It is used only as the quota-tracked
-   fallback when TMDb does not return the needed result.
-4. In **Network and Provider Settings**, choose availability regions, load
-   Networks if needed, choose the Providers and Networks you want, and save.
-5. Optionally configure the other metadata tabs described below.
-6. Create a tag backup in **Main Settings** or **Scan**.
-7. Use **Scan All Selected Libraries**.
-8. Review **Additions and Removals in the Last Scan**, then review Provider and
-   Network tags at the bottom of **Network and Provider Settings**.
-
-Each tab’s Save button saves only that tab’s settings. Save a tab before using
-one of its load, sync, or scan actions.
-
-## Sources and credentials
+## Sources and Credentials
 
 | Source | Used for | Credential |
 | --- | --- | --- |
@@ -131,7 +161,7 @@ to three availability countries.
 More documented, authorized sources may be added in a future iteration after
 their matching quality, terms, coverage, and limits are reviewed.
 
-### Get your keys
+### Get Your Keys
 
 <details>
 <summary><strong>Get a TMDb API Read Access Token and Watchmode API Key — usually only takes a few minutes</strong></summary>
@@ -162,9 +192,9 @@ Never place credentials in GitHub, screenshots, shared settings exports, or
 release archives. See [API key setup and rotation](Documentation/API_KEYS.md)
 for the full server-administrator guide.
 
-## Data and safety model
+## Data and Safety Model
 
-### Jellyfin tags
+### Jellyfin Tags
 
 The plugin writes clearly prefixed normal Jellyfin tags:
 
@@ -188,7 +218,7 @@ other tools, or already present before a scan remain untouched even when TMDb
 and Watchmode do not return them. Genre, keyword, collection, and unrelated
 tags have their own controls and are not silently cleared by that setting.
 
-### Native Jellyfin metadata
+### Native Jellyfin Metadata
 
 Where Jellyfin has a supported field, the plugin uses Jellyfin’s normal
 metadata-update path:
@@ -203,7 +233,7 @@ If the library itself is configured in Jellyfin to save NFO metadata, Jellyfin
 decides whether these ordinary metadata updates are written to NFO files. This
 plugin does not write NFO files separately or write into media files.
 
-### Plugin-owned supplemental data
+### Plugin-Owned Supplemental Data
 
 Some TMDb data has no equivalent multi-value Jellyfin field. The plugin keeps
 these values in its own server-side data for its dashboard and future compatible
@@ -218,7 +248,7 @@ plugins:
 Removing these records does not alter media files. Cleanup buttons say exactly
 which category they remove.
 
-### Backups, undo, and scoped access
+### Backups, Undo, and Scoped Access
 
 Backups capture the **complete current tag list** for every item in selected
 libraries. Restore intentionally overwrites the current tags on the saved
@@ -228,7 +258,7 @@ carefully.
 Empty library selection means **no libraries**, never every library. All scans,
 loads, manual edits, and cleanup actions are restricted to the saved selection.
 
-## How to use this plugin
+## How to Use This Plugin
 
 This plugin uses two rows of tabs. The first row is **Main Settings**,
 **Network and Provider Settings**, **Genres and Keywords Settings**, and
@@ -305,7 +335,7 @@ Use this tab to preserve and fill people metadata rather than overwrite it.
 People photos are Jellyfin server metadata shared across titles, not one new
 copy per title.
 
-### More like this Settings Tab
+### More Like This Settings Tab
 
 Enable TMDb **Recommendations** and/or **Similar Titles** for selected-library
 Movies and Series. These are title-to-title TMDb relationships, not
@@ -365,21 +395,6 @@ values and removals; both colors are configurable.
 The **Scan** tab is the last tab on the second row. It repeats Backup Settings
 and Scheduled Tasks Settings intentionally so they are available immediately
 before a broad scan.
-
-## Compatibility and limits
-
-- Target server version: **Jellyfin 10.11.11**.
-- Current supported scan item kinds: **Movies and Series**. Selecting another
-  library type does not make unsupported media kinds taggable.
-- TMDb/Watchmode coverage, identifiers, regional availability, logos, and
-  response content are source-dependent.
-- A title without the identifier a source needs is skipped for that source;
-  the plugin does not invent results.
-- Ratings, classifications, languages, and translations require TMDb.
-- The dashboard is administrator-only. Treat your Jellyfin server, plugin data
-  directory, and credentials as sensitive.
-
-Read the detailed [Jellyfin 10.11.11 compatibility audit](Documentation/JELLYFIN_10.11.11_COMPATIBILITY_AUDIT.md) and the [testing tracker](Documentation/goal-testing.txt) for supported behavior and recorded validation results.
 
 ## Documentation
 
