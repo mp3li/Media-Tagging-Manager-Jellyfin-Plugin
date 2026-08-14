@@ -347,6 +347,9 @@ Acceptance criteria:
 10. Post-first-release iteration: expanded overview scope and per-scan library selection
 -----------------------------------------------------------------------------------------
 
+[x] Expand the Genres and Keywords Library Overview to show native Jellyfin
+    genres imported from NFO `<genre>` fields alongside all prefixed `Genre:`
+    tags, while keeping native genres read-only in plugin edit actions.
 [ ] Expand Library Overview beyond plugin-created tags so it can also display
     relevant provider, network, genre, keyword, and collection tags that were
     not created by this plugin, while clearly distinguishing their origin and

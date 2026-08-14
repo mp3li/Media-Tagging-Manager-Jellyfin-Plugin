@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version: 1.0.0.4" src="Assets/Badges/version.svg" />
+  <img alt="Version: 1.0.0.5" src="Assets/Badges/version.svg" />
   <img alt="Status: Stable release" src="Assets/Badges/status.svg" />
   <img alt="Platform: Jellyfin 10.11.11" src="Assets/Badges/platform.svg" />
   <img alt="Interface: Jellyfin Dashboard" src="Assets/Badges/interface.svg" />
@@ -119,12 +119,18 @@ data for future compatible plugins.
 
 ## Current Release
 
-The current catalog release is **1.0.0.4**. It adds exact per-item tag ownership
-tracking so scans preserve pre-existing, NFO-imported, and other-tool-created
-tags even when an API omits them. The core provider/network,
-genre/keyword, collection, cast/crew, people-photo, more like this, production,
-ratings, and language workflows have been exercised on a real Jellyfin 10.11.11
-server. Remaining release checks and their recorded results live in
+The current catalog release is **1.0.0.5**. The Genres and Keywords Library
+Overview now shows native Jellyfin genres imported from NFO `<genre>` fields
+together with prefixed `Genre:` tags, regardless of whether a genre appears in
+TMDb's selectable catalog. Native genres are read-only in this plugin so an
+overview edit cannot rewrite NFO-managed genre metadata. This release also
+fixes administrator-uploaded PNG, JPEG, and SVG logos for mapped unknown
+Provider and Network tags and reports the server's actual upload error when a
+file is rejected. Earlier core provider/network, genre/keyword, collection,
+cast/crew, people-photo, more like this, production, ratings, and language
+workflows have been exercised on a real Jellyfin 10.11.11 server. The new native
+genre display and unknown-logo upload changes have passed source and package
+validation; their live server/browser checks and all recorded results live in
 [Documentation/goal-testing.txt](Documentation/goal-testing.txt).
 
 Create a tag backup before a broad scan and keep your usual server backups.
@@ -309,8 +315,10 @@ contact sources and do not remove pre-existing or NFO-created tags.
 - Enable or disable TMDb keyword tags.
 - Save genre choices independently, sync existing genre tags to the selection,
   or remove keywords created by this plugin.
-- Review and manually edit Genre and Keyword tags in the dedicated collapsible
-  **Genres and Keywords Library Overview**.
+- Review every native Jellyfin genre imported from NFO files together with all
+  prefixed Genre and Keyword tags in the dedicated collapsible **Genres and
+  Keywords Library Overview**. Editing there changes only the prefixed tags;
+  native Jellyfin genres remain read-only.
 
 ### Collections Tags Settings Tab
 

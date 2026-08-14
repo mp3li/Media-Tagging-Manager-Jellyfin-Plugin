@@ -4,6 +4,28 @@ All notable changes to Media Tagging Manager Jellyfin Plugin by mp3li are docume
 
 The format follows the spirit of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with release entries added only when a real packaged release exists.
 
+## [1.0.0.5] - 2026-08-14
+
+### Changed
+
+- Expanded the Genres and Keywords Library Overview to read native Jellyfin
+  genres, including custom values imported from NFO `<genre>` fields, alongside
+  every prefixed `Genre:` tag. Overview filters use the combined, case-insensitive
+  list and suppress duplicate names.
+- Kept native Jellyfin genres read-only in Media Tagging Manager. The overview's
+  Edit action continues to change only prefixed Genre and Keyword tags, preserving
+  NFO-managed genre metadata and the existing ownership boundary.
+
+### Fixed
+
+- Replaced the unknown Provider/Network logo upload request with a real browser
+  multipart upload. Jellyfin Web's legacy request helper URL-encoded the
+  `FormData` object instead of sending the selected file, leaving the server
+  without an `IFormFile` to save.
+- Added useful upload failure details, including an explicit message when the
+  official-name mapping saved but its logo did not, and refresh the logo cache
+  immediately after a successful upload.
+
 ## [1.0.0.4] - 2026-08-05
 
 ### Fixed

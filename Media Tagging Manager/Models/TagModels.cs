@@ -441,6 +441,7 @@ public sealed record TaggedItemDto(
     IReadOnlyCollection<string> Providers,
     IReadOnlyCollection<string> Networks,
     IReadOnlyCollection<string> Genres,
+    IReadOnlyCollection<string> NativeGenres,
     IReadOnlyCollection<string> Keywords,
     IReadOnlyCollection<string> Collections,
     DateTimeOffset? LastCheckedUtc,

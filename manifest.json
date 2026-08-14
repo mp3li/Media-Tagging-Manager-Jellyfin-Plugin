@@ -9,12 +9,12 @@
     "imageUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Assets/Branding/media-tagging-manager-plugin-photo.png",
     "versions": [
       {
-        "version": "1.0.0.4",
-        "changelog": "Preserves pre-existing, NFO-imported, and other-tool-created tags by removing only exact per-item tags recorded as added by this plugin.",
+        "version": "1.0.0.5",
+        "changelog": "Shows native Jellyfin genres imported from NFO files in the Genres and Keywords Library Overview, and fixes administrator-uploaded logos for mapped unknown Provider and Network tags.",
         "targetAbi": "10.11.11.0",
-        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Releases/1.0.0.4/Jellyfin.Plugin.MediaTaggingManager_1.0.0.4.zip",
-        "checksum": "f7bc74b3e345740b016ff8196958e988",
-        "timestamp": "2026-08-06T05:06:59Z"
+        "sourceUrl": "https://raw.githubusercontent.com/mp3li/Media-Tagging-Manager-Jellyfin-Plugin/main/Releases/1.0.0.5/Jellyfin.Plugin.MediaTaggingManager_1.0.0.5.zip",
+        "checksum": "6268a76491d1bb0eca4d8cd69a2f5993",
+        "timestamp": "2026-08-14T08:13:55Z"
       }
     ]
   }

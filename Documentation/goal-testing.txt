@@ -455,6 +455,13 @@ Acceptance criteria:
 [ ] In Genres and Keywords Settings, confirm the dedicated Library Overview
     has separate Genre and Keyword columns and each can be manually edited
     without changing other plugin-managed tag types.
+[ ] Add a custom NFO `<genre>` value that does not appear in TMDb's genre
+    catalog, rescan the library, and confirm it appears in the Genres column and
+    responds to the Genre filter.
+[ ] Give one item the same name as both a native Jellyfin genre and a prefixed
+    `Genre:` tag; confirm the overview shows it once, case-insensitively.
+[ ] Edit and save that item's prefixed Genre and Keyword tags from the overview;
+    confirm the native Jellyfin genre and its NFO `<genre>` field are unchanged.
 
 5. Manual scans, scan status, and performance
 ---------------------------------------------
@@ -853,3 +860,16 @@ only Jellyfin.Plugin.MediaTaggingManager.dll and LICENSE, passed ZIP integrity
 testing, and has MD5 f7bc74b3e345740b016ff8196958e988. A real-server test with
 one pre-existing Provider tag and one newly plugin-added Provider tag remains
 required before treating runtime behavior as verified.
+2026-08-14 | Stable 1.0.0.5 native-genre overview and unknown-logo upload fix | Pass — package validation |
+Jellyfin 10.11.11, plugin 1.0.0.5 | Added native `BaseItem.Genres` to the live
+selected-library item response and combined them with prefixed `Genre:` tags
+only for overview display and filtering. Prefixed Genre/Keyword values remain
+the only values submitted by the edit controls. Replaced the legacy
+`ApiClient.ajax` FormData request, which serialized a non-string body as URL
+parameters, with a browser-native multipart upload and useful response errors.
+Release build succeeded with zero warnings or errors, the embedded dashboard
+script parsed successfully, and git diff checks passed. The catalog ZIP contains
+only Jellyfin.Plugin.MediaTaggingManager.dll and LICENSE, passed ZIP integrity
+testing, and has MD5 6268a76491d1bb0eca4d8cd69a2f5993. Live Jellyfin
+server/browser checks for NFO genre display, read-only preservation, PNG/JPEG/SVG
+upload, immediate logo rendering, and error copy remain required.

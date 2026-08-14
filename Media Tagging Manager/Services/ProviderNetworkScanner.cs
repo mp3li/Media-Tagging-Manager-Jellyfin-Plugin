@@ -902,6 +902,7 @@ public sealed class ProviderNetworkScanner
             tags.Where(tag => tag.StartsWith(TagNaming.ProviderPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.ProviderPrefix.Length..]).ToArray(),
             tags.Where(tag => tag.StartsWith(TagNaming.NetworkPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.NetworkPrefix.Length..]).ToArray(),
             tags.Where(tag => tag.StartsWith(TagNaming.GenrePrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.GenrePrefix.Length..]).ToArray(),
+            (item.Genres ?? []).Where(static genre => !string.IsNullOrWhiteSpace(genre)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
             tags.Where(tag => tag.StartsWith(TagNaming.KeywordPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.KeywordPrefix.Length..]).ToArray(),
             tags.Where(tag => tag.StartsWith(TagNaming.CollectionPrefix, StringComparison.OrdinalIgnoreCase)).Select(tag => tag[TagNaming.CollectionPrefix.Length..]).ToArray(),
             checkedUtc,
